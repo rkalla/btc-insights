@@ -72,7 +72,7 @@ The Friday function runs at 00:05 UTC Saturday and retries until that Friday's d
 
 ## Hosting
 
-The target is a free static CDN plus that one scheduled function. No process stays connected to an exchange. That connected process is the piece that would start to cost money.
+The site is hosted on the exe.dev VM `btcfriday.exe.xyz`. nginx serves `/var/www/html` on port 8000, and exe.dev terminates HTTPS. Every deploy follows `docs/deploy.md`: the tree stays owned by `exedev`, directories are mode `2750`, files are mode `640`, and the nginx worker (`www-data`) can read the site and cannot write it. The scheduled function runs on that VM as `exedev`, with `umask 027`, and writes only into `/var/www/html/data/`. No process stays connected to an exchange. That connected process is the piece that would start to cost money.
 
 Python stays in the repository and runs in CI. It does not run in production. CI checks the production Friday function against the published record: the completed buy-cross fires and their next-year results, the open 18 September 2026 fire, the gold-share results already measured (completed arms at 0%, the 21 November 2025 arm at 24.5% against the 15% cut), and the cycle-capture shares in `docs/1-signal-quality.md`. A second fixture sends a new spot through the live slice and checks that the gap, the chart tip, and the progress rows move, and that the cash word, the rails, and the record do not.
 
