@@ -1,0 +1,9 @@
+# Local secrets. Never commit environment files.
+.env
+.env.*
+*.env
+
+# A checked-in template is fine. Real values stay in the ignored files above.
+!.env.example
+!.env.sample
+!.env.*.example
