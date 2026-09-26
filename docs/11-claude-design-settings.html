@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bitcoin dashboard · Settings · Design B reference</title>
+<!-- Design B Settings reference. All fields start blank, as the wireframe requires. The page reads these amounts; it never places an order. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0C0F14; --surface-1:#131820; --surface-2:#0F141B; --surface-3:#1A2029;
+  --border:#222A35; --border-strong:#2A3240; --border-accent:#3A6E9E;
+  --text-1:#E6EAF0; --text-2:#9BA6B5; --text-3:#7F8A9A;
+  --buy:#6CB4FF; --buy-hover:#9CCBFF; --on-buy:#07131F; --sell:#F2A65A; --danger:#FF8A7A;
+  --font-sans:'Geist','Helvetica Neue',Arial,sans-serif;
+  --font-mono:'Geist Mono',ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  --r-panel:16px; --r-well:10px; --r-chip:8px; --r-pill:999px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text-1);font-family:var(--font-sans);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:var(--buy)} a:hover{color:var(--buy-hover)}
+:focus-visible{outline:2px solid var(--buy);outline-offset:2px;border-radius:4px}
+.page{max-width:760px;margin:0 auto;padding:28px 24px 64px;display:flex;flex-direction:column;gap:16px}
+.topbar{display:flex;justify-content:space-between;align-items:center;min-height:56px}
+.back{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 14px 0 10px;border:1px solid var(--border-strong);border-radius:var(--r-well);color:var(--text-1);text-decoration:none;font-size:14px;font-weight:500}
+.back:hover{border-color:var(--text-3);color:var(--text-1)}
+h1{margin:0;font-size:28px;font-weight:700;letter-spacing:-.02em}
+.intro{margin:0;font-size:14px;color:var(--text-2)}
+.label{font-family:var(--font-mono);font-size:11px;line-height:1.3;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3)}
+.panel{background:var(--surface-1);border:1px solid var(--border);border-radius:var(--r-panel);padding:24px;display:flex;flex-direction:column;gap:16px}
+.panel h2{margin:0;font-size:18px;font-weight:600;letter-spacing:-.01em}
+.help{margin:0;font-size:13px;color:var(--text-2);line-height:1.5}
+.field{display:flex;flex-direction:column;gap:6px}
+.field > label,.field .legend{font-size:13.5px;font-weight:500}
+.fields-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.input{display:flex;align-items:center;height:44px;background:var(--surface-2);border:1px solid var(--border-strong);border-radius:var(--r-well);padding:0 12px;gap:8px}
+.input:focus-within{border-color:var(--buy);box-shadow:0 0 0 1px var(--buy)}
+.input .affix{font-family:var(--font-mono);font-size:14px;color:var(--text-3)}
+.input input{flex:1;min-width:0;height:100%;background:transparent;border:0;color:var(--text-1);font-family:var(--font-mono);font-size:15px;font-variant-numeric:tabular-nums;outline:none}
+.input input::placeholder{color:var(--text-3)}
+.input input[type="date"]{color-scheme:dark}
+.hint{font-size:12.5px;color:var(--text-3)}
+.error{font-size:12.5px;color:var(--danger)}
+.seg{display:inline-grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;padding:4px;background:var(--surface-2);border:1px solid var(--border-strong);border-radius:var(--r-well);width:max-content;border:0}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label{min-width:96px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:var(--r-chip);font-size:13.5px;color:var(--text-2);cursor:pointer}
+.seg input:checked + label{background:var(--text-1);color:var(--bg);font-weight:600}
+.seg input:focus-visible + label{outline:2px solid var(--buy);outline-offset:2px}
+.radios{display:flex;gap:8px;flex-wrap:wrap;border:0;padding:0;margin:0}
+.radio{position:relative}
+.radio input{position:absolute;opacity:0;pointer-events:none}
+.radio label{height:44px;display:flex;align-items:center;gap:10px;padding:0 16px;border:1px solid var(--border-strong);border-radius:var(--r-well);font-size:14px;cursor:pointer}
+.radio label::before{content:"";width:14px;height:14px;border-radius:50%;border:1.5px solid var(--text-3)}
+.radio input:checked + label{border-color:var(--buy)}
+.radio input:checked + label::before{border-color:var(--buy);background:radial-gradient(circle,var(--buy) 45%,transparent 50%)}
+.radio input:focus-visible + label{outline:2px solid var(--buy);outline-offset:2px}
+.switch-row{display:flex;justify-content:space-between;align-items:center;gap:16px}
+.switch{position:relative;width:52px;height:30px;border-radius:999px;background:var(--surface-3);border:1px solid var(--border-strong);cursor:pointer;padding:0}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--text-3);transition:transform .12s}
+.switch[aria-checked="true"]{background:var(--sell);border-color:var(--sell)}
+.switch[aria-checked="true"]::after{transform:translateX(22px);background:var(--on-buy)}
+.state{font-family:var(--font-mono);font-size:12px;color:var(--text-2)}
+.actions{display:flex;justify-content:flex-end;gap:10px;padding-top:4px}
+.btn{height:44px;padding:0 20px;border-radius:var(--r-well);font-family:var(--font-sans);font-size:14px;font-weight:600;cursor:pointer}
+.btn--primary{background:var(--buy);color:var(--on-buy);border:1px solid var(--buy)}
+.btn--primary:hover{background:var(--buy-hover)}
+.btn--ghost{background:transparent;color:var(--text-1);border:1px solid var(--border-strong)}
+.footnote{font-size:12.5px;color:var(--text-3);text-align:center;margin:8px 0 0}
+@media (max-width:767px){.page{padding:16px 16px 48px}.fields-2{grid-template-columns:1fr}.actions{flex-direction:column-reverse}.btn{width:100%}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main class="page">
+  <div class="topbar">
+    <a class="back" href="design-b-reference.html"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 6L9 12L15 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Back to dashboard</a>
+    <span class="label">Settings</span>
+  </div>
+  <h1>Settings</h1>
+  <p class="intro">The dashboard reads these amounts. It does not place an order.</p>
+
+  <form class="panel" aria-labelledby="h-standing" onsubmit="return false">
+    <h2 id="h-standing">Standing contribution</h2>
+    <div class="fields-2">
+      <div class="field"><label for="standing-amount">Amount</label><div class="input"><span class="affix">$</span><input id="standing-amount" inputmode="decimal" placeholder="Not set" aria-describedby="standing-hint"></div><span class="hint" id="standing-hint">Shape, if you have not chosen: about $5,000.</span></div>
+      <div class="field"><span class="legend" id="every-label">Every</span>
+        <div class="seg" role="radiogroup" aria-labelledby="every-label">
+          <input type="radio" name="every" id="every-week" value="week"><label for="every-week">Week</label>
+          <input type="radio" name="every" id="every-month" value="month"><label for="every-month">Month</label>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <form class="panel" aria-labelledby="h-build" onsubmit="return false">
+    <h2 id="h-build">Build tranche</h2>
+    <div class="field"><label for="build-amount">Amount</label><div class="input"><span class="affix">$</span><input id="build-amount" inputmode="decimal" placeholder="Not set" aria-describedby="build-hint"></div><span class="hint" id="build-hint">Shape, if you have not chosen: about $100,000, sliced on cheap Fridays.</span></div>
+  </form>
+
+  <form class="panel" aria-labelledby="h-cash" onsubmit="return false">
+    <h2 id="h-cash">Cash available to invest</h2>
+    <p class="help">Used by All in, Lump in, and Slow in. This amount is not refilled in order to wait for the next cross.</p>
+    <div class="field"><label for="cash-amount">Amount</label><div class="input"><span class="affix">$</span><input id="cash-amount" inputmode="decimal" placeholder="Not set" aria-describedby="cash-hint"></div><span class="hint" id="cash-hint">Shape, if you have not chosen: up to $100,000 on an All-in fire.</span></div>
+  </form>
+
+  <form class="panel" aria-labelledby="h-trim" onsubmit="return false">
+    <h2 id="h-trim">Trim</h2>
+    <p class="help">Any blank means Trim stays off.</p>
+    <div class="fields-2">
+      <div class="field"><label for="coins-held">Coins held</label><div class="input"><input id="coins-held" inputmode="decimal" placeholder="Not set"><span class="affix">BTC</span></div></div>
+      <div class="field"><label for="net-worth">Investable net worth</label><div class="input"><span class="affix">$</span><input id="net-worth" inputmode="decimal" placeholder="Not set"></div></div>
+      <div class="field"><label for="target-share">Target share</label><div class="input"><input id="target-share" inputmode="decimal" placeholder="Not set"><span class="affix">%</span></div></div>
+      <div class="field"><label for="ceiling-share">Ceiling share</label><div class="input"><input id="ceiling-share" inputmode="decimal" placeholder="Not set" aria-describedby="ceiling-rule"><span class="affix">%</span></div><span class="hint" id="ceiling-rule">Must be above the target share.</span></div>
+    </div>
+  </form>
+
+  <form class="panel" aria-labelledby="h-thesis" onsubmit="return false">
+    <h2 id="h-thesis">Thesis</h2>
+    <div class="switch-row">
+      <div class="field"><span class="legend" id="thesis-label">Thesis broken</span><span class="state" id="thesis-state">Not declared</span></div>
+      <button type="button" class="switch" role="switch" aria-checked="false" aria-labelledby="thesis-label" aria-describedby="thesis-state"></button>
+    </div>
+    <div class="field"><label for="thesis-date">Date</label><div class="input"><input id="thesis-date" type="date" disabled aria-describedby="thesis-help"></div></div>
+    <p class="help" id="thesis-help">Not declared means Exit stays off. This is a holder record, not a signal override.</p>
+  </form>
+
+  <form class="panel" aria-labelledby="h-account" onsubmit="return false">
+    <h2 id="h-account">Account</h2>
+    <fieldset class="radios" aria-labelledby="h-account">
+      <div class="radio"><input type="radio" name="account" id="acct-taxable" value="taxable"><label for="acct-taxable">Taxable</label></div>
+      <div class="radio"><input type="radio" name="account" id="acct-ira" value="ira"><label for="acct-ira">IRA</label></div>
+      <div class="radio"><input type="radio" name="account" id="acct-fund" value="fund"><label for="acct-fund">Fund</label></div>
+    </fieldset>
+    <p class="help">Blank means the page does not compute tax. After-tax dollars are not a score until this is set.</p>
+  </form>
+
+  <div class="actions">
+    <a class="btn btn--ghost" href="design-b-reference.html" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none">Cancel</a>
+    <button type="button" class="btn btn--primary">Save settings</button>
+  </div>
+</main>
+</body>
+</html>
