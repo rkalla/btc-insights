@@ -55,7 +55,7 @@ A file deploy does not reload nginx. Reload nginx only after a change under `/et
 
 ## The job
 
-The scheduled job runs as `exedev` with `umask 027`. It writes files into `/var/www/html/data/`, which already exists and is setgid. It does not create directories. A new directory is made with sudo and then `chmod 2750`. Otherwise the setgid bit is missing and nginx cannot read what the job puts there.
+The scheduled job runs as `exedev` with `umask 027`. It writes `/var/www/html/data/friday.json` and `/var/www/html/data/live.json`. That directory already exists and is setgid. The job does not create directories. A new directory is made with sudo and then `chmod 2750`. Otherwise the setgid bit is missing and nginx cannot read what the job puts there.
 
 `umask 027` makes the new files mode `640`. The login umask on this box is `022`, which leaves a file world-readable. That file is still not writable by `www-data`. The job does not rely on the next deploy to tighten it.
 
@@ -75,6 +75,7 @@ The site file is `/etc/nginx/sites-available/default`. The extra file is `/etc/n
 - A request for a hidden file, including `/.env`, is denied.
 - `server_tokens off`.
 - CSS, JavaScript, JSON, and SVG responses are compressed.
+- `/data/friday.json` is cached for a day (`max-age=86400`). `/data/live.json` is cached for a minute (`max-age=60`). The live slice carries the Friday date, and the page refetches `friday.json` when that date changes.
 
 ## Leave Docker stopped
 

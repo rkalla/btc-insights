@@ -1,6 +1,6 @@
 # Dashboard wireframe
 
-Locked on 26 September 2026. Structure only. Boxes, labels, and the words each box is allowed to say. No color, type, logo, or spacing system. A later change is a new draft, not a quiet edit of this page.
+Locked on 26 September 2026, and amended the same day to match `docs/10-claude-design-reference.html`. Structure only. Boxes, labels, and the words each box is allowed to say. No color, type, logo, or spacing system. A later change is a new draft, not a quiet edit of this page.
 
 A picture of the sample page is `docs/mockups/friday-wireframe.png`. The file name still says Friday because that was the first draft. The page is a dashboard the holder can open on any day.
 
@@ -16,7 +16,7 @@ The page has two clocks. Region 1 is the official call from the last Friday clos
 
 ## Dashboard
 
-Desktop width. On a phone the same regions stack in the same order, action first. Region 3 is not drawn on this sample. Hidden means it is not rendered. It is drawn only when All in and Stand down are both on.
+Wide screens follow `docs/10-claude-design-reference.html`: header, then the spectrum strip, then Cash with Coins and Now beside it. Under 768 px the order is header, the one-line clock sentence, Cash, Coins, Now, then the spectrum strip, then the rest. The clock sentence reads: "Official call: Fri 25 Sep 2026 close · Next close Fri 2 Oct · Friday close is 00:00 UTC Saturday · Opened 26 Sep 2026." Region 3 is not drawn on this sample. Hidden means it is not rendered. It is drawn only when All in and Stand down are both on.
 
 ```
 +----------------------------------------------------------------------------+
@@ -25,11 +25,11 @@ Desktop width. On a phone the same regions stack in the same order, action first
 | Official call: Friday 25 Sep 2026 close.                                   |
 | Next official close: Friday 2 Oct 2026.                                    |
 +----------------------------------------------------------------------------+
-| NOW                                                                        |
-| Latest print: 25 Sep 2026 daily close. Same print as the official call.   |
-| Spot $84,413. Gap about -41% against the Friday trend, about $141,000.    |
-| A later print can move these levels. It does not change region 1.         |
-| Developing: none. This print is the official Friday close.                |
+| SPECTRUM     Position on the spectrum only. Not a confidence scale.       |
+| 02 Coins held   Exit · Trim · HOLD                                         |
+| 01 Cash         Stand down · Stay the course · Slow in · Build ·          |
+|                 Lump in · ALL IN                                           |
+| ← Out of Bitcoin                              Into Bitcoin →               |
 +----------------------------------------------------------------------------+
 | 1  CASH          Official call                                             |
 |    ALL IN                                                                  |
@@ -44,6 +44,12 @@ Desktop width. On a phone the same regions stack in the same order, action first
 | 2  COINS                                                                   |
 |    HOLD                                                                    |
 |    Coins already held stay held. Trim is off. Exit is off.                |
++----------------------------------------------------------------------------+
+| NOW                                                                        |
+| Latest print: 25 Sep 2026 daily close. Same print as the official call.   |
+| Spot $84,413. Gap about -41% against the Friday trend, about $141,000.    |
+| A later print can move these levels. It does not change region 1.         |
+| Developing: none. This print is the official Friday close.                |
 +----------------------------------------------------------------------------+
 | 4  CAVEATS                                                                 |
 |    Gold flag is on. Arm 21 Nov 2025. Gold share 24.5%, cut 15%.           |
@@ -136,9 +142,10 @@ Desktop width. On a phone the same regions stack in the same order, action first
 
 | Region | Always shows | May add | Collapses when |
 | --- | --- | --- | --- |
-| Header | When the page was opened, which Friday close the official call uses, the next official Friday, a way to Settings | The All-in window end, when that window is open | Never |
+| Header | When the page was opened, which Friday close the official call uses, the next official Friday, a way to Settings | The All-in window end, when that window is open. Under 1024 px, the chips collapse to the one-line clock sentence. | Never |
+| Spectrum | Two rails. Coins: Exit, Trim, Hold. Cash: Stand down, Stay the course, Slow in, Build, Lump in, All in. The line "Position on the spectrum only. Not a confidence scale." | — | Never, except the cash rail has no active segment during Exit or a missing Friday close. The middle sentence hides under 768 px. |
 | Now | The latest print's time, spot, and gap against the last Friday's trend. Whether that print is the official close or a later print. | "Developing:" plus the condition that would arm or fire if this print were a Friday close. The sentence ends with "Not an official fire." | Never. When the clocks match, it says developing is none. |
-| 1 Cash | One posture name, the action in words, wins of episodes, then the floor. The words "Official call." | "Open episode." "Not high confidence." The All-in coin payoff. "Schedule untested." "Armed wait untested." | Never. There is always one cash posture. |
+| 1 Cash | One posture name, the action in words, wins of episodes, then the floor. The words "Official call." | "Open episode." "Not high confidence." The All-in coin payoff. "Schedule untested." "Armed wait untested." | Never on a normal close. A missing Friday close replaces the posture with "No call" and drops the record box. |
 | 2 Coins | Hold, Trim, or Exit | Tax line on Trim and Exit. "No floor" on Exit. | Never |
 | 3 Disagreement | — | "Sell roll is also in its pause. All in still wins. The week is not cut in half." | Not rendered unless All in and Stand down are both on. It then sits between Coins and Caveats. |
 | 4 Caveats | — | Gold flag in words. Fit-range sentence. "Same week is not a higher probability." Armed-wait sentence. | Hidden when none of those apply |
@@ -148,7 +155,7 @@ Desktop width. On a phone the same regions stack in the same order, action first
 | 8 Cycle capture | One row per finished cycle the buy cross traded, with that cycle's full percentage gain, then the buy cross, Build, and Lump in. The current cycle adds progress at the latest print: rise from the low, the share of the rise to the high still in the price, and each signal's gain so far as a share of the rise from the low. | The note that 2011 and 2013 had no fire. | Never. The current cycle still occupies its progress lines when it has not ended. |
 | 9 Footer | Research line. Does not trade. Does not compute tax. | — | Never |
 
-The record line is the only confidence display. If a rule later clears a Wilson 90% floor of 80%, that same line gains the words "High confidence." There is no meter, badge slot, or second score that grows when the action gets larger.
+The record line is the only confidence display. The spectrum strip is not one. If a rule later clears a Wilson 90% floor of 80%, that same line gains the words "High confidence." There is no meter, badge slot, or second score that grows when the action gets larger.
 
 Region 1 names one posture. All in together with Build is still led by All in. The cash box adds one sentence that the build slice also runs, and region 4 says the week is not a higher probability. Build does not lend its record to All in, and All in does not lend the 4 of 4 to Build.
 
@@ -217,7 +224,7 @@ A visit on any day refreshes Now and the chart from the latest print. Region 1 s
 +----------------------------------------------------------------------------+
 ```
 
-If an amount is blank, region 1 names the pile and omits a dollar figure. It does not invent $100,000 on a live page. The $100,000 in the sample frame is the spec's shape, used so this draft can be read.
+If an amount is blank, the dollar clause comes out and the pile is named. "Up to $100,000." becomes "Use your cash available to invest." The page does not invent $100,000 on a live page. The $100,000 in the sample frame is the spec's shape, used so this draft can be read.
 
 ## Marker detail
 
@@ -234,6 +241,19 @@ Opened from a B or an S on the chart. Closing it returns to the dashboard with t
 ```
 
 Completed buy-cross results that may appear here: +127%, +59%, +269%, +138%. The open buy cross is 18 September 2026, near $81,000. Sell-roll dates that may appear here: June 2013, April 2014, August 2014, September 2017, March 2018, May 2018, May 2021, December 2021.
+
+Under 768 px the markers are display-only. A "Show fires" text button under the chart opens a bottom sheet titled "Fires". The sheet lists each fire with the same two lines, newest first, and a Close button. Opening it does not change the official call.
+
+## System states
+
+These states do not show a posture the engine did not produce. No state uses a toast.
+
+| State | Trigger | What the page shows |
+| --- | --- | --- |
+| Loading | Before the first view model arrives | The header, plus panels whose text lines are empty bars at their line heights. No numbers and no posture words. The main region is marked busy. No shimmer. |
+| Stale print | The latest print is more than 26 hours old | The Now chip reads "Stale print". The note reads "The latest print is from [date]. Levels may be out of date." The official call is untouched. |
+| Missing Friday close | The engine cannot compute the official close | Cash word "No call". Sentence: "The Friday [date] close is missing. There is no official call until it arrives." No record box. No active cash segment. Coins and Context show the previous Friday, with "(from Fri [date])" after each Context value. |
+| No data at all | The view model fails to load | One centred panel: "The dashboard could not load its data. Nothing here is a call." and a "Try again" button. |
 
 ## Not on this wireframe
 

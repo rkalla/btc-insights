@@ -21,11 +21,11 @@ Finished cycle cards, the context block's Friday readings, the 5-year and 10-yea
 
 ## What the phone loads
 
-The page is static files on a free CDN. A phone downloads the shell, the Friday document, and the live slice, then stops. It never calls a market API, and it never opens a websocket.
+The page is static files on the VM. A phone downloads the shell, `/data/friday.json`, and `/data/live.json`, then stops. It never calls a market API, and it never opens a websocket.
 
-The Friday document is the official call, the record, the Friday context, the finished cycle cards, the weekly chart from 2013, and the frozen anchors the progress card needs. Its URL is content-addressed and cached until the next official close. Compact JSON for that chart is about 15 KB after compression.
+`/data/friday.json` is the official call, the record, the Friday context, the finished cycle cards, the weekly chart from 2013, and the frozen anchors the progress card needs. nginx sends `Cache-Control: public, max-age=86400`. Compact JSON for that chart is about 15 KB after compression.
 
-The live slice is about 1 KB. It carries spot, gap, trend, the developing sentence or null, the realized-price ratio and that cap's date, gold with its as-of time and whether the print is a fill, the chart tip, the current-cycle progress rows, and an as-of time for each series. The CDN caches it for about a minute. The phone refetches it only while the tab is visible, and no more often than the job that writes it. A hidden tab does not poll.
+`/data/live.json` is about 1 KB. It carries the Friday date the official document belongs to, spot, gap, trend, the developing sentence or null, the realized-price ratio and that cap's date, gold with its as-of time and whether the print is a fill, the chart tip, the current-cycle progress rows, and an as-of time for each series. nginx sends `Cache-Control: public, max-age=60`. The phone refetches it only while the tab is visible, and no more often than the job that writes it. When the Friday date in the live slice is not the date of the Friday document the page already has, the page fetches `friday.json` again and bypasses that long cache. A hidden tab does not poll.
 
 First-load budget, compressed: the HTML, CSS, and JavaScript together under 50 KB, excluding fonts. The Friday document about 15 KB. The live slice about 1 KB. No third-party request on first paint. No image assets. The chart is SVG drawn with plain math on a log scale. A charting library is out, as the design spec already requires. `d3` is out as well, unless a later measurement shows the size budget still holds with one scale function imported.
 
@@ -37,7 +37,7 @@ The painter starts from the two reference HTML files. It fills sentences from th
 
 Coins held, investable net worth, the target share, the ceiling share, the thesis declaration and its date, the account type, and the dollar amounts for the three piles are stored in the browser. They are not in the public cache, and there is no login to host. The public repo stays free of secrets. `.gitignore` already ignores `.env` files. API keys live in the host's secret store.
 
-The Friday document names piles and omits personal dollars. When an amount is saved on the device, the painter inserts that dollar clause. A blank amount keeps the pile name. The page invents no dollar figure.
+The Friday document names piles and omits personal dollars. When an amount is saved on the device, the painter inserts that dollar clause. A blank amount removes the dollar clause. "Up to $100,000." becomes "Use your cash available to invest." The page invents no dollar figure.
 
 The cash posture still comes only from the Friday document. Two holder rules are applied on the device, because their inputs never leave it:
 
@@ -72,7 +72,7 @@ The Friday function runs at 00:05 UTC Saturday and retries until that Friday's d
 
 ## Hosting
 
-The site is hosted on the exe.dev VM `btcfriday.exe.xyz`. nginx serves `/var/www/html` on port 8000, and exe.dev terminates HTTPS. Every deploy follows `docs/deploy.md`: the tree stays owned by `exedev`, directories are mode `2750`, files are mode `640`, and the nginx worker (`www-data`) can read the site and cannot write it. The scheduled function runs on that VM as `exedev`, with `umask 027`, and writes only into `/var/www/html/data/`. No process stays connected to an exchange. That connected process is the piece that would start to cost money.
+The site is hosted on the exe.dev VM `btcfriday.exe.xyz`. nginx serves `/var/www/html` on port 8000, and exe.dev terminates HTTPS. Every deploy follows `docs/deploy.md`: the tree stays owned by `exedev`, directories are mode `2750`, files are mode `640`, and the nginx worker (`www-data`) can read the site and cannot write it. The scheduled function runs on that VM as `exedev`, with `umask 027`, and writes `/var/www/html/data/friday.json` and `/var/www/html/data/live.json`. No process stays connected to an exchange. That connected process is the piece that would start to cost money.
 
 Python stays in the repository and runs in CI. It does not run in production. CI checks the production Friday function against the published record: the completed buy-cross fires and their next-year results, the open 18 September 2026 fire, the gold-share results already measured (completed arms at 0%, the 21 November 2025 arm at 24.5% against the 15% cut), and the cycle-capture shares in `docs/1-signal-quality.md`. A second fixture sends a new spot through the live slice and checks that the gap, the chart tip, and the progress rows move, and that the cash word, the rails, and the record do not.
 

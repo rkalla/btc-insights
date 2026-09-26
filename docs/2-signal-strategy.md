@@ -194,7 +194,7 @@ Coin line, independent of the cash order:
 2. The z-score, split into the Bitcoin leg and the gold leg. The gold flag uses the arm-Friday rule above. A year-over-year share is not the flag.
 3. The macro-pressure thermometer, labeled non-voting.
 4. A marker at each buy-cross fire and each sell-roll fire.
-5. The cash posture and the coin line, in the words of the action.
+5. The cash posture and the coin line, in the words of the action. A spectrum strip marks where this week sits. Coins run Exit, Trim, Hold. Cash runs Stand down, Stay the course, Slow in, Build, Lump in, All in. It is not a confidence scale. One segment is active on each rail. Exit, and a missing Friday close, leave the cash rail with no active segment.
 6. The record, the floor, and the episode count of whichever rule is in force. Open episodes stay open.
 7. One realized-price sentence: under cost and slicing, or above cost.
 8. On the sell roll, the recall sentence: not armed since 2021, missed 2019–20 and 2025–26.
