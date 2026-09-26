@@ -10,7 +10,9 @@ Do not deploy as root. Do not run the job as root or as `www-data`.
 
 ## Host packages
 
-The job runs on Node.js 24 LTS, installed from the NodeSource `node_24.x` repository. On 26 September 2026 that is `v24.21.0` at `/usr/bin/node`, with npm `11.19.0`. Ubuntu's own `nodejs` package is 18, which is past support, so it is not the runtime. The job uses Node's built-in `fetch` and installs no npm packages on the host. N|solid is not installed.
+The job runs on Node.js 24 LTS, installed from the NodeSource `node_24.x` apt repository at `https://deb.nodesource.com/node_24.x`. On 26 September 2026 that is `v24.21.0` at `/usr/bin/node`, with npm `11.19.0`. The package is pinned at priority 600, so apt prefers it over Ubuntu's Node 18 package. The job uses Node's built-in `fetch` and installs no npm packages on the host. N|solid is not installed.
+
+`sudo apt update && sudo apt upgrade` moves Node along the 24 line. It does not jump to a later major. Node 24 receives security fixes through 30 April 2028. A later major is a separate change of that repository. Unattended upgrades on this VM cover Ubuntu only, so a Node release waits until that apt command is run. After Node itself is upgraded, restart the scheduled job so it is not still running the previous binary.
 
 nginx, rsync, curl, ca-certificates, OpenSSL, systemd, and git were already on the image. Python 3.12 is on the image and is not used by the site. Do not add a compiler toolchain, and do not start Docker.
 
