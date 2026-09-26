@@ -8,6 +8,12 @@ The live site is the exe.dev VM `btcfriday.exe.xyz`. nginx serves `/var/www/html
 
 Do not deploy as root. Do not run the job as root or as `www-data`.
 
+## Host packages
+
+The job runs on Node.js 24 LTS, installed from the NodeSource `node_24.x` repository. On 26 September 2026 that is `v24.21.0` at `/usr/bin/node`, with npm `11.19.0`. Ubuntu's own `nodejs` package is 18, which is past support, so it is not the runtime. The job uses Node's built-in `fetch` and installs no npm packages on the host. N|solid is not installed.
+
+nginx, rsync, curl, ca-certificates, OpenSSL, systemd, and git were already on the image. Python 3.12 is on the image and is not used by the site. Do not add a compiler toolchain, and do not start Docker.
+
 nginx's master process runs as root. The workers that read the files and answer requests run as `www-data`. These rules assume an attacker who can act as a worker.
 
 ## Layout
