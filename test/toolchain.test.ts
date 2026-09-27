@@ -5,8 +5,6 @@ import { test } from "node:test";
 const forbidden = new Set([
   "react",
   "react-dom",
-  "d3",
-  "d3-scale",
   "chart.js",
   "lightweight-charts",
 ]);
@@ -16,18 +14,33 @@ test("package.json has no react, d3, or chart dependency", () => {
   const pkg = JSON.parse(source) as {
     dependencies?: Record<string, string>;
     devDependencies?: Record<string, string>;
+    optionalDependencies?: Record<string, string>;
+    peerDependencies?: Record<string, string>;
+    bundleDependencies?: Record<string, string> | readonly string[];
   };
-  const names = [
-    ...Object.keys(pkg.dependencies ?? {}),
-    ...Object.keys(pkg.devDependencies ?? {}),
+  const fields = [
+    pkg.dependencies,
+    pkg.devDependencies,
+    pkg.optionalDependencies,
+    pkg.peerDependencies,
+    pkg.bundleDependencies,
   ];
+  const names = fields.flatMap((field) => {
+    if (field == null) {
+      return [];
+    }
+    if (Array.isArray(field)) {
+      return field;
+    }
+    return Object.keys(field);
+  });
 
   for (const name of names) {
-    assert.equal(forbidden.has(name), false, `${name} is not allowed`);
-    assert.equal(
-      name.toLowerCase().includes("chart"),
-      false,
-      `${name} is a chart package`,
-    );
+    const banned =
+      forbidden.has(name) ||
+      name === "d3" ||
+      name.startsWith("d3-") ||
+      name.toLowerCase().includes("chart");
+    assert.equal(banned, false, `${name} is not allowed`);
   }
 });
