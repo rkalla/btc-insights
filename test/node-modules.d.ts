@@ -17,15 +17,21 @@ declare module "node:fs" {
   export function rmSync(path: string, options?: { recursive?: boolean; force?: boolean }): void;
   export function writeFileSync(path: string, data: string): void;
   export function utimesSync(path: string, atime: Date, mtime: Date): void;
+  export function chmodSync(path: string, mode: number): void;
 }
 
 declare module "node:fs/promises" {
   export function stat(path: string): Promise<{ isDirectory(): boolean }>;
   export function readFile(path: string, encoding: "utf8"): Promise<string>;
-  export function writeFile(path: string, data: string, options?: { mode?: number }): Promise<void>;
+  export function writeFile(
+    path: string,
+    data: string,
+    options?: { mode?: number; flag?: "w" | "wx" },
+  ): Promise<void>;
   export function chmod(path: string, mode: number): Promise<void>;
   export function rename(from: string, to: string): Promise<void>;
   export function rm(path: string, options?: { force?: boolean }): Promise<void>;
+  export function realpath(path: string): Promise<string>;
 }
 
 declare module "node:crypto" {
@@ -37,11 +43,7 @@ declare module "node:crypto" {
 }
 
 declare module "node:test" {
-  export function test(
-    name: string,
-    optionsOrFn: { concurrency?: boolean | number } | (() => void | Promise<void>),
-    fn?: () => void | Promise<void>,
-  ): void;
+  export function test(name: string, fn: () => void | Promise<void>): void;
 }
 
 declare module "node:path" {

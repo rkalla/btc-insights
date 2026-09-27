@@ -40,19 +40,6 @@ export function coinGeckoSpotUrl(origin: string): string {
   return `${root}/api/v3/simple/price?ids=bitcoin&vs_currencies=usd`;
 }
 
-export function coinMetricsDailyUrl(base: string, start: string, end: string): string {
-  const root = base.endsWith("/") ? base.slice(0, -1) : base;
-  const query = [
-    "assets=btc",
-    "metrics=PriceUSD%2CCapMVRVCur",
-    "frequency=1d",
-    `start_time=${start}`,
-    `end_time=${end}`,
-    "page_size=10000",
-  ].join("&");
-  return `${root}/v4/timeseries/asset-metrics?${query}`;
-}
-
 export function createPaceWindow(now: number, stamps: readonly number[]): number[] {
   return stamps.filter((stamp) => now - stamp < COIN_METRICS_WINDOW_MS);
 }
@@ -102,33 +89,51 @@ export async function getJson(
   }
 }
 
-export function parseBitcoinSpot(body: unknown): number | null {
-  if (typeof body !== "object" || body === null) return null;
-  const bitcoin = (body as { bitcoin?: { usd?: unknown } }).bitcoin;
-  const usd = bitcoin?.usd;
-  if (typeof usd !== "number" || !(usd > 0)) return null;
+export async function fetchBitcoinSpot(origin: string, key: string, fetchImpl: FetchLike): Promise<number> {
+  const body = await getJson(fetchImpl, coinGeckoSpotUrl(origin), { "x-cg-demo-api-key": key });
+  if (typeof body !== "object" || body === null) throw new VendorFailure("network");
+  const usd = (body as { bitcoin?: { usd?: unknown } }).bitcoin?.usd;
+  if (typeof usd !== "number" || !(usd > 0)) throw new VendorFailure("network");
   return usd;
 }
 
-export interface GoldQuote {
-  usd: number;
-  asOf: string | null;
-  filled: boolean;
-}
-
-export function parseGoldQuote(body: unknown): GoldQuote | null {
-  if (typeof body !== "object" || body === null) return null;
+export async function fetchGoldQuote(
+  url: string,
+  fetchImpl: FetchLike,
+  nowIso: string,
+): Promise<{ usd: number; asOf: string; filled: boolean }> {
+  const body = await getJson(fetchImpl, url);
+  if (typeof body !== "object" || body === null) throw new VendorFailure("network");
   const record = body as { usd?: unknown; price?: unknown; asOf?: unknown; filled?: unknown };
   const usd = typeof record.usd === "number" ? record.usd : typeof record.price === "number" ? record.price : null;
-  if (usd == null || !(usd > 0)) return null;
+  if (usd == null || !(usd > 0)) throw new VendorFailure("network");
   return {
     usd,
-    asOf: typeof record.asOf === "string" ? record.asOf : null,
+    asOf: typeof record.asOf === "string" ? record.asOf : nowIso,
     filled: record.filled === true,
   };
 }
 
-export function parseCoinMetricsRows(body: unknown): HistoryRow[] {
+export async function fetchCoinMetricsRange(
+  base: string,
+  start: string,
+  end: string,
+  fetchImpl: FetchLike,
+  pace: PaceClock,
+  now: () => number,
+  sleep: (ms: number) => Promise<void>,
+): Promise<HistoryRow[]> {
+  await paceCoinMetrics(pace, now, sleep);
+  const root = base.endsWith("/") ? base.slice(0, -1) : base;
+  const query = [
+    "assets=btc",
+    "metrics=PriceUSD%2CCapMVRVCur",
+    "frequency=1d",
+    `start_time=${start}`,
+    `end_time=${end}`,
+    "page_size=10000",
+  ].join("&");
+  const body = await getJson(fetchImpl, `${root}/v4/timeseries/asset-metrics?${query}`);
   const data =
     typeof body === "object" && body !== null && "data" in body
       ? (body as { data?: unknown }).data
@@ -146,38 +151,6 @@ export function parseCoinMetricsRows(body: unknown): HistoryRow[] {
     });
   }
   return rows;
-}
-
-export async function fetchBitcoinSpot(origin: string, key: string, fetchImpl: FetchLike): Promise<number> {
-  const body = await getJson(fetchImpl, coinGeckoSpotUrl(origin), { "x-cg-demo-api-key": key });
-  const spot = parseBitcoinSpot(body);
-  if (spot == null) throw new VendorFailure("network");
-  return spot;
-}
-
-export async function fetchGoldQuote(
-  url: string,
-  fetchImpl: FetchLike,
-  nowIso: string,
-): Promise<{ usd: number; asOf: string; filled: boolean }> {
-  const body = await getJson(fetchImpl, url);
-  const quote = parseGoldQuote(body);
-  if (quote == null) throw new VendorFailure("network");
-  return { usd: quote.usd, asOf: quote.asOf ?? nowIso, filled: quote.filled };
-}
-
-export async function fetchCoinMetricsRange(
-  base: string,
-  start: string,
-  end: string,
-  fetchImpl: FetchLike,
-  pace: PaceClock,
-  now: () => number,
-  sleep: (ms: number) => Promise<void>,
-): Promise<HistoryRow[]> {
-  await paceCoinMetrics(pace, now, sleep);
-  const body = await getJson(fetchImpl, coinMetricsDailyUrl(base, start, end));
-  return parseCoinMetricsRows(body);
 }
 
 export function rowPrice(row: HistoryRow): number | null {

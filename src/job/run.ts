@@ -1,14 +1,13 @@
-import { chmod, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
-import { join, relative, resolve } from "node:path";
+import { chmod, readFile, realpath, rename, rm, stat, writeFile } from "node:fs/promises";
+import { join, relative } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { sentenceDate } from "../contract/format.ts";
 import { buildFriday } from "./friday.ts";
 import type { HistoryRow, PublishedRecord } from "./friday.ts";
 import { buildLive } from "./live.ts";
 import type { FrozenFriday, LivePrint } from "./live.ts";
 import { fitPowerLaw, trendAt } from "./powerlaw.ts";
-import type { DatedPrice } from "./powerlaw.ts";
 import {
   createPace,
   fetchBitcoinSpot,
@@ -30,8 +29,8 @@ const STATE_MODE = 0o600;
 export const FRIDAY_RETRY_MS = 60_000;
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
-
-export type FridayStep = "idle" | "try" | "stop";
+const RECORD_FIXTURE = fileURLToPath(new URL("../../fixtures/published-record.json", import.meta.url));
+const HISTORY_FIXTURE = fileURLToPath(new URL("../../fixtures/history/btc-daily.json", import.meta.url));
 
 interface StoredGold {
   usd: number;
@@ -61,6 +60,8 @@ interface Ctx {
   geckoOrigin: string;
   metricsBase: string;
   pace: PaceClock;
+  recordPath: string;
+  historyPath: string;
 }
 
 export interface RunOptions {
@@ -74,7 +75,7 @@ export interface RunOptions {
   umask?: (mask: number) => number;
 }
 
-export function fridayStep(now: Date): FridayStep {
+export function fridayStep(now: Date): "idle" | "try" | "stop" {
   if (now.getUTCDay() !== 6) return "idle";
   const seconds = now.getUTCHours() * 3600 + now.getUTCMinutes() * 60 + now.getUTCSeconds();
   if (seconds < 5 * 60) return "idle";
@@ -95,13 +96,6 @@ export function addUtcDays(isoDate: string, days: number): string {
   return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
 }
 
-export function jobMode(argv: readonly string[]): "live" | "friday" {
-  for (const arg of argv) {
-    if (arg === "live" || arg === "friday") return arg;
-  }
-  return "live";
-}
-
 function isoStamp(now: Date): string {
   return now.toISOString().replace(".000Z", "Z");
 }
@@ -110,25 +104,11 @@ function dayOf(now: Date): string {
   return now.toISOString().slice(0, 10);
 }
 
-function intradayLabel(iso: string): string {
-  const date = iso.slice(0, 10);
-  const year = Number(date.slice(0, 4));
-  const month = Number(date.slice(5, 7));
-  const day = Number(date.slice(8, 10));
-  const weekday = WEEKDAYS[new Date(Date.UTC(year, month - 1, day)).getUTCDay()] ?? "Day";
-  return `${weekday} ${sentenceDate(date)} print`;
-}
-
-function isEnoent(error: unknown): boolean {
-  return typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
-}
-
-function isInside(parent: string, child: string): boolean {
-  const from = resolve(parent);
-  const to = resolve(child);
-  if (from === to) return true;
-  const rel = relative(from, to);
-  return rel !== "" && !rel.startsWith("..") && !rel.startsWith("/");
+function errorCode(error: unknown): string | null {
+  if (typeof error === "object" && error !== null && "code" in error && typeof error.code === "string") {
+    return error.code;
+  }
+  return null;
 }
 
 async function dirStatus(dir: string): Promise<"ok" | "missing"> {
@@ -136,7 +116,7 @@ async function dirStatus(dir: string): Promise<"ok" | "missing"> {
     const info = await stat(dir);
     return info.isDirectory() ? "ok" : "missing";
   } catch (error) {
-    if (isEnoent(error)) return "missing";
+    if (errorCode(error) === "ENOENT") return "missing";
     throw error;
   }
 }
@@ -146,7 +126,7 @@ async function readJson(path: string): Promise<unknown | null> {
     const text = await readFile(path, "utf8");
     return JSON.parse(text) as unknown;
   } catch (error) {
-    if (isEnoent(error)) return null;
+    if (errorCode(error) === "ENOENT") return null;
     if (error instanceof SyntaxError) return null;
     throw error;
   }
@@ -168,23 +148,8 @@ function asRows(value: unknown): HistoryRow[] {
   return rows;
 }
 
-function asRecord(value: unknown): PublishedRecord | null {
-  if (typeof value !== "object" || value === null) return null;
-  const record = value as PublishedRecord;
-  if (typeof record.official?.closeDate !== "string") return null;
-  if (typeof record.anchors?.low !== "number") return null;
-  return record;
-}
-
-function parseGoldState(value: unknown): StoredGold | null {
-  if (typeof value !== "object" || value === null) return null;
-  const gold = value as StoredGold;
-  if (typeof gold.usd !== "number" || !(gold.usd > 0)) return null;
-  if (typeof gold.asOf !== "string") return null;
-  return { usd: gold.usd, asOf: gold.asOf, filled: gold.filled === true };
-}
-
-function parseState(value: unknown): StoredState | null {
+async function readState(stateDir: string): Promise<StoredState | null> {
+  const value = await readJson(join(stateDir, "state.json"));
   if (typeof value !== "object" || value === null) return null;
   const row = value as StoredState;
   const frozen = row.frozen;
@@ -194,6 +159,13 @@ function parseState(value: unknown): StoredState | null {
   if (typeof row.spotUsd !== "number" || !(row.spotUsd > 0)) return null;
   if (typeof row.spotAsOf !== "string" || typeof row.printLabel !== "string") return null;
   if (typeof frozen.anchors !== "object" || frozen.anchors === null) return null;
+  let gold: StoredGold | null = null;
+  if (typeof row.gold === "object" && row.gold !== null) {
+    const parsed = row.gold;
+    if (typeof parsed.usd === "number" && parsed.usd > 0 && typeof parsed.asOf === "string") {
+      gold = { usd: parsed.usd, asOf: parsed.asOf, filled: parsed.filled === true };
+    }
+  }
   return {
     frozen: {
       officialCloseDate: frozen.officialCloseDate,
@@ -205,15 +177,11 @@ function parseState(value: unknown): StoredState | null {
     spotUsd: row.spotUsd,
     spotAsOf: row.spotAsOf,
     printLabel: row.printLabel,
-    gold: parseGoldState(row.gold),
+    gold,
     lastMetricsDate: typeof row.lastMetricsDate === "string" ? row.lastMetricsDate : null,
     metricsCheckedOn: typeof row.metricsCheckedOn === "string" ? row.metricsCheckedOn : null,
     missingFriday: typeof row.missingFriday === "string" ? row.missingFriday : null,
   };
-}
-
-async function readState(stateDir: string): Promise<StoredState | null> {
-  return parseState(await readJson(join(stateDir, "state.json")));
 }
 
 async function removeTemp(path: string): Promise<void> {
@@ -266,36 +234,77 @@ function mergeRows(history: HistoryRow[], extra: readonly HistoryRow[]): History
   return [...byDate.values()].sort((left, right) => (left.time < right.time ? -1 : left.time > right.time ? 1 : 0));
 }
 
-function pointsOf(rows: readonly HistoryRow[]): DatedPrice[] {
-  const points: DatedPrice[] = [];
-  for (const row of rows) {
-    const price = rowPrice(row);
-    if (price == null) continue;
-    points.push({ date: row.time.slice(0, 10), price });
+async function readHistory(ctx: Ctx, extra: readonly HistoryRow[]): Promise<HistoryRow[]> {
+  const stored = asRows(await readJson(join(ctx.stateDir, "history.json")));
+  if (stored.length > 0) return mergeRows(stored, extra);
+  return mergeRows(asRows(await readJson(ctx.historyPath)), extra);
+}
+
+async function writeLive(
+  ctx: Ctx,
+  state: StoredState,
+  print: LivePrint,
+  keepNewerMissing: boolean,
+): Promise<void> {
+  const lockPath = join(ctx.stateDir, ".live.lock");
+  let locked = false;
+  if ((await dirStatus(ctx.stateDir)) === "ok") {
+    for (let attempt = 0; attempt < 50; attempt += 1) {
+      try {
+        await writeFile(lockPath, `${process.pid}\n`, { flag: "wx", mode: STATE_MODE });
+        locked = true;
+        break;
+      } catch (error) {
+        if (errorCode(error) !== "EEXIST") throw error;
+        await delay(20);
+      }
+    }
+    if (!locked) throw new Error("state lock");
   }
-  return points;
+  try {
+    let nextState = state;
+    let nextPrint = print;
+    if (keepNewerMissing && nextPrint.missingClose === false) {
+      const latest = await readState(ctx.stateDir);
+      const disk = await readJson(join(ctx.dataDir, "live.json"));
+      const diskMissing =
+        typeof disk === "object" && disk !== null && (disk as { missingClose?: unknown }).missingClose === true;
+      const diskDate =
+        typeof disk === "object" &&
+        disk !== null &&
+        typeof (disk as { officialCloseDate?: unknown }).officialCloseDate === "string"
+          ? (disk as { officialCloseDate: string }).officialCloseDate
+          : null;
+      const newer = latest?.missingFriday ?? (diskMissing ? diskDate : null);
+      if (newer != null) {
+        nextState = { ...nextState, missingFriday: newer };
+        nextPrint = { ...nextPrint, missingClose: true };
+      }
+    }
+    const frozen =
+      nextState.missingFriday != null
+        ? { ...nextState.frozen, officialCloseDate: nextState.missingFriday }
+        : nextState.frozen;
+    await writeDataFile(ctx.dataDir, "live.json", buildLive(frozen, nextPrint));
+    await writeState(ctx.stateDir, {
+      ...nextState,
+      spotUsd: nextPrint.spot,
+      spotAsOf: nextPrint.spotAsOf,
+      printLabel: nextPrint.printLabel,
+      gold: nextPrint.gold,
+    });
+  } finally {
+    if (locked) await removeTemp(lockPath);
+  }
 }
 
-function withMissingDate(state: StoredState): FrozenFriday {
-  if (state.missingFriday == null) return state.frozen;
-  return { ...state.frozen, officialCloseDate: state.missingFriday };
-}
-
-async function writeLive(ctx: Ctx, state: StoredState, print: LivePrint): Promise<void> {
-  const live = buildLive(withMissingDate(state), print);
-  await writeDataFile(ctx.dataDir, "live.json", live);
-  await writeState(ctx.stateDir, {
-    ...state,
-    spotUsd: print.spot,
-    spotAsOf: print.spotAsOf,
-    printLabel: print.printLabel,
-    gold: print.gold,
-  });
-}
-
-function applyMetricRows(state: StoredState, rows: readonly HistoryRow[], today: string): StoredState {
+async function storeDailyRows(ctx: Ctx, state: StoredState, rows: readonly HistoryRow[]): Promise<StoredState> {
+  const priced = rows.filter((row) => rowPrice(row) != null);
+  if (priced.length === 0) return state;
+  const history = await readHistory(ctx, priced);
+  await writeAtomic(ctx.stateDir, "history.json", history, STATE_MODE);
   let next = state;
-  for (const row of rows) {
+  for (const row of priced) {
     const price = rowPrice(row);
     if (price == null) continue;
     const date = row.time.slice(0, 10);
@@ -308,29 +317,40 @@ function applyMetricRows(state: StoredState, rows: readonly HistoryRow[], today:
         realizedAsOf: realized != null ? date : next.frozen.realizedAsOf,
       },
       lastMetricsDate: date,
+      metricsCheckedOn: date,
     };
   }
-  return { ...next, metricsCheckedOn: today };
-}
-
-async function refreshMetrics(ctx: Ctx, state: StoredState, today: string): Promise<StoredState> {
-  if (state.metricsCheckedOn === today) return state;
-  const start = state.lastMetricsDate != null ? addUtcDays(state.lastMetricsDate, 1) : today;
-  const end = addUtcDays(today, 1);
-  if (start > today) return { ...state, metricsCheckedOn: today };
-  const rows = await fetchCoinMetricsRange(
-    ctx.metricsBase,
-    start,
-    end,
-    ctx.fetch,
-    ctx.pace,
-    () => ctx.now().getTime(),
-    ctx.sleep,
-  );
-  return applyMetricRows(state, rows, today);
+  const latest = await readState(ctx.stateDir);
+  if (latest?.missingFriday != null) next = { ...next, missingFriday: latest.missingFriday };
+  await writeState(ctx.stateDir, next);
+  return next;
 }
 
 async function runLive(ctx: Ctx): Promise<number> {
+  let state = await readState(ctx.stateDir);
+  const today = dayOf(ctx.now());
+  if (state != null && (state.lastMetricsDate == null || state.lastMetricsDate < today)) {
+    const start = state.lastMetricsDate != null ? addUtcDays(state.lastMetricsDate, 1) : today;
+    if (start <= today) {
+      let rows: HistoryRow[];
+      try {
+        rows = await fetchCoinMetricsRange(
+          ctx.metricsBase,
+          start,
+          addUtcDays(today, 1),
+          ctx.fetch,
+          ctx.pace,
+          () => ctx.now().getTime(),
+          ctx.sleep,
+        );
+      } catch (error) {
+        const stopped = stopForVendor(ctx, error);
+        if (stopped != null) return stopped;
+        throw error;
+      }
+      state = await storeDailyRows(ctx, state, rows);
+    }
+  }
   const key = (ctx.env.COINGECKO_API_KEY ?? "").trim();
   if (key === "") return 0;
   let spot: number;
@@ -352,61 +372,65 @@ async function runLive(ctx: Ctx): Promise<number> {
       throw error;
     }
   }
-  let state = await readState(ctx.stateDir);
   if (state == null) return 0;
-  const today = dayOf(ctx.now());
-  try {
-    state = await refreshMetrics(ctx, state, today);
-  } catch (error) {
-    const stopped = stopForVendor(ctx, error);
-    if (stopped != null) return stopped;
-    throw error;
-  }
   const spotAsOf = isoStamp(ctx.now());
-  await writeLive(ctx, state, {
-    spot,
-    spotAsOf,
-    printLabel: intradayLabel(spotAsOf),
-    isOfficialClose: false,
-    bitcoin: { usd: spot, asOf: spotAsOf },
-    gold,
-    now: spotAsOf,
-    missingClose: state.missingFriday != null,
-  });
+  const date = spotAsOf.slice(0, 10);
+  const year = Number(date.slice(0, 4));
+  const month = Number(date.slice(5, 7));
+  const day = Number(date.slice(8, 10));
+  const weekday = WEEKDAYS[new Date(Date.UTC(year, month - 1, day)).getUTCDay()] ?? "Day";
+  await writeLive(
+    ctx,
+    state,
+    {
+      spot,
+      spotAsOf,
+      printLabel: `${weekday} ${sentenceDate(date)} print`,
+      isOfficialClose: false,
+      bitcoin: { usd: spot, asOf: spotAsOf },
+      gold,
+      now: spotAsOf,
+      missingClose: state.missingFriday != null,
+    },
+    true,
+  );
   return 0;
-}
-
-async function readRecord(ctx: Ctx): Promise<PublishedRecord | null> {
-  const configured = (ctx.env.RECORD_PATH ?? "").trim();
-  const path = configured !== "" ? configured : "fixtures/published-record.json";
-  return asRecord(await readJson(path));
-}
-
-async function readHistory(ctx: Ctx, fetched: readonly HistoryRow[]): Promise<HistoryRow[]> {
-  const stored = asRows(await readJson(join(ctx.stateDir, "history.json")));
-  if (stored.length > 0) return mergeRows(stored, fetched);
-  const configured = (ctx.env.HISTORY_PATH ?? "").trim();
-  const path = configured !== "" ? configured : "fixtures/history/btc-daily.json";
-  return mergeRows(asRows(await readJson(path)), fetched);
 }
 
 async function onFridayBar(ctx: Ctx, friday: string, rows: HistoryRow[]): Promise<void> {
   const bar = rowForDate(rows, friday);
-  if (bar == null) return;
-  const price = rowPrice(bar);
-  if (price == null) return;
+  const price = bar == null ? null : rowPrice(bar);
+  if (bar == null || price == null) return;
   const state = await readState(ctx.stateDir);
-  const record = await readRecord(ctx);
+  if (state != null) await storeDailyRows(ctx, state, [bar]);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(await readFile(ctx.recordPath, "utf8")) as unknown;
+  } catch {
+    throw new Error("record unreadable");
+  }
+  if (typeof parsed !== "object" || parsed === null) throw new Error("record unreadable");
+  const record = parsed as PublishedRecord;
+  if (typeof record.official?.closeDate !== "string" || typeof record.anchors?.low !== "number") {
+    throw new Error("record unreadable");
+  }
   const spotAsOf = `${friday}T00:00:00Z`;
   const label = `${sentenceDate(friday)} daily close`;
-  if (record != null && record.official.closeDate === friday) {
+  const fresh = (await readState(ctx.stateDir)) ?? state;
+  if (record.official.closeDate === friday) {
     const history = await readHistory(ctx, rows);
     const doc = buildFriday(history, record);
-    const fit = fitPowerLaw(pointsOf(history), friday);
+    const points = [];
+    for (const row of history) {
+      const point = rowPrice(row);
+      if (point == null) continue;
+      points.push({ date: row.time.slice(0, 10), price: point });
+    }
+    const fit = fitPowerLaw(points, friday);
     const frozen: FrozenFriday = {
       officialCloseDate: friday,
       trend: trendAt(fit, friday),
-      realizedPrice: realizedPrice(bar, price) ?? state?.frozen.realizedPrice ?? null,
+      realizedPrice: realizedPrice(bar, price) ?? fresh?.frozen.realizedPrice ?? null,
       realizedAsOf: friday,
       anchors: record.anchors,
     };
@@ -416,49 +440,59 @@ async function onFridayBar(ctx: Ctx, friday: string, rows: HistoryRow[]): Promis
       spotUsd: price,
       spotAsOf,
       printLabel: label,
-      gold: state?.gold ?? null,
+      gold: fresh?.gold ?? null,
       lastMetricsDate: friday,
-      metricsCheckedOn: dayOf(ctx.now()),
+      metricsCheckedOn: friday,
       missingFriday: null,
     };
-    await writeLive(ctx, next, {
-      spot: price,
-      spotAsOf,
-      printLabel: label,
-      isOfficialClose: true,
-      bitcoin: { usd: price, asOf: spotAsOf },
-      gold: next.gold,
-      now: isoStamp(ctx.now()),
-      missingClose: false,
-    });
+    await writeLive(
+      ctx,
+      next,
+      {
+        spot: price,
+        spotAsOf,
+        printLabel: label,
+        isOfficialClose: true,
+        bitcoin: { usd: price, asOf: spotAsOf },
+        gold: next.gold,
+        now: isoStamp(ctx.now()),
+        missingClose: false,
+      },
+      false,
+    );
     if ((await dirStatus(ctx.stateDir)) === "ok") {
       await writeAtomic(ctx.stateDir, "history.json", history, STATE_MODE);
     }
     return;
   }
-  if (state == null) return;
+  if (fresh == null) return;
   const realized = realizedPrice(bar, price);
   const next: StoredState = {
-    ...state,
+    ...fresh,
     frozen: {
-      ...state.frozen,
-      realizedPrice: realized ?? state.frozen.realizedPrice,
-      realizedAsOf: realized != null ? friday : state.frozen.realizedAsOf,
+      ...fresh.frozen,
+      realizedPrice: realized ?? fresh.frozen.realizedPrice,
+      realizedAsOf: realized != null ? friday : fresh.frozen.realizedAsOf,
     },
     lastMetricsDate: friday,
-    metricsCheckedOn: dayOf(ctx.now()),
+    metricsCheckedOn: friday,
     missingFriday: null,
   };
-  await writeLive(ctx, next, {
-    spot: price,
-    spotAsOf,
-    printLabel: label,
-    isOfficialClose: false,
-    bitcoin: { usd: price, asOf: spotAsOf },
-    gold: state.gold,
-    now: isoStamp(ctx.now()),
-    missingClose: false,
-  });
+  await writeLive(
+    ctx,
+    next,
+    {
+      spot: price,
+      spotAsOf,
+      printLabel: label,
+      isOfficialClose: false,
+      bitcoin: { usd: price, asOf: spotAsOf },
+      gold: fresh.gold,
+      now: isoStamp(ctx.now()),
+      missingClose: false,
+    },
+    false,
+  );
 }
 
 async function writeMissingClose(ctx: Ctx, friday: string): Promise<void> {
@@ -470,17 +504,21 @@ async function writeMissingClose(ctx: Ctx, friday: string): Promise<void> {
     await writeDataFile(ctx.dataDir, "live.json", next);
     return;
   }
-  const next: StoredState = { ...state, missingFriday: friday };
-  await writeLive(ctx, next, {
-    spot: state.spotUsd,
-    spotAsOf: state.spotAsOf,
-    printLabel: state.printLabel,
-    isOfficialClose: false,
-    bitcoin: { usd: state.spotUsd, asOf: state.spotAsOf },
-    gold: state.gold,
-    now: isoStamp(ctx.now()),
-    missingClose: true,
-  });
+  await writeLive(
+    ctx,
+    { ...state, missingFriday: friday },
+    {
+      spot: state.spotUsd,
+      spotAsOf: state.spotAsOf,
+      printLabel: state.printLabel,
+      isOfficialClose: false,
+      bitcoin: { usd: state.spotUsd, asOf: state.spotAsOf },
+      gold: state.gold,
+      now: isoStamp(ctx.now()),
+      missingClose: true,
+    },
+    false,
+  );
 }
 
 async function runFriday(ctx: Ctx): Promise<number> {
@@ -515,14 +553,7 @@ async function runFriday(ctx: Ctx): Promise<number> {
       await ctx.sleep(FRIDAY_RETRY_MS);
       continue;
     }
-    try {
-      await onFridayBar(ctx, friday, rows);
-    } catch (error) {
-      const stopped = stopForVendor(ctx, error);
-      if (stopped != null) return stopped;
-      ctx.stderr("vendor failure: friday");
-      return 0;
-    }
+    await onFridayBar(ctx, friday, rows);
     return 0;
   }
 }
@@ -531,14 +562,26 @@ async function execute(options: RunOptions): Promise<number> {
   const env = options.env;
   const dataDir = (env.DATA_DIR ?? "").trim() || DEFAULT_DATA_DIR;
   const stateDir = (env.STATE_DIR ?? "").trim() || DEFAULT_STATE_DIR;
-  if (isInside(dataDir, stateDir)) return 1;
   if ((await dirStatus(dataDir)) !== "ok") {
     (options.stderr ?? (() => undefined))("data dir missing");
     return 1;
   }
-  const fetchImpl: FetchLike =
-    options.fetch ??
-    ((url, init) => fetch(url, init));
+  const dataReal = await realpath(dataDir);
+  if ((await dirStatus(stateDir)) === "ok") {
+    const stateReal = await realpath(stateDir);
+    const rel = relative(dataReal, stateReal);
+    if (rel === "" || (!rel.startsWith("..") && !rel.startsWith("/"))) return 1;
+  }
+  const fetchImpl: FetchLike = options.fetch ?? ((url, init) => fetch(url, init));
+  let mode: "live" | "friday" = options.mode ?? "live";
+  if (options.mode == null) {
+    for (const arg of options.argv ?? []) {
+      if (arg === "live" || arg === "friday") {
+        mode = arg;
+        break;
+      }
+    }
+  }
   const ctx: Ctx = {
     env,
     dataDir,
@@ -550,8 +593,9 @@ async function execute(options: RunOptions): Promise<number> {
     geckoOrigin: (env.COINGECKO_BASE_URL ?? "").trim() || DEFAULT_GECKO_ORIGIN,
     metricsBase: (env.COINMETRICS_BASE_URL ?? "").trim() || DEFAULT_METRICS_BASE,
     pace: createPace(),
+    recordPath: (env.RECORD_PATH ?? "").trim() || RECORD_FIXTURE,
+    historyPath: (env.HISTORY_PATH ?? "").trim() || HISTORY_FIXTURE,
   };
-  const mode = options.mode ?? jobMode(options.argv ?? []);
   if (mode === "friday") return runFriday(ctx);
   return runLive(ctx);
 }
@@ -561,17 +605,21 @@ export async function run(options: RunOptions): Promise<number> {
   const previous = setUmask(0o027);
   try {
     return await execute(options);
+  } catch (error) {
+    const write = options.stderr ?? ((line: string) => process.stderr.write(`${line}\n`));
+    if (error instanceof VendorFailure) {
+      write(`vendor failure: ${error.status}`);
+      return 0;
+    }
+    write(error instanceof Error ? error.message : "publish failed");
+    return 1;
   } finally {
     setUmask(previous);
   }
 }
 
-function isDirectRun(entry: string | undefined, moduleUrl: string): boolean {
-  if (!entry) return false;
-  return pathToFileURL(entry).href === moduleUrl;
-}
-
-if (isDirectRun(process.argv[1], import.meta.url)) {
+const entry = process.argv[1];
+if (entry != null && pathToFileURL(entry).href === import.meta.url) {
   run({
     env: process.env,
     argv: process.argv,
@@ -583,7 +631,7 @@ if (isDirectRun(process.argv[1], import.meta.url)) {
       process.exit(code);
     })
     .catch(() => {
-      process.stderr.write("vendor failure: crash\n");
+      process.stderr.write("publish failed\n");
       process.exit(1);
     });
 }
