@@ -57,15 +57,19 @@ function startStub(respond: (url: string, response: ServerResponse) => void): Pr
   origin: string;
   paths: string[];
   readonly header: string;
+  readonly goldHeader: string;
   close(): Promise<void>;
 }> {
   const paths: string[] = [];
   let header = "";
+  let goldHeader = "";
   const server = createServer((request: IncomingMessage, response: ServerResponse) => {
     const url = request.url ?? "/";
     paths.push(url);
     const value = request.headers["x-cg-demo-api-key"];
     if (typeof value === "string") header = value;
+    const gold = request.headers["x-api-key"];
+    if (typeof gold === "string") goldHeader = gold;
     respond(url, response);
   });
   return new Promise((resolve, reject) => {
@@ -80,6 +84,9 @@ function startStub(respond: (url: string, response: ServerResponse) => void): Pr
         paths,
         get header() {
           return header;
+        },
+        get goldHeader() {
+          return goldHeader;
         },
         close: () =>
           new Promise<void>((done) => {
@@ -375,6 +382,96 @@ test("a set gold URL is the only gold request and developing stays a sentence", 
     };
     assert.equal(live.developing?.endsWith("Not an official fire."), true);
     assert.equal(live.gold?.usd, 4080);
+  } finally {
+    await stub.close();
+    cleanup(root);
+  }
+});
+
+test("a gold snapshot uses the XAUUSD last trade and does not store the key", async () => {
+  const { root, dataDir, stateDir } = scene();
+  const quotedAt = Date.parse("2026-09-26T12:00:00.000Z");
+  const stub = await startStub((url, response) => {
+    if (url.startsWith("/gold")) {
+      sendJson(response, 200, {
+        data: [
+          { s: "XAGUSD", p: "30.00", t: quotedAt },
+          { s: "XAUUSD", p: "4080.50", t: quotedAt },
+        ],
+        meta: { as_of: "2026-09-26T12:00:01Z", venue: "commodities", count: 2 },
+      });
+      return;
+    }
+    sendJson(response, 200, { bitcoin: { usd: 90000 } });
+  });
+  try {
+    writePrivateState(stateDir, "2026-09-26");
+    const code = await run({
+      env: {
+        DATA_DIR: dataDir,
+        STATE_DIR: stateDir,
+        COINGECKO_API_KEY: "demo-test-key",
+        COINGECKO_BASE_URL: stub.origin,
+        COINMETRICS_BASE_URL: stub.origin,
+        GOLD_QUOTE_URL: `${stub.origin}/gold`,
+        GOLD_QUOTE_API_KEY: "gold-test-key",
+      },
+      fetch: stubFetch(stub.origin),
+      now: () => new Date(FIXED_NOW),
+      sleep: async () => undefined,
+      stderr: () => undefined,
+    });
+    assert.equal(code, 0);
+    assert.equal(stub.goldHeader, "gold-test-key");
+    const liveText = readFileSync(join(dataDir, "live.json"), "utf8");
+    assert.equal(liveText.includes("gold-test-key"), false);
+    const live = JSON.parse(liveText) as {
+      developing: string | null;
+      gold: { usd: number; asOf: string; filled: boolean } | null;
+    };
+    assert.equal(live.developing?.endsWith("Not an official fire."), true);
+    assert.equal(live.gold?.usd, 4080.5);
+    assert.equal(live.gold?.asOf, "2026-09-26T12:00:00Z");
+    assert.equal(live.gold?.filled, false);
+  } finally {
+    await stub.close();
+    cleanup(root);
+  }
+});
+
+test("a gold snapshot without XAUUSD keeps the previous live file", async () => {
+  const { root, dataDir, stateDir } = scene();
+  const livePath = join(dataDir, "live.json");
+  const body = "{\"keep\":\"live\"}\n";
+  writeFileSync(livePath, body);
+  const stub = await startStub((url, response) => {
+    if (url.startsWith("/gold")) {
+      sendJson(response, 200, { data: [{ s: "XAGUSD", p: "30", t: 1 }], meta: { as_of: FIXED_NOW } });
+      return;
+    }
+    sendJson(response, 200, { bitcoin: { usd: 90000 } });
+  });
+  const lines: string[] = [];
+  try {
+    writePrivateState(stateDir, "2026-09-26");
+    const code = await run({
+      env: {
+        DATA_DIR: dataDir,
+        STATE_DIR: stateDir,
+        COINGECKO_API_KEY: "demo-test-key",
+        COINGECKO_BASE_URL: stub.origin,
+        COINMETRICS_BASE_URL: stub.origin,
+        GOLD_QUOTE_URL: `${stub.origin}/gold`,
+        GOLD_QUOTE_API_KEY: "gold-test-key",
+      },
+      fetch: stubFetch(stub.origin),
+      now: () => new Date(FIXED_NOW),
+      sleep: async () => undefined,
+      stderr: (line) => lines.push(line),
+    });
+    assert.equal(code, 0);
+    assert.deepEqual(lines, ["vendor failure: network"]);
+    assert.equal(readFileSync(livePath, "utf8"), body);
   } finally {
     await stub.close();
     cleanup(root);
@@ -800,6 +897,6 @@ test(".env.example has empty keys and the community Coin Metrics URL", () => {
   const example = readFileSync(new URL("../.env.example", import.meta.url), "utf8");
   assert.equal(
     example,
-    "COINGECKO_API_KEY=\nCOINMETRICS_BASE_URL=https://community-api.coinmetrics.io\nGOLD_QUOTE_URL=\n",
+    "COINGECKO_API_KEY=\nCOINMETRICS_BASE_URL=https://community-api.coinmetrics.io\nGOLD_QUOTE_URL=\nGOLD_QUOTE_API_KEY=\n",
   );
 });

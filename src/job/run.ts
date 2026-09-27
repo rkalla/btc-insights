@@ -395,7 +395,7 @@ async function runLive(ctx: Ctx): Promise<number> {
   let gold: StoredGold | null = null;
   if (goldUrl !== "") {
     try {
-      gold = await fetchGoldQuote(goldUrl, ctx.fetch, isoStamp(ctx.now()));
+      gold = await fetchGoldQuote(goldUrl, ctx.fetch, isoStamp(ctx.now()), ctx.env.GOLD_QUOTE_API_KEY ?? "");
     } catch (error) {
       const stopped = stopForVendor(ctx, error);
       if (stopped != null) return stopped;
