@@ -84,7 +84,7 @@ export function reducePoll(state: PollState, event: PollEvent): { state: PollSta
   }
 
   if (event.type === "live") {
-    if (state.fridayCloseDate != null && event.officialCloseDate !== state.fridayCloseDate) {
+    if (state.fridayCloseDate == null || event.officialCloseDate !== state.fridayCloseDate) {
       return {
         state: { ...state, awaiting: "friday" },
         commands: [{ type: "fetch", url: "/data/friday.json", cache: "no-store" }],
@@ -122,27 +122,31 @@ export interface PollHost {
   fetchJson(url: string, init?: { cache?: "no-store" }): Promise<unknown>;
 }
 
-export interface PollHooks {
-  onLive(live: unknown): void;
-  onFriday(friday: unknown, live: unknown): void;
-  onError?(error: unknown): void;
-}
-
 export interface PollHandle {
   loaded(fridayCloseDate: string): void;
   visibilityChanged(): void;
   stop(): void;
 }
 
-export function connectPoll(host: PollHost, hooks: PollHooks): PollHandle {
+export function connectPoll(
+  host: PollHost,
+  hooks: {
+    onLive(live: unknown): void;
+    onFriday(friday: unknown, live: unknown): void;
+    onError?(error: unknown): void;
+  },
+): PollHandle {
   let state = initialPollState();
   let timer: unknown = null;
   let stopped = false;
   let lastLive: unknown = null;
 
-  function apply(commands: readonly PollCommand[]): Promise<void> {
+  function dispatch(event: PollEvent): Promise<void> {
+    if (stopped) return Promise.resolve();
+    const next = reducePoll(state, event);
+    state = next.state;
     let chain = Promise.resolve();
-    for (const command of commands) {
+    for (const command of next.commands) {
       if (command.type === "clear") {
         if (timer != null) host.clearTimer(timer);
         timer = null;
@@ -150,46 +154,37 @@ export function connectPoll(host: PollHost, hooks: PollHooks): PollHandle {
       }
       if (command.type === "schedule") {
         if (timer != null) host.clearTimer(timer);
-        timer = host.setTimer(command.ms, () => onTimer());
+        timer = host.setTimer(command.ms, () => dispatch({ type: "timer", now: host.now() }));
         continue;
       }
-      const fetchCommand = command;
-      chain = chain.then(() => runFetch(fetchCommand));
+      const url = command.url;
+      const cache = command.cache;
+      chain = chain.then(async () => {
+        try {
+          const body = await host.fetchJson(url, cache == null ? undefined : { cache });
+          if (stopped) return;
+          if (url === "/data/live.json") {
+            if (typeof body !== "object" || body == null) throw new Error("live");
+            const officialCloseDate = (body as { officialCloseDate?: unknown }).officialCloseDate;
+            if (typeof officialCloseDate !== "string") throw new Error("live");
+            lastLive = body;
+            hooks.onLive(body);
+            await dispatch({ type: "live", officialCloseDate, now: host.now() });
+            return;
+          }
+          if (typeof body !== "object" || body == null) throw new Error("friday");
+          const closeDate = (body as { official?: { closeDate?: unknown } }).official?.closeDate;
+          if (typeof closeDate !== "string") throw new Error("friday");
+          hooks.onFriday(body, lastLive);
+          await dispatch({ type: "friday", closeDate, now: host.now() });
+        } catch (error) {
+          if (stopped) return;
+          hooks.onError?.(error);
+          await dispatch({ type: "failed", now: host.now() });
+        }
+      });
     }
     return chain;
-  }
-
-  function dispatch(event: PollEvent): Promise<void> {
-    if (stopped) return Promise.resolve();
-    const next = reducePoll(state, event);
-    state = next.state;
-    return apply(next.commands);
-  }
-
-  function onTimer(): Promise<void> {
-    return dispatch({ type: "timer", now: host.now() });
-  }
-
-  async function runFetch(command: Extract<PollCommand, { type: "fetch" }>): Promise<void> {
-    try {
-      const init = command.cache == null ? undefined : { cache: command.cache };
-      const body = await host.fetchJson(command.url, init);
-      if (stopped) return;
-      if (command.url === "/data/live.json") {
-        const officialCloseDate = readLiveClose(body);
-        lastLive = body;
-        hooks.onLive(body);
-        await dispatch({ type: "live", officialCloseDate, now: host.now() });
-        return;
-      }
-      const closeDate = readFridayClose(body);
-      hooks.onFriday(body, lastLive);
-      await dispatch({ type: "friday", closeDate, now: host.now() });
-    } catch (error) {
-      if (stopped) return;
-      hooks.onError?.(error);
-      await dispatch({ type: "failed", now: host.now() });
-    }
   }
 
   return {
@@ -214,18 +209,4 @@ export function connectPoll(host: PollHost, hooks: PollHooks): PollHandle {
       timer = null;
     },
   };
-}
-
-function readLiveClose(value: unknown): string {
-  if (typeof value !== "object" || value == null) throw new Error("live");
-  const date = (value as { officialCloseDate?: unknown }).officialCloseDate;
-  if (typeof date !== "string") throw new Error("live");
-  return date;
-}
-
-function readFridayClose(value: unknown): string {
-  if (typeof value !== "object" || value == null) throw new Error("friday");
-  const date = (value as { official?: { closeDate?: unknown } }).official?.closeDate;
-  if (typeof date !== "string") throw new Error("friday");
-  return date;
 }

@@ -1,22 +1,10 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import {
-  connectPoll,
-  initialPollState,
-  LIVE_POLL_MS,
-  reducePoll,
-  type PollCommand,
-  type PollHost,
-  type PollState,
-} from "../src/client/poll.ts";
+import { connectPoll, initialPollState, LIVE_POLL_MS, reducePoll, type PollHost } from "../src/client/poll.ts";
 
 const FRIDAY = "2026-09-25";
 const NEXT = "2026-10-02";
-
-function commandsOf(state: PollState, event: Parameters<typeof reducePoll>[1]): PollCommand[] {
-  return reducePoll(state, event).commands;
-}
 
 test("visible schedules 10 minutes", () => {
   const step = reducePoll(initialPollState(), { type: "visibility", visible: true, now: 0 });
@@ -31,7 +19,17 @@ test("hidden clears the timer", () => {
   assert.deepEqual(hidden.commands, [{ type: "clear" }]);
   assert.equal(hidden.state.timerArmed, false);
   assert.equal(hidden.state.visible, false);
-  assert.equal(commandsOf(hidden.state, { type: "timer", now: LIVE_POLL_MS }).some((command) => command.type === "fetch"), false);
+  assert.equal(
+    reducePoll(hidden.state, { type: "timer", now: LIVE_POLL_MS }).commands.some((command) => command.type === "fetch"),
+    false,
+  );
+});
+
+test("a live result before friday has loaded requests friday", () => {
+  const shown = reducePoll(initialPollState(), { type: "visibility", visible: true, now: 0 });
+  const tick = reducePoll(shown.state, { type: "timer", now: LIVE_POLL_MS });
+  const live = reducePoll(tick.state, { type: "live", officialCloseDate: FRIDAY, now: LIVE_POLL_MS });
+  assert.deepEqual(live.commands, [{ type: "fetch", url: "/data/friday.json", cache: "no-store" }]);
 });
 
 test("a changed officialCloseDate requests friday with no-store", () => {

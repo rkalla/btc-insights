@@ -36,8 +36,10 @@ export function chartSvg(
   chart: FridayDocument["chart"],
   spot: DashboardVM["chart"]["spot"],
   width: number,
+  markers?: boolean,
 ): string {
   const phone = width < 768;
+  const showMarkers = markers ?? !phone;
   const fontSize = phone ? 11 : 12.5;
   const height = chartHeight(width);
   const margin = phone
@@ -136,16 +138,16 @@ export function chartSvg(
       return `<circle class="m-ring" data-date="${fire.date}" pointer-events="none" fill="none" stroke="var(--buy)" stroke-width="1.4" cx="${fmt(xAt(fire.date))}" cy="${fmt(yAt(fire.price))}" r="${ringR}"/>`;
     })
     .join("");
-  const hits = phone
-    ? ""
-    : fires
+  const hits = showMarkers
+    ? fires
         .filter((fire) => fire.price > 0)
         .map((fire) => {
           const cx = fmt(xAt(fire.date));
           const cy = fmt(yAt(fire.price));
           return `<g class="marker" data-date="${fire.date}" tabindex="0" role="button" aria-label="${esc(markerText(fire))}"><circle class="m-hit" fill="transparent" cx="${cx}" cy="${cy}" r="11"/></g>`;
         })
-        .join("");
+        .join("")
+    : "";
 
   const buyCount = fires.filter((fire) => fire.type === "buy").length;
   const sellCount = fires.filter((fire) => fire.type === "sell").length;

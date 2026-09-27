@@ -19,6 +19,7 @@ let chartPhone = false;
 let chartObserver: ResizeObserver | null = null;
 let countdownTimer: ReturnType<typeof setInterval> | null = null;
 let poll: PollHandle | null = null;
+let rendering = false;
 
 function boot(): void {
   if (typeof document === "undefined") return;
@@ -43,13 +44,14 @@ function boot(): void {
         render();
       },
       onError(): void {
-        showError();
+        if (currentVm == null) showError();
       },
     },
   );
   document.addEventListener("click", onClick);
   document.addEventListener("keydown", onKey);
   document.addEventListener("visibilitychange", onVisibility);
+  document.addEventListener("scroll", onScroll, true);
   void loadInitial();
 }
 
@@ -68,7 +70,6 @@ async function loadInitial(): Promise<void> {
     live = nextLive;
     render();
     poll?.loaded(nextFriday.official.closeDate);
-    if (document.visibilityState === "visible") armCountdown();
   } catch {
     showError();
   }
@@ -84,16 +85,34 @@ function render(): void {
   if (friday == null || live == null) return;
   const y = window.scrollY;
   const date = openMarkerDate;
-  const sheet = isSheetOpen();
-  const focusedDate = document.activeElement?.closest(".marker")?.getAttribute("data-date") ?? null;
+  const active = document.activeElement;
+  const restoreDate = active instanceof Element ? active.closest(".marker")?.getAttribute("data-date") ?? null : null;
+  const restoreId = active instanceof HTMLElement && active.id !== "" && active.closest(".page") != null ? active.id : null;
+  const restoreShowFires = active instanceof Element && active.closest(".page .show-fires") != null;
+  const restoreSettings = active instanceof Element && active.closest(".page a.icon-btn") != null;
   const vm = compose(friday, live, readHolder(), new Date().toISOString());
-  mount(vm);
-  window.scrollTo(0, y);
-  if (date != null && !window.matchMedia(PHONE).matches) {
-    const marker = findMarker(date);
-    if (marker) openPopover(marker, date, focusedDate === date);
+  rendering = true;
+  try {
+    mount(vm);
+    window.scrollTo(0, y);
+    if (date != null) {
+      const marker = findMarker(date);
+      if (marker == null) closePopover(false);
+      else openPopover(marker, date, false);
+    }
+    if (restoreDate != null) findMarker(restoreDate)?.focus({ preventScroll: true });
+    else if (restoreId != null) document.getElementById(restoreId)?.focus({ preventScroll: true });
+    else if (restoreShowFires) {
+      const button = document.querySelector(".show-fires");
+      if (button instanceof HTMLElement) button.focus({ preventScroll: true });
+    } else if (restoreSettings) {
+      const link = document.querySelector("a.icon-btn");
+      if (link instanceof HTMLElement) link.focus({ preventScroll: true });
+    }
+  } finally {
+    rendering = false;
   }
-  if (sheet) openSheet();
+  if (document.visibilityState === "visible") armCountdown();
 }
 
 function mount(vm: ReturnType<typeof compose>): void {
@@ -140,7 +159,7 @@ function redrawChart(): void {
   const measured = contentWidth(figure);
   if (measured < 32) return;
   const phone = window.matchMedia(PHONE).matches;
-  const drawWidth = phone ? Math.min(measured, 767) : Math.max(measured, 768);
+  const drawWidth = measured;
   if (figure.querySelector(".chart-svg") != null && chartPhone === phone && Math.abs(drawWidth - chartWidthDrawn) < 2) {
     if (openMarkerDate != null) {
       const marker = findMarker(openMarkerDate);
@@ -150,23 +169,21 @@ function redrawChart(): void {
   }
   chartPhone = phone;
   chartWidthDrawn = drawWidth;
-  const markup = chartSvg(currentVm.chart, currentVm.chart.spot, drawWidth);
+  const markup = chartSvg(currentVm.chart, currentVm.chart.spot, drawWidth, !phone);
   const at = markup.indexOf('\n<div class="sr-only"');
   const svg = (at < 0 ? markup : markup.slice(0, at)).replace('role="img"', 'role="group"');
   for (const old of figure.querySelectorAll(".chart-svg")) old.remove();
   const anchor = figure.querySelector(".show-fires");
   if (anchor) anchor.insertAdjacentHTML("beforebegin", svg);
   else figure.insertAdjacentHTML("beforeend", svg);
-  if (phone && openMarkerDate != null) {
-    closePopover(false);
-    return;
-  }
   if (openMarkerDate != null) {
     const marker = findMarker(openMarkerDate);
-    if (marker) {
-      markSelected(marker);
-      positionPopover(marker);
+    if (marker == null) {
+      closePopover(false);
+      return;
     }
+    markSelected(marker);
+    positionPopover(marker);
   }
 }
 
@@ -174,6 +191,11 @@ function contentWidth(el: HTMLElement): number {
   const style = getComputedStyle(el);
   const pad = Number.parseFloat(style.paddingLeft) + Number.parseFloat(style.paddingRight);
   return Math.max(0, Math.floor(el.clientWidth - (Number.isFinite(pad) ? pad : 0)));
+}
+
+function onScroll(): void {
+  if (rendering || openMarkerDate == null) return;
+  closePopover(false);
 }
 
 function onClick(event: MouseEvent): void {
@@ -241,7 +263,10 @@ function openPopover(marker: SVGGElement, date: string, focus: boolean): void {
   const title = pop.querySelector(".t");
   const result = pop.querySelector(".b");
   if (title) title.textContent = lines.title;
-  if (result) result.textContent = lines.result;
+  if (result instanceof HTMLElement) {
+    result.textContent = lines.result;
+    result.hidden = lines.result === "";
+  }
   pop.hidden = false;
   openMarkerDate = date;
   markSelected(marker);
@@ -354,10 +379,13 @@ function openSheet(): void {
     const title = document.createElement("span");
     title.className = "t";
     title.textContent = lines.title;
-    const result = document.createElement("span");
-    result.className = "b";
-    result.textContent = lines.result;
-    row.append(title, result);
+    row.append(title);
+    if (lines.result !== "") {
+      const result = document.createElement("span");
+      result.className = "b";
+      result.textContent = lines.result;
+      row.append(result);
+    }
     list.append(row);
   }
   root.hidden = false;
@@ -425,10 +453,11 @@ function trapSheet(event: KeyboardEvent): void {
 }
 
 function fireLines(fire: FridayDocument["chart"]["fires"][number]): { title: string; result: string } {
-  if (fire.type === "sell") {
-    return { title: `${fire.titleLabel} · ${fire.resultLabel}`, result: fire.resultLabel };
-  }
-  return { title: `${fire.titleLabel} · ${sentenceDate(fire.date)}`, result: fire.resultLabel };
+  const title =
+    fire.type === "sell"
+      ? `${fire.titleLabel} · ${fire.resultLabel}`
+      : `${fire.titleLabel} · ${sentenceDate(fire.date)}`;
+  return { title, result: title.includes(fire.resultLabel) ? "" : fire.resultLabel };
 }
 
 function armCountdown(): void {
