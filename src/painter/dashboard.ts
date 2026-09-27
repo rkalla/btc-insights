@@ -58,8 +58,14 @@ function header(vm: DashboardVM): string {
 }
 
 function clockLine(vm: DashboardVM): string {
+  const closeYear = vm.official.closeDate.slice(0, 4);
+  const nextYear = vm.official.nextCloseDate.slice(0, 4);
+  let nextClose = vm.official.nextCloseLabel;
+  if (closeYear === nextYear && nextClose.endsWith(` ${closeYear}`)) {
+    nextClose = nextClose.slice(0, -(closeYear.length + 1));
+  }
   const text =
-    `Official call: ${officialCloseValue(vm.official.closeLabel)} · Next close ${vm.official.nextCloseLabel} · ` +
+    `Official call: ${officialCloseValue(vm.official.closeLabel)} · Next close ${nextClose} · ` +
     `Friday close is 00:00 UTC Saturday · Opened ${openedLabel(vm.openedAt)}`;
   return `<p class="clock-line" style="order:1;margin:-8px 0 0">${esc(text)}</p>`;
 }
@@ -96,7 +102,7 @@ function cashPanel(vm: DashboardVM): string {
   const sub = rest.join(" ");
   return `<article class="panel cash" aria-labelledby="cash-posture">
     <div class="panel-head" style="align-items:center"><span class="label">01 · Cash</span><span class="tag">Official call</span></div>
-    <h2 class="posture posture--${toneName(vm.cash.tone)}" id="cash-posture">${esc(vm.cash.word)}</h2>
+    <h2 class="posture posture--${vm.cash.tone}" id="cash-posture">${esc(vm.cash.word)}</h2>
     ${first == null || first === "" ? "" : `<p class="action">${esc(first)}</p>`}
     ${sub === "" ? "" : `<p class="action-sub">${esc(sub)}</p>`}
     ${windowBlock(vm)}
@@ -112,9 +118,8 @@ function windowBlock(vm: DashboardVM): string {
   const countdown = vm.countdown == null ? "" : `<span class="window-left">${esc(vm.countdown)}</span>`;
   const steps = grace.steps
     .map((step) => {
-      const state = stepState(step.state);
-      const current = state === "current" ? ` aria-current="step"` : "";
-      return `<li data-state="${state}"${current}><span class="bar"></span><span><span class="d">${esc(step.dateLabel)}</span><span class="s"> · ${esc(step.caption)}</span></span></li>`;
+      const current = step.state === "current" ? ` aria-current="step"` : "";
+      return `<li data-state="${step.state}"${current}><span class="bar"></span><span><span class="d">${esc(step.dateLabel)}</span><span class="s"> · ${esc(step.caption)}</span></span></li>`;
     })
     .join("");
   return `<div class="window">
@@ -138,22 +143,6 @@ function recordBlock(vm: DashboardVM): string {
 }
 
 function coinsPanel(vm: DashboardVM): string {
-  const paragraphs = coinLines(vm)
-    .map((line) => `<p>${esc(line)}</p>`)
-    .join("");
-  const chips =
-    vm.coins.offChips.length === 0
-      ? ""
-      : `<div class="chips">${vm.coins.offChips.map((chip) => `<span class="chip">${esc(chip)}</span>`).join("")}</div>`;
-  return `<article class="panel coins" aria-labelledby="coins-posture">
-      <span class="label">02 · Coins</span>
-      <h2 class="posture-sm posture--${toneName(vm.coins.tone)}" id="coins-posture">${esc(vm.coins.word)}</h2>
-      ${paragraphs}
-      ${chips}
-    </article>`;
-}
-
-function coinLines(vm: DashboardVM): string[] {
   const lines = [...vm.coins.sentences];
   const declared = vm.coins.declarationDateLabel;
   if (declared != null && declared !== "" && !lines.some((line) => line.includes(declared))) {
@@ -163,39 +152,41 @@ function coinLines(vm: DashboardVM): string[] {
   if (tax != null && tax !== "" && !lines.includes(tax)) {
     lines.push(tax);
   }
-  return lines;
+  const paragraphs = lines.map((line) => `<p>${esc(line)}</p>`).join("");
+  const chips =
+    vm.coins.offChips.length === 0
+      ? ""
+      : `<div class="chips">${vm.coins.offChips.map((chip) => `<span class="chip">${esc(chip)}</span>`).join("")}</div>`;
+  return `<article class="panel coins" aria-labelledby="coins-posture">
+      <span class="label">02 · Coins</span>
+      <h2 class="posture-sm posture--${vm.coins.tone}" id="coins-posture">${esc(vm.coins.word)}</h2>
+      ${paragraphs}
+      ${chips}
+    </article>`;
 }
 
 function nowPanel(vm: DashboardVM): string {
   const stale = vm.now.stale;
   const chipStyle = stale ? "height:24px;font-size:12px;color:var(--sell)" : "height:24px;font-size:12px";
+  const chip = stale
+    ? "Stale print"
+    : vm.now.isOfficialClose
+      ? "Same print as the official call"
+      : "Later print · not the official close";
+  const developing = vm.now.developing == null ? "Developing: none." : vm.now.developing;
+  const note =
+    stale && vm.now.staleNote != null
+      ? vm.now.staleNote
+      : `A later print can move these levels. It does not change the call. ${developing}`;
   return `<article class="panel now" aria-label="Now, latest print">
-      <div class="panel-head" style="align-items:center"><span class="label">Now · ${esc(vm.now.printLabel)}</span><span class="chip" style="${chipStyle}">${esc(nowChip(vm))}</span></div>
+      <div class="panel-head" style="align-items:center"><span class="label">Now · ${esc(vm.now.printLabel)}</span><span class="chip" style="${chipStyle}">${esc(chip)}</span></div>
       <div class="spot">${esc(money(vm.now.spotUsd))}</div>
       <div class="stats">
         <div class="stat well"><span class="k">Gap against the Friday trend</span><span class="v">${esc(signedPercent(vm.now.gapPct))}</span></div>
         <div class="stat well"><span class="k">Trend</span><span class="v">≈ ${esc(money(vm.now.trendUsd))}</span></div>
       </div>
-      <p class="note">${esc(nowNote(vm))}</p>
+      <p class="note">${esc(note)}</p>
     </article>`;
-}
-
-function nowChip(vm: DashboardVM): string {
-  if (vm.now.stale) {
-    return "Stale print";
-  }
-  if (vm.now.isOfficialClose) {
-    return "Same print as the official call";
-  }
-  return "Later print · not the official close";
-}
-
-function nowNote(vm: DashboardVM): string {
-  if (vm.now.stale && vm.now.staleNote != null) {
-    return vm.now.staleNote;
-  }
-  const developing = vm.now.developing == null ? "Developing: none." : vm.now.developing;
-  return `A later print can move these levels. It does not change the call. ${developing}`;
 }
 
 function disagreement(vm: DashboardVM): string {
@@ -272,7 +263,15 @@ function splitChart(markup: string): { svg: string; table: string } {
 function context(vm: DashboardVM): string {
   const readings = vm.context
     .map((reading) => {
-      return `<div class="reading"><div class="top"><span class="label">${esc(reading.label)}</span><span class="${flagClass(reading.flagTone)}">${esc(reading.flag)}</span></div><p class="v">${esc(reading.value)}</p><p class="n">${esc(reading.note)}</p></div>`;
+      const flag =
+        reading.flagTone === "buy"
+          ? "flag flag--buy"
+          : reading.flagTone === "sell"
+            ? "flag flag--sell"
+            : reading.flagTone === "muted"
+              ? "flag flag--muted"
+              : "flag";
+      return `<div class="reading"><div class="top"><span class="label">${esc(reading.label)}</span><span class="${flag}">${esc(reading.flag)}</span></div><p class="v">${esc(reading.value)}</p><p class="n">${esc(reading.note)}</p></div>`;
     })
     .join("");
   return `<aside class="panel context" aria-labelledby="context-label">
@@ -300,12 +299,14 @@ function longView(vm: DashboardVM): string {
 }
 
 function cycles(vm: DashboardVM): string {
-  const intro = splitIntro(vm.cycles.intro);
-  const note = intro.note === "" ? "" : `<p class="note">${esc(intro.note)}</p>`;
+  const at = vm.cycles.intro.indexOf(". ");
+  const title = at < 0 ? vm.cycles.intro : vm.cycles.intro.slice(0, at);
+  const noteText = at < 0 ? "" : vm.cycles.intro.slice(at + 2);
+  const note = noteText === "" ? "" : `<p class="note">${esc(noteText)}</p>`;
   const cards = vm.cycles.cards.map(cycleCard).join("");
   return `<section class="panel cycles" aria-labelledby="cyc-title">
   <div class="cycles-head">
-    <div><span class="label">08 · Cycle capture</span><h2 class="cycles-title" id="cyc-title">${esc(intro.title)}</h2></div>
+    <div><span class="label">08 · Cycle capture</span><h2 class="cycles-title" id="cyc-title">${esc(title)}</h2></div>
     ${note}
   </div>
   <ul class="key" aria-hidden="true"><li><span class="sw sw--cross"></span>Buy cross</li><li><span class="sw sw--build"></span>Build</li><li><span class="sw sw--lump"></span>Lump in</li></ul>
@@ -320,7 +321,9 @@ function cycleCard(card: DashboardVM["cycles"]["cards"][number]): string {
   const note = card.note == null ? "" : `<p class="note" style="font-size:12px">${esc(card.note)}</p>`;
   const rows = card.rows
     .map((row) => {
-      return `<div class="cap"><div class="top"><span class="name">${esc(row.name)}</span><span class="share">${esc(`${row.sharePct}%`)}</span></div><div class="track" aria-hidden="true"><div class="bar-fill bar-fill--${signalName(row.signal)}" style="width:${barWidth(row.sharePct)}"></div></div><span class="detail">${esc(row.detail)}</span></div>`;
+      const width =
+        !Number.isFinite(row.sharePct) || row.sharePct <= 0 ? "0%" : `max(2px, ${Math.min(row.sharePct, 100)}%)`;
+      return `<div class="cap"><div class="top"><span class="name">${esc(row.name)}</span><span class="share">${esc(`${row.sharePct}%`)}</span></div><div class="track" aria-hidden="true"><div class="bar-fill bar-fill--${row.signal}" style="width:${width}"></div></div><span class="detail">${esc(row.detail)}</span></div>`;
     })
     .join("");
   return `<article class="cycle${now}"><div><h3>${esc(card.title)}</h3><span class="range">${esc(card.range)}</span></div>${lead}${rows}${note}</article>`;
@@ -340,63 +343,9 @@ function railItems(
       if (active !== key) {
         return `<li>${esc(label)}</li>`;
       }
-      return `<li class="is-active ${toneClass(tone)}" aria-current="step">${esc(label)}</li>`;
+      return `<li class="is-active tone-${tone}" aria-current="step">${esc(label)}</li>`;
     })
     .join("");
-}
-
-function splitIntro(intro: string): { title: string; note: string } {
-  const at = intro.indexOf(". ");
-  if (at < 0) {
-    return { title: intro, note: "" };
-  }
-  return { title: intro.slice(0, at + 1), note: intro.slice(at + 2) };
-}
-
-function flagClass(tone: DashboardVM["context"][number]["flagTone"]): string {
-  if (tone === "buy") {
-    return "flag flag--buy";
-  }
-  if (tone === "sell") {
-    return "flag flag--sell";
-  }
-  if (tone === "muted") {
-    return "flag flag--muted";
-  }
-  return "flag";
-}
-
-function toneClass(tone: Tone): string {
-  return `tone-${toneName(tone)}`;
-}
-
-function toneName(tone: Tone): "buy" | "neutral" | "sell" {
-  if (tone === "sell" || tone === "neutral") {
-    return tone;
-  }
-  return "buy";
-}
-
-function stepState(state: "done" | "current" | "next"): "done" | "current" | "next" {
-  if (state === "done" || state === "current" || state === "next") {
-    return state;
-  }
-  return "next";
-}
-
-function signalName(signal: "cross" | "build" | "lump"): "cross" | "build" | "lump" {
-  if (signal === "build" || signal === "lump") {
-    return signal;
-  }
-  return "cross";
-}
-
-function barWidth(share: number): string {
-  if (!Number.isFinite(share) || share <= 0) {
-    return "0%";
-  }
-  const pct = Math.min(share, 100);
-  return `max(2px, ${pct}%)`;
 }
 
 function officialCloseValue(label: string): string {

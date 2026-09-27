@@ -1,8 +1,3 @@
-import type { FridayDocument } from "../contract/types.ts";
-
-type CaveatKind = FridayDocument["caveats"][number]["kind"];
-type LegendKind = "price" | "trend" | "upper" | "lower" | "average" | "buy" | "sell";
-
 const MUTED = "#9BA6B5";
 const SELL = "#F2A65A";
 
@@ -34,7 +29,7 @@ export function backIcon(): string {
   );
 }
 
-export function caveatIcon(kind: CaveatKind): string {
+export function caveatIcon(kind: "gold" | "fireWeek" | "fit" | "sameWeek" | "armedWait"): string {
   switch (kind) {
     case "gold":
       return icon(
@@ -64,7 +59,7 @@ export function caveatIcon(kind: CaveatKind): string {
   }
 }
 
-export function legendSwatch(kind: LegendKind): string {
+export function legendSwatch(kind: "price" | "trend" | "upper" | "lower" | "average" | "buy" | "sell"): string {
   switch (kind) {
     case "price":
       return legendLine("#E6EAF0", "2");

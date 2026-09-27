@@ -110,6 +110,17 @@ test("sample settings paint All in, the record, and the footer", () => {
   assert.equal(html.includes("Fri 18 Sep"), true);
   assert.equal(html.includes("last grace"), true);
   assert.equal(html.includes("6 days left"), true);
+  assert.equal(
+    document.querySelector(".clock-line")?.textContent,
+    "Official call: Fri 25 Sep 2026 close · Next close Fri 2 Oct · Friday close is 00:00 UTC Saturday · Opened 26 Sep 2026",
+  );
+  assert.equal(html.includes("Next close Fri 2 Oct"), true);
+  assert.equal(html.includes("Next close Fri 2 Oct 2026"), false);
+  assert.equal(texts(document, ".clock .v")[1], "Fri 2 Oct 2026");
+  assert.equal(
+    document.querySelector("#cyc-title")?.textContent,
+    "Share of that cycle's percentage gain, buying the signal and holding to the cycle high",
+  );
   assert.equal(document.querySelector("svg.chart-svg") != null, true);
   assert.equal(html.includes('data-layer="price"'), true);
   assert.equal(document.querySelectorAll("#chart-alt").length, 1);
@@ -123,6 +134,22 @@ test("sample settings paint All in, the record, and the footer", () => {
     }
     assert.equal(svg?.getAttribute("aria-hidden"), "true");
   }
+});
+
+test("the clock line keeps the next-close year when it is the following year", () => {
+  const html = paintDashboard({
+    ...sampleVm,
+    official: {
+      ...sampleVm.official,
+      closeDate: "2026-12-25",
+      closeLabel: "Fri 25 Dec 2026",
+      nextCloseDate: "2027-01-01",
+      nextCloseLabel: "Fri 1 Jan 2027",
+    },
+  });
+  const line = parse(html).querySelector(".clock-line")?.textContent ?? "";
+  assert.equal(line.includes("Next close Fri 1 Jan 2027"), true);
+  assert.equal(line.includes("Next close Fri 1 Jan ·"), false);
 });
 
 test("blank settings name the cash pile and do not invent $100,000", () => {
