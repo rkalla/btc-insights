@@ -63,8 +63,9 @@ test("host units run as exedev on the locked schedules", () => {
     true,
   );
   assert.equal(liveTimer.includes("OnUnitActiveSec=10min"), true);
+  assert.equal(liveTimer.includes("OnActiveSec=1min"), true);
+  assert.equal(liveTimer.includes("Persistent=true"), false);
   assert.equal(fridayTimer.includes("OnCalendar=Sat *-*-* 00:05:00 UTC"), true);
-  assert.equal(liveTimer.includes("Persistent=true"), true);
   assert.equal(fridayTimer.includes("Persistent=true"), true);
 });
 

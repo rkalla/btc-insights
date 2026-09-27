@@ -85,6 +85,6 @@ The site file is `/etc/nginx/sites-available/default`. The extra file is `/etc/n
 
 `scripts/deploy-job.sh` copies `job/run.mjs` to `/home/exedev/btc-insights/job/` and excludes `.env`. It does not use `--delete`.
 
-The four units are `deploy/btc-insights-live.service`, `deploy/btc-insights-live.timer`, `deploy/btc-insights-friday.service`, and `deploy/btc-insights-friday.timer`. Both services run as `exedev` with `Restart=on-failure`. The live timer is `OnUnitActiveSec=10min`. The Friday timer is `OnCalendar=Sat *-*-* 00:05:00 UTC`. These files have no `WantedBy` and do not enable the timers.
+The four units are `deploy/btc-insights-live.service`, `deploy/btc-insights-live.timer`, `deploy/btc-insights-friday.service`, and `deploy/btc-insights-friday.timer`. Both services run as `exedev` with `Restart=on-failure`. The live timer is `OnActiveSec=1min` and then `OnUnitActiveSec=10min`. The Friday timer is `OnCalendar=Sat *-*-* 00:05:00 UTC`. These files have no `WantedBy` and do not enable the timers.
 
 The job umask is 027. Docker stays stopped.
