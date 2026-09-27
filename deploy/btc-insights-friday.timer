@@ -1,0 +1,7 @@
+[Unit]
+Description=Publish the Friday Bitcoin document at 00:05 UTC Saturday
+# systemd timers do not take User=. The paired service sets User=exedev.
+
+[Timer]
+OnCalendar=Sat *-*-* 00:05:00 UTC
+Persistent=true
