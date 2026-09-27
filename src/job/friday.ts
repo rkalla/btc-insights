@@ -46,40 +46,23 @@ export interface PublishedRecord {
   feedCrossFridays?: readonly string[];
 }
 
-function rowDate(time: string): string {
-  return time.slice(0, 10);
-}
-
-function rowPrice(value: string | number | null): number | null {
-  if (value == null) return null;
-  const price = typeof value === "number" ? value : Number(value);
-  return price > 0 ? price : null;
-}
-
-function isFriday(isoDate: string): boolean {
-  const year = Number(isoDate.slice(0, 4));
-  const month = Number(isoDate.slice(5, 7));
-  const day = Number(isoDate.slice(8, 10));
-  return new Date(Date.UTC(year, month - 1, day)).getUTCDay() === 5;
-}
-
-function feedMatches(record: PublishedRecord): boolean {
-  const feed = record.feedCrossFridays;
-  if (feed == null) return false;
-  return officialFeedMatchesPublished(feed, record.zeroCrossFridays);
-}
-
 export function buildFriday(history: readonly HistoryRow[], record: PublishedRecord): FridayDocument {
   const through = record.official.closeDate;
   const daily: DatedPrice[] = [];
   const weekly: { date: string; close: number }[] = [];
   for (const row of history) {
-    const date = rowDate(row.time);
+    const date = row.time.slice(0, 10);
     if (date > through) continue;
-    const price = rowPrice(row.PriceUSD);
+    const raw = row.PriceUSD;
+    const parsed = raw == null ? null : typeof raw === "number" ? raw : Number(raw);
+    const price = parsed != null && parsed > 0 ? parsed : null;
     if (price == null) continue;
     daily.push({ date, price });
-    if (date >= "2013-01-01" && isFriday(date)) {
+    const year = Number(date.slice(0, 4));
+    const month = Number(date.slice(5, 7));
+    const day = Number(date.slice(8, 10));
+    const friday = new Date(Date.UTC(year, month - 1, day)).getUTCDay() === 5;
+    if (date >= "2013-01-01" && friday) {
       weekly.push({ date, close: price });
     }
   }
@@ -104,8 +87,11 @@ export function buildFriday(history: readonly HistoryRow[], record: PublishedRec
   const sma = tail.reduce((sum, point) => sum + point.close, 0) / tail.length;
   const closes = new Map(weekly.map((point) => [point.date, point.close]));
   const buysByDate = new Map(record.buys.map((buy) => [buy.date, buy]));
-  const matchedFeed = feedMatches(record);
-  const buyDates = matchedFeed ? record.feedCrossFridays ?? [] : record.buys.map((buy) => buy.date);
+  const feed = record.feedCrossFridays;
+  const buyDates =
+    feed != null && officialFeedMatchesPublished(feed, record.zeroCrossFridays)
+      ? feed
+      : record.buys.map((buy) => buy.date);
   const fires: FridayDocument["chart"]["fires"] = [];
   for (const date of buyDates) {
     const buy = buysByDate.get(date);

@@ -11,13 +11,6 @@ export interface CashFlags {
   exit?: boolean;
 }
 
-export interface CoinFlags {
-  trim: boolean;
-  exit: boolean;
-  standDownPause: boolean;
-  declarationDateLabel?: string;
-}
-
 export interface CoinCopy {
   posture: CoinPosture;
   word: string;
@@ -212,7 +205,12 @@ export function coinHold(): CoinCopy {
   };
 }
 
-export function coinCopy(input: CoinFlags): CoinCopy {
+export function coinCopy(input: {
+  trim: boolean;
+  exit: boolean;
+  standDownPause: boolean;
+  declarationDateLabel?: string;
+}): CoinCopy {
   if (input.exit) {
     const copy: CoinCopy = {
       posture: "EXIT",

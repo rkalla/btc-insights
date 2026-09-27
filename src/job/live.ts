@@ -25,22 +25,14 @@ export interface LivePrint {
   missingClose: boolean;
 }
 
-function parseTime(iso: string): number {
-  return Date.parse(iso);
-}
-
-function usableGold(print: LivePrint): LivePrint["gold"] {
-  const gold = print.gold;
-  if (gold == null) return null;
-  if (parseTime(print.spotAsOf) - parseTime(gold.asOf) > TEN_DAYS_MS) return null;
-  return gold;
-}
-
 export function buildLive(frozen: FrozenFriday, print: LivePrint): LiveSlice {
-  const gold = usableGold(print);
-  const times = [parseTime(print.spotAsOf)];
-  if (print.bitcoin) times.push(parseTime(print.bitcoin.asOf));
-  if (gold) times.push(parseTime(gold.asOf));
+  const gold =
+    print.gold != null && Date.parse(print.spotAsOf) - Date.parse(print.gold.asOf) <= TEN_DAYS_MS
+      ? print.gold
+      : null;
+  const times = [Date.parse(print.spotAsOf)];
+  if (print.bitcoin) times.push(Date.parse(print.bitcoin.asOf));
+  if (gold) times.push(Date.parse(gold.asOf));
   const newest = Math.max(...times);
   const developing = print.bitcoin != null && gold != null ? DEVELOPING : null;
   const realizedRatio =
@@ -63,7 +55,7 @@ export function buildLive(frozen: FrozenFriday, print: LivePrint): LiveSlice {
     gold: gold == null ? null : { usd: gold.usd, asOf: gold.asOf, filled: gold.filled },
     chartTip: { date: print.spotAsOf.slice(0, 10), value: print.spot },
     progress,
-    stale: parseTime(print.now) - newest > TWENTY_SIX_HOURS_MS,
+    stale: Date.parse(print.now) - newest > TWENTY_SIX_HOURS_MS,
     missingClose: print.missingClose,
   };
 }

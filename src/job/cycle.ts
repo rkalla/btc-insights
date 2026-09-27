@@ -5,16 +5,10 @@ export function cycleShare(signalGain: number, fullGain: number): number {
   return signalGain / fullGain;
 }
 
-export interface ProgressCross {
-  name: string;
-  dateLabel: string;
-  price: number;
-}
-
 export interface ProgressAnchors {
   low: number;
   high: number;
-  crosses: ProgressCross[];
+  crosses: { name: string; dateLabel: string; price: number }[];
   buildAverage: number;
   buildDetail: string;
   lumpAverage: number;
@@ -55,8 +49,14 @@ const PINNED_PROGRESS: CycleCard = {
   note: "Shares are of the +436% rise from the low, not of the rise to the high.",
 };
 
-function isPinnedSpot(spot: number, anchors: ProgressAnchors): boolean {
-  return (
+function shareOfRise(spot: number, entry: number, low: number): number {
+  const gain = spot / entry - 1;
+  const rise = spot / low - 1;
+  return Math.round((100 * gain) / rise);
+}
+
+export function progressCard(spot: number, date: string, anchors: ProgressAnchors): CycleCard {
+  if (
     spot === 84413 &&
     anchors.low === 15758 &&
     anchors.high === 124824 &&
@@ -65,17 +65,7 @@ function isPinnedSpot(spot: number, anchors: ProgressAnchors): boolean {
     anchors.crosses[1]?.price === 80944 &&
     anchors.buildAverage === 16806 &&
     anchors.lumpAverage === 48026
-  );
-}
-
-function shareOfRise(spot: number, entry: number, low: number): number {
-  const gain = spot / entry - 1;
-  const rise = spot / low - 1;
-  return Math.round((100 * gain) / rise);
-}
-
-export function progressCard(spot: number, date: string, anchors: ProgressAnchors): CycleCard {
-  if (isPinnedSpot(spot, anchors)) {
+  ) {
     return {
       title: PINNED_PROGRESS.title,
       range: PINNED_PROGRESS.range,
