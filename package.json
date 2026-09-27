@@ -11,8 +11,10 @@
     "build": "node scripts/build.mjs"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@fontsource/geist": "^5.3.0",
     "@fontsource/geist-mono": "^5.3.0",
+    "@playwright/test": "^1.63.0",
     "esbuild": "^0.28.2",
     "linkedom": "^0.18.13",
     "typescript": "^7.0.2"

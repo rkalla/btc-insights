@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "esnext",
-    "lib": ["esnext"],
+    "lib": ["esnext", "dom", "dom.iterable"],
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "strict": true,
@@ -12,5 +12,5 @@
     // Node runs the tests as TypeScript, so imports end in .ts.
     "allowImportingTsExtensions": true
   },
-  "include": ["test/**/*.ts"]
+  "include": ["src/**/*.ts", "test/**/*.ts"]
 }
