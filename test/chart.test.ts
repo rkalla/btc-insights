@@ -131,16 +131,20 @@ test("July 2020 buy marker stays when the close is above the lower band", () => 
   };
   const width = 1280;
   const svg = chartSvg(chart, spotOf("2020-07-31", close), width);
-  const group = groupWith(svg, 'data-date="2020-07-31"');
-  assert.equal(group.includes('role="button"'), true);
-  assert.equal(group.includes('class="m-buy"'), true);
+  const buy = svg.match(/<circle class="m-buy"[^>]*data-date="2020-07-31"[^>]*>/)?.[0] ?? "";
+  assert.equal(buy.includes('pointer-events="none"'), true);
+  const hit = groupWith(svg, 'class="marker" data-date="2020-07-31"');
+  assert.equal(hit.includes('tabindex="0"'), true);
+  assert.equal(hit.includes('role="button"'), true);
+  assert.equal(hit.includes('r="11"'), true);
+  assert.equal(hit.includes('class="m-buy"'), false);
   const yMin = 0.6 * 10000;
   const yMax = 1.8 * trend * 1.55;
   const plotHeight = width * 0.5 - 16 - 32;
   const yClose = yPx(close, yMin, yMax, 16, plotHeight);
   const yLower = yPx(lower, yMin, yMax, 16, plotHeight);
   assert.equal(yClose < yLower, true);
-  const cy = Number(group.match(/class="m-buy"[^>]*cy="([\d.]+)"/)?.[1]);
+  const cy = Number(buy.match(/cy="([\d.]+)"/)?.[1]);
   near(cy, yClose, 0.02);
 });
 
@@ -160,16 +164,22 @@ test("fixture chart marks fires, the open ring, and no floor band", () => {
   assert.equal(svg.toLowerCase().includes("floor"), false);
   assert.equal(svg.includes("M56.0 390.7"), false);
 
-  const march = groupWith(svg, 'data-date="2023-03-17"');
+  const march = groupWith(svg, 'class="marker" data-date="2023-03-17"');
   assert.equal(march.includes('tabindex="0"'), true);
   assert.equal(march.includes('role="button"'), true);
   assert.equal(march.includes('r="11"'), true);
   assert.equal(march.includes("Buy cross, 17 March 2023. Finished year +138%."), true);
+  assert.equal(/tabindex="[1-9]/.test(svg), false);
+  const buttonDates = [...svg.matchAll(/<g class="marker" data-date="([^"]+)"/g)].map((match) => match[1]);
+  assert.deepEqual(buttonDates, chart.fires.map((fire) => fire.date).sort());
+  assert.equal(svg.indexOf('class="open-ring"') < svg.indexOf('class="markers"'), true);
+  assert.equal(svg.indexOf('class="markers-sell"') < svg.indexOf('class="markers"'), true);
 
   const rings = [...svg.matchAll(/<circle\b[^>]*class="m-ring"[^>]*>/g)].map((match) => match[0]);
   assert.equal(rings.length, 1);
   const ring = rings[0] ?? "";
   assert.equal(ring.includes('data-date="2026-09-18"'), true);
+  assert.equal(ring.includes('pointer-events="none"'), true);
   assert.equal(ring.includes('r="10"'), true);
   assert.equal(svg.includes("18 Sep 2026 \u00b7 open"), true);
 
@@ -212,7 +222,7 @@ test("end labels stay at least 1.2em apart", () => {
     const next = deskYs[i] ?? 0;
     assert.equal(next - prev >= 12.5 * 1.2 - 0.02, true, `${prev} -> ${next}`);
   }
-  assert.equal(desk.includes('class="c-leader"'), true);
+  assert.equal(desk.includes('class="c-leader" pointer-events="none"'), true);
 
   const phone = chartSvg(chart, spot, 400);
   assert.equal(phone.includes("Trend $10k"), false);

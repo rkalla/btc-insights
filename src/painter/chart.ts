@@ -20,20 +20,6 @@ const FULL_MONTHS = [
   "December",
 ] as const;
 
-const COUNT_WORDS = [
-  "zero",
-  "one",
-  "two",
-  "three",
-  "four",
-  "five",
-  "six",
-  "seven",
-  "eight",
-  "nine",
-  "ten",
-] as const;
-
 const LOWER_LABEL = "\u221220%";
 const UPPER_LABEL = "+55%";
 
@@ -122,7 +108,7 @@ export function chartSvg(
   const spotLabel = endLabels.find((label) => label.kind === "spot");
   const leader =
     spotLabel !== undefined && Math.abs(spotLabel.y - spotLabel.natural) > 4
-      ? `<line class="c-leader" x1="${fmt(xAt(spot.date))}" y1="${fmt(spotLabel.natural)}" x2="${fmt(labelX)}" y2="${fmt(spotLabel.y)}" stroke="var(--text-1)" stroke-width="0.7"/>`
+      ? `<line class="c-leader" pointer-events="none" x1="${fmt(xAt(spot.date))}" y1="${fmt(spotLabel.natural)}" x2="${fmt(labelX)}" y2="${fmt(spotLabel.y)}" stroke="var(--text-1)" stroke-width="0.7"/>`
       : "";
   const endLabelText = endLabels
     .map((label) => {
@@ -140,22 +126,34 @@ export function chartSvg(
   }, obstacles);
 
   const sellMarks = sells
-    .map((fire) => marker(fire, xAt(fire.date), yAt(fire.price), phone, sellShape(xAt(fire.date), yAt(fire.price), sellD, fire.date, phone)))
+    .map((fire) => sellShape(xAt(fire.date), yAt(fire.price), sellD, fire.date))
     .join("");
   const buyMarks = buys
-    .map((fire) => marker(fire, xAt(fire.date), yAt(fire.price), phone, buyShape(xAt(fire.date), yAt(fire.price), buyR, fire.date, phone)))
+    .map((fire) => buyShape(xAt(fire.date), yAt(fire.price), buyR, fire.date))
     .join("");
   const rings = opens
     .map((fire) => {
-      return `<circle class="m-ring" data-date="${fire.date}" fill="none" stroke="var(--buy)" stroke-width="1.4" cx="${fmt(xAt(fire.date))}" cy="${fmt(yAt(fire.price))}" r="${ringR}"/>`;
+      return `<circle class="m-ring" data-date="${fire.date}" pointer-events="none" fill="none" stroke="var(--buy)" stroke-width="1.4" cx="${fmt(xAt(fire.date))}" cy="${fmt(yAt(fire.price))}" r="${ringR}"/>`;
     })
     .join("");
+  const hits = phone
+    ? ""
+    : fires
+        .filter((fire) => fire.price > 0)
+        .map((fire) => {
+          const cx = fmt(xAt(fire.date));
+          const cy = fmt(yAt(fire.price));
+          return `<g class="marker" data-date="${fire.date}" tabindex="0" role="button" aria-label="${esc(markerText(fire))}"><circle class="m-hit" fill="transparent" cx="${cx}" cy="${cy}" r="11"/></g>`;
+        })
+        .join("");
 
   const buyCount = fires.filter((fire) => fire.type === "buy").length;
   const sellCount = fires.filter((fire) => fire.type === "sell").length;
+  const buyPhrase = firePhrase(buyCount, "buy-cross");
+  const buyTitle = buyPhrase.charAt(0).toUpperCase() + buyPhrase.slice(1);
   const title =
     `Bitcoin price on a log scale against its power-law trend, 2013 to ${sentenceDate(spot.date)}. ` +
-    `${capital(firePhrase(buyCount, "buy-cross"))} and ${firePhrase(sellCount, "sell-roll")} are marked. ` +
+    `${buyTitle} and ${firePhrase(sellCount, "sell-roll")} are marked. ` +
     `A table of the fires follows the chart.`;
 
   const svg = [
@@ -173,6 +171,7 @@ export function chartSvg(
     `<g data-layer="buy" class="markers-buy">${buyMarks}</g>`,
     `<g data-layer="open" class="open-ring">${rings}</g>`,
     `<g data-layer="selected" class="selected"></g>`,
+    `<g class="markers">${hits}</g>`,
     `<g data-layer="labels" class="labels">${yTicks}${xTicks.join("")}${openLabels}${leader}${endLabelText}</g>`,
     `</svg>`,
   ].join("\n");
@@ -350,26 +349,13 @@ function lastPositive(points: readonly Dated[]): Dated | null {
   return sorted[sorted.length - 1] ?? null;
 }
 
-function marker(fire: Fire, cx: number, cy: number, phone: boolean, shape: string): string {
-  if (phone) {
-    return shape;
-  }
-  const hit = `<circle class="m-hit" fill="transparent" cx="${fmt(cx)}" cy="${fmt(cy)}" r="11"/>`;
-  return `<g class="marker" data-date="${fire.date}" tabindex="0" role="button" aria-label="${esc(markerText(fire))}">${hit}${shape}</g>`;
+function sellShape(cx: number, cy: number, half: number, date: string): string {
+  const d = `M${fmt(cx)} ${fmt(cy - half)}L${fmt(cx + half)} ${fmt(cy)}L${fmt(cx)} ${fmt(cy + half)}L${fmt(cx - half)} ${fmt(cy)}Z`;
+  return `<path class="m-sell" data-date="${date}" pointer-events="none" fill="var(--sell)" stroke="var(--surface-1)" stroke-width="1.2" d="${d}"/>`;
 }
 
-function sellShape(cx: number, cy: number, half: number, date: string, phone: boolean): string {
-  const dated = phone ? ` data-date="${date}"` : "";
-  return `<path class="m-sell"${dated} fill="var(--sell)" stroke="var(--surface-1)" stroke-width="1.2" d="${diamond(cx, cy, half)}"/>`;
-}
-
-function buyShape(cx: number, cy: number, radius: number, date: string, phone: boolean): string {
-  const dated = phone ? ` data-date="${date}"` : "";
-  return `<circle class="m-buy"${dated} fill="var(--buy)" stroke="var(--surface-1)" stroke-width="1.2" cx="${fmt(cx)}" cy="${fmt(cy)}" r="${radius}"/>`;
-}
-
-function diamond(cx: number, cy: number, half: number): string {
-  return `M${fmt(cx)} ${fmt(cy - half)}L${fmt(cx + half)} ${fmt(cy)}L${fmt(cx)} ${fmt(cy + half)}L${fmt(cx - half)} ${fmt(cy)}Z`;
+function buyShape(cx: number, cy: number, radius: number, date: string): string {
+  return `<circle class="m-buy" data-date="${date}" pointer-events="none" fill="var(--buy)" stroke="var(--surface-1)" stroke-width="1.2" cx="${fmt(cx)}" cy="${fmt(cy)}" r="${radius}"/>`;
 }
 
 function markerText(fire: Fire): string {
@@ -415,7 +401,32 @@ function openLabelText(
         top: baseline - ascent - 2,
         bottom: baseline + descent + 2,
       };
-      return obstacles.some((line) => polylineHits(line, box));
+      const inside = (x: number, y: number) => x >= box.left && x <= box.right && y >= box.top && y <= box.bottom;
+      return obstacles.some((line) => {
+        for (const point of line) {
+          if (inside(point.x, point.y)) {
+            return true;
+          }
+        }
+        for (let i = 1; i < line.length; i += 1) {
+          const a = line[i - 1];
+          const b = line[i];
+          if (a === undefined || b === undefined) {
+            continue;
+          }
+          if (
+            inside(a.x, a.y) ||
+            inside(b.x, b.y) ||
+            segmentsCross(a.x, a.y, b.x, b.y, box.left, box.top, box.right, box.top) ||
+            segmentsCross(a.x, a.y, b.x, b.y, box.right, box.top, box.right, box.bottom) ||
+            segmentsCross(a.x, a.y, b.x, b.y, box.right, box.bottom, box.left, box.bottom) ||
+            segmentsCross(a.x, a.y, b.x, b.y, box.left, box.bottom, box.left, box.top)
+          ) {
+            return true;
+          }
+        }
+        return false;
+      });
     };
     const below = firstClear(markerY + ringR + 4 + ascent, 4, plot.bottom - descent, blocked);
     const above = below === null ? firstClear(markerY - ringR - 4 - descent, -4, plot.top + ascent, blocked) : null;
@@ -449,38 +460,6 @@ function firstClear(
     y += step;
   }
   return null;
-}
-
-function polylineHits(points: readonly { x: number; y: number }[], box: Rect): boolean {
-  for (const point of points) {
-    if (point.x >= box.left && point.x <= box.right && point.y >= box.top && point.y <= box.bottom) {
-      return true;
-    }
-  }
-  for (let i = 1; i < points.length; i += 1) {
-    const a = points[i - 1];
-    const b = points[i];
-    if (a === undefined || b === undefined) {
-      continue;
-    }
-    if (segmentHitsRect(a.x, a.y, b.x, b.y, box)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-function segmentHitsRect(x1: number, y1: number, x2: number, y2: number, box: Rect): boolean {
-  const inside = (x: number, y: number) => x >= box.left && x <= box.right && y >= box.top && y <= box.bottom;
-  if (inside(x1, y1) || inside(x2, y2)) {
-    return true;
-  }
-  return (
-    segmentsCross(x1, y1, x2, y2, box.left, box.top, box.right, box.top) ||
-    segmentsCross(x1, y1, x2, y2, box.right, box.top, box.right, box.bottom) ||
-    segmentsCross(x1, y1, x2, y2, box.right, box.bottom, box.left, box.bottom) ||
-    segmentsCross(x1, y1, x2, y2, box.left, box.bottom, box.left, box.top)
-  );
 }
 
 function segmentsCross(
@@ -519,19 +498,9 @@ function fireTable(fires: readonly Fire[]): string {
 }
 
 function firePhrase(count: number, kind: string): string {
+  const words = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
   const noun = count === 1 ? "fire" : "fires";
-  return `${countWord(count)} ${kind} ${noun}`;
-}
-
-function countWord(count: number): string {
-  return COUNT_WORDS[count] ?? String(count);
-}
-
-function capital(text: string): string {
-  if (text.length === 0) {
-    return text;
-  }
-  return text.charAt(0).toUpperCase() + text.slice(1);
+  return `${words[count] ?? String(count)} ${kind} ${noun}`;
 }
 
 function sortByDate<T extends { date: string }>(points: readonly T[]): T[] {
