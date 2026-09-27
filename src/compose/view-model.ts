@@ -25,18 +25,59 @@ export function compose(
   let context = friday.context.map(cloneReading);
 
   if (live.missingClose) {
+    const due = sentenceDate(live.officialCloseDate);
     cash.posture = "NO_CALL";
     cash.word = "No call";
     cash.tone = "neutral";
-    cash.sentences = [missingSentence(live)];
+    cash.sentences = [
+      `The Friday ${due} close is missing. There is no official call until it arrives.`,
+    ];
     cash.recordRows = [];
     delete cash.window;
     rails = { cash: null, coins: coins.posture };
-    context =
-      friday.previousOfficial == null ? [] : previousContext(friday.previousOfficial);
+    const previous = friday.previousOfficial;
+    if (previous == null) {
+      context = [];
+    } else {
+      const label = previous.closeLabel.startsWith("Fri")
+        ? previous.closeLabel
+        : `Fri ${previous.closeLabel}`;
+      context = previous.context.map((reading) => {
+        const copy = cloneReading(reading);
+        copy.value = `${reading.value} (from ${label})`;
+        return copy;
+      });
+    }
   }
 
-  const stale = printIsStale(live, openedAt);
+  let stale = live.stale;
+  if (!stale) {
+    const ageMs = Date.parse(openedAt) - Date.parse(live.spotAsOf);
+    stale = Number.isFinite(ageMs) && ageMs > STALE_AFTER_MS;
+  }
+  let staleNote: string | null = null;
+  if (stale) {
+    const spotMs = Date.parse(live.spotAsOf);
+    const isoDate = Number.isFinite(spotMs)
+      ? new Date(spotMs).toISOString().slice(0, 10)
+      : live.spotAsOf;
+    staleNote = `The latest print is from ${sentenceDate(isoDate)}. Levels may be out of date.`;
+  }
+
+  let countdown: string | null = null;
+  const lastGrace = cash.window?.lastGraceCloseUtc;
+  if (lastGrace != null) {
+    const closeMs = Date.parse(lastGrace);
+    const openedMs = Date.parse(openedAt);
+    if (Number.isFinite(closeMs) && Number.isFinite(openedMs)) {
+      if (openedMs >= closeMs) {
+        delete cash.window;
+      } else {
+        const days = Math.floor((closeMs - openedMs) / DAY_MS);
+        countdown = days < 1 ? "Closes today" : days === 1 ? "1 day left" : `${days} days left`;
+      }
+    }
+  }
 
   return {
     openedAt,
@@ -54,7 +95,7 @@ export function compose(
       isOfficialClose: live.isOfficialClose,
       developing: live.developing == null ? "Developing: none." : live.developing,
       stale,
-      staleNote: stale ? stalePrintNote(live.spotAsOf) : null,
+      staleNote,
     },
     rails,
     cash,
@@ -83,66 +124,8 @@ export function compose(
       ),
     },
     footer: [friday.footer[0], friday.footer[1]],
-    countdown: countdownLabel(cash, openedAt),
+    countdown,
   };
-}
-
-function missingSentence(live: LiveSlice): string {
-  // The live slice names the Friday whose close was due.
-  const due = sentenceDate(live.officialCloseDate);
-  return `The Friday ${due} close is missing. There is no official call until it arrives.`;
-}
-
-function previousContext(
-  previous: NonNullable<FridayDocument["previousOfficial"]>,
-): ContextReading[] {
-  const label = previous.closeLabel.startsWith("Fri")
-    ? previous.closeLabel
-    : `Fri ${previous.closeLabel}`;
-  return previous.context.map((reading) => {
-    const copy = cloneReading(reading);
-    copy.value = `${reading.value} (from ${label})`;
-    return copy;
-  });
-}
-
-function printIsStale(live: LiveSlice, openedAt: string): boolean {
-  if (live.stale) {
-    return true;
-  }
-  const ageMs = Date.parse(openedAt) - Date.parse(live.spotAsOf);
-  return Number.isFinite(ageMs) && ageMs > STALE_AFTER_MS;
-}
-
-function stalePrintNote(spotAsOf: string): string {
-  return `The latest print is from ${spotCalendarDate(spotAsOf)}. Levels may be out of date.`;
-}
-
-function spotCalendarDate(spotAsOf: string): string {
-  const ms = Date.parse(spotAsOf);
-  const isoDate = Number.isFinite(ms) ? new Date(ms).toISOString().slice(0, 10) : spotAsOf;
-  return sentenceDate(isoDate);
-}
-
-function countdownLabel(cash: FridayDocument["cash"], openedAt: string): string | null {
-  const last = cash.window?.lastGraceCloseUtc;
-  if (last == null) {
-    return null;
-  }
-  const closeMs = Date.parse(last);
-  const openedMs = Date.parse(openedAt);
-  if (!Number.isFinite(closeMs) || !Number.isFinite(openedMs)) {
-    return null;
-  }
-  if (openedMs >= closeMs) {
-    delete cash.window;
-    return null;
-  }
-  const days = Math.floor((closeMs - openedMs) / DAY_MS);
-  if (days < 1) {
-    return "Closes today";
-  }
-  return days === 1 ? "1 day left" : `${days} days left`;
 }
 
 function cloneReading(reading: ContextReading): ContextReading {
