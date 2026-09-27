@@ -660,17 +660,6 @@ test("a live write does not clear missingClose set after the state was read", as
   }
 });
 
-function deadPid(): number {
-  for (let pid = 1_000_000; pid < 1_000_200; pid += 1) {
-    try {
-      process.kill(pid, 0);
-    } catch {
-      return pid;
-    }
-  }
-  return 1_000_199;
-}
-
 function waitFor(child: ReturnType<typeof spawn>): Promise<{ code: number; stderr: string }> {
   return new Promise((resolve, reject) => {
     let stderr = "";
@@ -729,7 +718,16 @@ test("a missing history seed does not write an empty history", async () => {
 test("a lock whose pid is not running is removed", async () => {
   const { root, dataDir, stateDir } = scene();
   writePrivateState(stateDir, "2026-09-26");
-  writeFileSync(join(stateDir, ".live.lock"), `${deadPid()}\n`);
+  let stalePid = 1_000_199;
+  for (let pid = 1_000_000; pid < 1_000_200; pid += 1) {
+    try {
+      process.kill(pid, 0);
+    } catch {
+      stalePid = pid;
+      break;
+    }
+  }
+  writeFileSync(join(stateDir, ".live.lock"), `${stalePid}\n`);
   const stub = await startStub((_url, response) => {
     sendJson(response, 200, { bitcoin: { usd: 90000 } });
   });
