@@ -7,3 +7,10 @@
 !.env.example
 !.env.sample
 !.env.*.example
+
+node_modules/
+dist/
+test-results/
+playwright-report/
+blob-report/
+/job/

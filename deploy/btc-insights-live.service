@@ -1,0 +1,12 @@
+[Unit]
+Description=Publish the Bitcoin live slice
+
+[Service]
+Type=oneshot
+User=exedev
+WorkingDirectory=/home/exedev/btc-insights
+EnvironmentFile=/home/exedev/btc-insights/.env
+UMask=0027
+ExecStart=/usr/bin/node /home/exedev/btc-insights/job/run.mjs live
+Restart=on-failure
+RestartSec=30s

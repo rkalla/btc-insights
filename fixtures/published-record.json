@@ -1,0 +1,333 @@
+{
+  "official": {
+    "closeDate": "2026-09-25",
+    "closeLabel": "Fri 25 Sep 2026",
+    "nextCloseDate": "2026-10-02",
+    "nextCloseLabel": "Fri 2 Oct 2026"
+  },
+  "standDownPause": false,
+  "armedWait": false,
+  "dollarSlot": {
+    "pile": "cashAvailable"
+  },
+  "cashFlags": {
+    "allIn": true,
+    "build": false,
+    "standDownPause": false,
+    "lumpIn": false,
+    "slowIn": false,
+    "armedWait": false
+  },
+  "buys": [
+    {
+      "date": "2015-07-24",
+      "price": 289,
+      "status": "completed",
+      "titleLabel": "Buy cross",
+      "resultLabel": "Finished year: +127%"
+    },
+    {
+      "date": "2019-05-03",
+      "price": 5658,
+      "status": "completed",
+      "titleLabel": "Buy cross",
+      "resultLabel": "Finished year: +59%"
+    },
+    {
+      "date": "2020-07-31",
+      "price": 11338,
+      "status": "completed",
+      "titleLabel": "Buy cross",
+      "resultLabel": "Finished year: +269%"
+    },
+    {
+      "date": "2023-03-17",
+      "price": 27451,
+      "status": "completed",
+      "titleLabel": "Buy cross",
+      "resultLabel": "Finished year: +138%"
+    },
+    {
+      "date": "2026-09-18",
+      "price": 80944,
+      "status": "open",
+      "titleLabel": "Buy cross",
+      "resultLabel": "Open. Not in the completed count."
+    }
+  ],
+  "sells": [
+    {
+      "date": "2013-06-07",
+      "status": "completed",
+      "titleLabel": "Sell roll",
+      "resultLabel": "Jun 2013"
+    },
+    {
+      "date": "2014-04-04",
+      "status": "completed",
+      "titleLabel": "Sell roll",
+      "resultLabel": "Apr 2014"
+    },
+    {
+      "date": "2014-08-01",
+      "status": "completed",
+      "titleLabel": "Sell roll",
+      "resultLabel": "Aug 2014"
+    },
+    {
+      "date": "2017-09-01",
+      "status": "completed",
+      "titleLabel": "Sell roll",
+      "resultLabel": "Sep 2017"
+    },
+    {
+      "date": "2018-03-02",
+      "status": "completed",
+      "titleLabel": "Sell roll",
+      "resultLabel": "Mar 2018"
+    },
+    {
+      "date": "2018-05-04",
+      "status": "completed",
+      "titleLabel": "Sell roll",
+      "resultLabel": "May 2018"
+    },
+    {
+      "date": "2021-05-07",
+      "status": "completed",
+      "titleLabel": "Sell roll",
+      "resultLabel": "May 2021"
+    },
+    {
+      "date": "2021-12-03",
+      "status": "completed",
+      "titleLabel": "Sell roll",
+      "resultLabel": "Dec 2021"
+    }
+  ],
+  "zeroCrossFridays": [
+    "2015-07-24",
+    "2019-05-03",
+    "2020-07-31",
+    "2023-03-17",
+    "2026-09-18"
+  ],
+  "goldFlagCut": 0.15,
+  "goldShares": {
+    "completedArms": 0,
+    "openArm": 0.245
+  },
+  "openArmPrices": {
+    "btc0": 116149,
+    "btc1": 84948,
+    "gold0": 3686,
+    "gold1": 4080
+  },
+  "coinsHold": {
+    "word": "Hold",
+    "tone": "neutral",
+    "sentences": [
+      "Coins already held stay held."
+    ]
+  },
+  "caveats": [
+    {
+      "kind": "gold",
+      "title": "Gold flag is on",
+      "body": "Arm 21 Nov 2025. Gold share 24.5%, cut 15%. From 12 Sep 2025: Bitcoin about −27%, gold about +11%. The 38% year-over-year figure is a different window."
+    },
+    {
+      "kind": "fireWeek",
+      "title": "Fire week",
+      "body": "Led by Bitcoin (+10.4% to this close)."
+    },
+    {
+      "kind": "fit",
+      "title": "Fit range",
+      "body": "Gap about −41% on this fit (trend about $141,000). Other start years: −29% to −46%. The arm holds. Not a price target."
+    }
+  ],
+  "context": [
+    {
+      "key": "buyCross",
+      "label": "Buy cross",
+      "flag": "FIRED",
+      "flagTone": "buy",
+      "value": "Fired 18 Sep 2026. Open.",
+      "note": "Z-score crossed above 0. Gap about −41%, past −20%."
+    },
+    {
+      "key": "zScore",
+      "label": "Z-score",
+      "flag": "GOLD FLAG",
+      "flagTone": "sell",
+      "value": "Into the arm: Bitcoin about −27%. Gold about +11%.",
+      "note": "Gold share 24.5%. Flag on. Cut is 15%."
+    },
+    {
+      "key": "thermometer",
+      "label": "Thermometer",
+      "flag": "+4",
+      "flagTone": "neutral",
+      "value": "about +4. Signed, zero when the inputs disagree.",
+      "note": "Non-voting."
+    },
+    {
+      "key": "realizedPrice",
+      "label": "Realized price",
+      "flag": "+59%",
+      "flagTone": "neutral",
+      "value": "About 59% above cost. Cost about $53,000.",
+      "note": "Build is off until a Friday close."
+    },
+    {
+      "key": "sellRoll",
+      "label": "Sell roll",
+      "flag": "QUIET",
+      "flagTone": "muted",
+      "value": "Quiet. Not armed since 2021.",
+      "note": "Missed 2019–20 and 2025–26. Coins: 7 of 8, floor about 59%. June 2013 lost."
+    }
+  ],
+  "longView": {
+    "statement": "Holds of 3, 4, 5, and 10 years were up in 99% or more of entry weeks.",
+    "caveat": "Fewer than three independent 5-year windows since 2012. Early growth inflates the rate. Not today's action.",
+    "tiles": [
+      {
+        "label": "Ceiling",
+        "text": "Not set. Trim is off."
+      },
+      {
+        "label": "Thesis broken",
+        "text": "Not declared. Exit off."
+      },
+      {
+        "label": "Monitors, not triggers",
+        "text": "Hash-rate collapse; signature break with no migration; prohibition across major markets. Floor band: not defined.",
+        "wide": true
+      },
+      {
+        "label": "Regime from 2024",
+        "text": "Spot ETF and corporate buying. No flow number yet.",
+        "wide": true
+      }
+    ]
+  },
+  "cycles": {
+    "intro": "Share of that cycle's percentage gain, buying the signal and holding to the cycle high. This page does not sell there. A higher share is an earlier price. It is not a higher probability. Sell roll is not in this table. It does not sell coins.",
+    "finished": [
+      {
+        "title": "2015–2017",
+        "range": "$176 to $19,641 · full +11,082%",
+        "isProgress": false,
+        "rows": [
+          {
+            "signal": "cross",
+            "name": "Buy cross",
+            "sharePct": 60,
+            "detail": "24 Jul 2015 at $289 · +6,689%"
+          },
+          {
+            "signal": "build",
+            "name": "Build",
+            "sharePct": 71,
+            "detail": "39 Fridays, avg $246 · +7,895%"
+          },
+          {
+            "signal": "lump",
+            "name": "Lump in",
+            "sharePct": 34,
+            "detail": "119 Fridays, avg $511 · +3,747%"
+          }
+        ]
+      },
+      {
+        "title": "2018–2021",
+        "range": "$3,185 to $67,542 · full +2,021%",
+        "isProgress": false,
+        "rows": [
+          {
+            "signal": "cross",
+            "name": "Buy cross",
+            "sharePct": 54,
+            "detail": "3 May 2019 at $5,658 · +1,094%"
+          },
+          {
+            "signal": "cross",
+            "name": "Buy cross",
+            "sharePct": 25,
+            "detail": "31 Jul 2020 at $11,338 · +496%"
+          },
+          {
+            "signal": "build",
+            "name": "Build",
+            "sharePct": 84,
+            "detail": "15 Fridays, avg $3,769 · +1,692%"
+          },
+          {
+            "signal": "lump",
+            "name": "Lump in",
+            "sharePct": 42,
+            "detail": "60 Fridays, avg $7,147 · +845%"
+          }
+        ]
+      },
+      {
+        "title": "2022–2025",
+        "range": "$15,758 to $124,824 · full +692%",
+        "isProgress": false,
+        "note": "The drop after 6 Oct 2025 reached about 53% on 30 Jun 2026. Not a finished 70% bear. This cycle is still the current one.",
+        "rows": [
+          {
+            "signal": "cross",
+            "name": "Buy cross",
+            "sharePct": 51,
+            "detail": "17 Mar 2023 at $27,451 · +355%"
+          },
+          {
+            "signal": "build",
+            "name": "Build",
+            "sharePct": 93,
+            "detail": "9 Fridays, avg $16,806 · +643%"
+          },
+          {
+            "signal": "lump",
+            "name": "Lump in",
+            "sharePct": 44,
+            "detail": "71 Fridays, avg $30,841 · +305%"
+          }
+        ]
+      }
+    ],
+    "footnote": "2011 and 2013 had no buy-cross fire. They are not scored."
+  },
+  "anchors": {
+    "low": 15758,
+    "high": 124824,
+    "crosses": [
+      {
+        "name": "Buy cross, Mar 2023",
+        "dateLabel": "17 Mar 2023",
+        "price": 27451
+      },
+      {
+        "name": "Buy cross, Sep 2026",
+        "dateLabel": "18 Sep 2026",
+        "price": 80944
+      }
+    ],
+    "buildAverage": 16806,
+    "buildDetail": "Same 9 Fridays, avg $16,806",
+    "lumpAverage": 48026,
+    "lumpDetail": "116 Fridays to date, avg $48,026"
+  },
+  "footer": [
+    "Research rule. A large position needs the holder's full balance sheet.",
+    "This page does not trade and does not compute tax."
+  ],
+  "previousOfficial": null,
+  "captions": [
+    "The 200-week average is a map line. It does not time a buy.",
+    "July 2020 fired nearer the trend."
+  ]
+}

@@ -1,0 +1,14 @@
+[Unit]
+Description=Publish the Friday Bitcoin document
+
+[Service]
+Type=oneshot
+User=exedev
+WorkingDirectory=/home/exedev/btc-insights
+EnvironmentFile=/home/exedev/btc-insights/.env
+UMask=0027
+# The process retries until 06:00 UTC. The default start timeout would kill that loop.
+TimeoutStartSec=infinity
+ExecStart=/usr/bin/node /home/exedev/btc-insights/job/run.mjs friday
+Restart=on-failure
+RestartSec=30s

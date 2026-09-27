@@ -1,0 +1,8 @@
+[Unit]
+Description=Publish the Bitcoin live slice every 10 minutes
+# systemd timers do not take User=. The paired service sets User=exedev.
+
+[Timer]
+# OnUnitActiveSec does not elapse until the service has run. OnActiveSec starts it.
+OnActiveSec=1min
+OnUnitActiveSec=10min
