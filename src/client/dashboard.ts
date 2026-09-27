@@ -20,6 +20,8 @@ let chartObserver: ResizeObserver | null = null;
 let countdownTimer: ReturnType<typeof setInterval> | null = null;
 let poll: PollHandle | null = null;
 let rendering = false;
+let lastScrollX = 0;
+let lastScrollY = 0;
 
 function boot(): void {
   if (typeof document === "undefined") return;
@@ -51,6 +53,8 @@ function boot(): void {
   document.addEventListener("click", onClick);
   document.addEventListener("keydown", onKey);
   document.addEventListener("visibilitychange", onVisibility);
+  lastScrollX = window.scrollX;
+  lastScrollY = window.scrollY;
   document.addEventListener("scroll", onScroll, true);
   void loadInitial();
 }
@@ -194,6 +198,11 @@ function contentWidth(el: HTMLElement): number {
 }
 
 function onScroll(): void {
+  const x = window.scrollX;
+  const y = window.scrollY;
+  if (x === lastScrollX && y === lastScrollY) return;
+  lastScrollX = x;
+  lastScrollY = y;
   if (rendering || openMarkerDate == null) return;
   closePopover(false);
 }
