@@ -78,6 +78,18 @@ Python stays in the repository and runs in CI. It does not run in production. CI
 
 The public cache holds market data and the official call. It does not hold holdings, net worth, settings, API keys, or the live working set of the job.
 
+## Work log
+
+Work on this repo is recorded at <https://github.com/rkalla/btc-insights/issues>. The issue list is the log of slices that shipped and of later changes. The specs stay in `docs/`. An issue records that a slice happened. It does not replace a locked document.
+
+One issue covers one reviewable slice. During the dashboard build, that slice is one pull request in `docs/13-implementation-plan.md`. Open the issue when that pull request starts, before the code. The title is the plan id and the pull request title, for example `PR 3: Add device settings and holder rules`. The body links that pull request's section in the plan and states the acceptance in a few sentences. Search open issues for that title first, and reuse the match if the slice is retried.
+
+The pull request body contains `Fixes #N`. Merging to `main` closes the issue. Review comments, extra tests, and files inside the slice stay on that same issue.
+
+Later changes use the same unit. Open an issue when the change alters a locked rule, a sentence on the page, the stack, a signal, a vendor, or behavior a holder can see. A wording fix that leaves behavior and locked sentences alone can ship on a pull request with no new issue. The six studies under "Next tests" in `docs/2-signal-strategy.md` get an issue when a study starts.
+
+Issues are public. They carry no API keys, no `.env` values, no holdings, and no net worth. No project board and no extra labels are required.
+
 ## Left for later
 
 A free exchange quote stream may replace the Bitcoin poll. The live slice remains the contract the phone reads, so the page does not change.
