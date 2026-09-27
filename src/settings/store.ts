@@ -37,9 +37,12 @@ export function parseSettings(raw: string | null): HolderSettings {
     return blankSettings();
   }
   const record = parsed as Record<string, unknown>;
+  const every = record.standingEvery;
+  const account = record.account;
+  const thesisDate = record.thesisDate;
   return {
     standingAmount: finiteOrNull(record.standingAmount),
-    standingEvery: everyOrNull(record.standingEvery),
+    standingEvery: every === "week" || every === "month" ? every : null,
     buildAmount: finiteOrNull(record.buildAmount),
     cashAvailable: finiteOrNull(record.cashAvailable),
     coinsHeld: finiteOrNull(record.coinsHeld),
@@ -47,8 +50,8 @@ export function parseSettings(raw: string | null): HolderSettings {
     targetShare: finiteOrNull(record.targetShare),
     ceilingShare: finiteOrNull(record.ceilingShare),
     thesisBroken: record.thesisBroken === true,
-    thesisDate: dateOrNull(record.thesisDate),
-    account: accountOrNull(record.account),
+    thesisDate: typeof thesisDate === "string" && thesisDate !== "" ? thesisDate : null,
+    account: account === "taxable" || account === "ira" || account === "fund" ? account : null,
   };
 }
 
@@ -75,27 +78,6 @@ export function saveSettings(storage: SettingsStorage, settings: HolderSettings)
 
 function finiteOrNull(value: unknown): number | null {
   if (typeof value !== "number" || !Number.isFinite(value)) {
-    return null;
-  }
-  return value;
-}
-
-function everyOrNull(value: unknown): HolderSettings["standingEvery"] {
-  if (value === "week" || value === "month") {
-    return value;
-  }
-  return null;
-}
-
-function accountOrNull(value: unknown): HolderSettings["account"] {
-  if (value === "taxable" || value === "ira" || value === "fund") {
-    return value;
-  }
-  return null;
-}
-
-function dateOrNull(value: unknown): string | null {
-  if (typeof value !== "string" || value === "") {
     return null;
   }
   return value;

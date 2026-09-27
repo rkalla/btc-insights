@@ -1,26 +1,10 @@
 import { money, sentenceDate } from "../contract/format.ts";
-import type {
-  CashPosture,
-  CoinPosture,
-  DashboardVM,
-  FridayDocument,
-  HolderSettings,
-} from "../contract/types.ts";
+import type { DashboardVM, FridayDocument, HolderSettings } from "../contract/types.ts";
 import { isDeclarationDate } from "./validate.ts";
 
 const TAX_LINE = "A sale can create a tax bill. Rate not computed.";
 
-export interface HolderResult {
-  cash: FridayDocument["cash"];
-  coins: DashboardVM["coins"];
-  rails: { cash: CashPosture | null; coins: CoinPosture };
-}
-
-export function applyHolder(
-  friday: FridayDocument,
-  settings: HolderSettings,
-  spotUsd: number,
-): HolderResult {
+export function applyHolder(friday: FridayDocument, settings: HolderSettings, spotUsd: number) {
   const exiting = exitOn(settings);
   const cash = cloneCash(friday.cash);
   if (exiting) {
@@ -29,6 +13,8 @@ export function applyHolder(
     cash.tone = "neutral";
     cash.sentences = ["No new buy."];
     cash.recordRows = [{ key: "RECORD", text: "No floor." }];
+    cash.highConfidence = false;
+    delete cash.window;
   } else {
     cash.sentences = appendDollarClause(cash.sentences, friday.dollarSlot, settings.cashAvailable);
   }
@@ -130,8 +116,8 @@ function trimOn(settings: HolderSettings, spotUsd: number): boolean {
   ) {
     return false;
   }
-  const share = (coinsHeld * spotUsd) / netWorth;
-  return share >= ceilingShare / 100;
+  const sharePct = (coinsHeld * spotUsd * 100) / netWorth;
+  return sharePct >= ceilingShare - 1e-6;
 }
 
 function trimOffChip(settings: HolderSettings): string {

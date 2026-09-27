@@ -1,6 +1,7 @@
 import type { HolderSettings } from "../contract/types.ts";
 
 const THESIS_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const MONTH_LENGTHS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
 export interface SettingsFieldError {
   field: keyof HolderSettings;
@@ -8,7 +9,22 @@ export interface SettingsFieldError {
 }
 
 export function isDeclarationDate(value: string | null): boolean {
-  return value != null && THESIS_DATE.test(value);
+  if (value == null || !THESIS_DATE.test(value)) {
+    return false;
+  }
+  const year = Number(value.slice(0, 4));
+  const month = Number(value.slice(5, 7));
+  const day = Number(value.slice(8, 10));
+  const length = MONTH_LENGTHS[month - 1];
+  if (length == null || day < 1) {
+    return false;
+  }
+  const maxDay = month === 2 && isLeapYear(year) ? 29 : length;
+  return day <= maxDay;
+}
+
+function isLeapYear(year: number): boolean {
+  return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
 }
 
 export function validateSettings(settings: HolderSettings): SettingsFieldError[] {

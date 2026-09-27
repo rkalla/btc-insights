@@ -179,11 +179,41 @@ test("ceiling math turns Trim on", () => {
   assert.equal(on.rails.coins, "TRIM");
   assert.equal(on.rails.cash, "ALL_IN");
   assert.equal(on.cash.word, "All in");
+  assert.equal(on.cash.highConfidence, friday.cash.highConfidence);
+  assert.equal(on.cash.window?.lastGraceCloseUtc, friday.cash.window?.lastGraceCloseUtc);
   assert.equal(on.coins.sentences.includes("Sped up: finish by the end of the pause."), false);
 
   const under = applyHolder(friday, settings({ ...trimReady, ceilingShare: 50.01 }), 50000);
   assert.equal(under.coins.posture, "HOLD");
   assert.equal(under.coins.offChips[0], "Trim off · share under the ceiling");
+
+  const flagged: FridayDocument = {
+    ...friday,
+    cash: { ...friday.cash, highConfidence: true },
+  };
+  const kept = applyHolder(flagged, settings(trimReady), 50000);
+  assert.equal(kept.coins.posture, "TRIM");
+  assert.equal(kept.cash.highConfidence, true);
+  assert.equal(kept.cash.window?.lastGraceCloseUtc, friday.cash.window?.lastGraceCloseUtc);
+
+  const onePointOne = applyHolder(
+    friday,
+    settings({ coinsHeld: 1, netWorth: 100000, targetShare: 1, ceilingShare: 1.1 }),
+    1100,
+  );
+  assert.equal(onePointOne.coins.posture, "TRIM");
+  for (const [spot, ceiling] of [
+    [66670, 66.67],
+    [33340, 33.34],
+    [2200, 2.2],
+  ] as const) {
+    const hit = applyHolder(
+      friday,
+      settings({ coinsHeld: 1, netWorth: 100000, targetShare: 1, ceilingShare: ceiling }),
+      spot,
+    );
+    assert.equal(hit.coins.posture, "TRIM", String(ceiling));
+  }
 });
 
 test("Exit without a date stays off", () => {
@@ -200,11 +230,24 @@ test("Exit without a date stays off", () => {
   const bad = applyHolder(friday, settings({ thesisBroken: true, thesisDate: "26 Sep 2026" }), 84413);
   assert.equal(bad.coins.posture, "HOLD");
   assert.equal(bad.coins.offChips[1], "Exit off · date not set");
+
+  const impossible = applyHolder(
+    friday,
+    settings({ thesisBroken: true, thesisDate: "2026-13-01" }),
+    84413,
+  );
+  assert.equal(impossible.coins.posture, "HOLD");
+  assert.equal(impossible.coins.declarationDateLabel, undefined);
+  assert.equal(impossible.cash.window?.lastGraceCloseUtc, friday.cash.window?.lastGraceCloseUtc);
 });
 
 test("Exit with a date wins over Trim", () => {
   const longView = friday.longView.statement;
-  const paused: FridayDocument = { ...friday, standDownPause: true };
+  const paused: FridayDocument = {
+    ...friday,
+    standDownPause: true,
+    cash: { ...friday.cash, highConfidence: true },
+  };
   const result = applyHolder(
     paused,
     settings({
@@ -220,6 +263,10 @@ test("Exit with a date wins over Trim", () => {
   assert.equal(result.cash.tone, "neutral");
   assert.deepEqual(result.cash.sentences, ["No new buy."]);
   assert.deepEqual(result.cash.recordRows, [{ key: "RECORD", text: "No floor." }]);
+  assert.equal(result.cash.highConfidence, false);
+  assert.equal("window" in result.cash, false);
+  assert.equal(friday.cash.highConfidence, false);
+  assert.equal(friday.cash.window == null, false);
   assert.equal(result.rails.cash, null);
   assert.equal(result.rails.coins, "EXIT");
   assert.equal(result.coins.posture, "EXIT");
@@ -286,6 +333,7 @@ test("validateSettings accepts a partial Trim card and rejects bad fields", () =
     validateSettings(settings({ thesisBroken: true, thesisDate: "2026-09-26", account: "fund" })),
     [],
   );
+  assert.deepEqual(validateSettings(settings({ thesisBroken: true, thesisDate: "2024-02-29" })), []);
 
   assert.deepEqual(validateSettings(settings({ cashAvailable: -1 })), [
     { field: "cashAvailable", message: "Enter zero or more." },
@@ -321,4 +369,17 @@ test("validateSettings accepts a partial Trim card and rejects bad fields", () =
   assert.deepEqual(validateSettings(settings({ thesisDate: "yesterday" })), [
     { field: "thesisDate", message: "Use a YYYY-MM-DD date." },
   ]);
+  assert.deepEqual(validateSettings(settings({ thesisBroken: true, thesisDate: "2026-13-01" })), [
+    { field: "thesisDate", message: "Use a YYYY-MM-DD date." },
+  ]);
+  assert.deepEqual(validateSettings(settings({ thesisBroken: true, thesisDate: "2026-02-31" })), [
+    { field: "thesisDate", message: "Use a YYYY-MM-DD date." },
+  ]);
+  assert.deepEqual(validateSettings(settings({ thesisBroken: true, thesisDate: "2026-02-29" })), [
+    { field: "thesisDate", message: "Use a YYYY-MM-DD date." },
+  ]);
+
+  const leap = applyHolder(friday, settings({ thesisBroken: true, thesisDate: "2024-02-29" }), 84413);
+  assert.equal(leap.coins.word, "Exit");
+  assert.equal(leap.coins.declarationDateLabel, "29 Feb 2024");
 });
