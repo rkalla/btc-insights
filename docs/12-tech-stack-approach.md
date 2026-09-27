@@ -55,7 +55,7 @@ The function holds the frozen Friday state: the trend price, the inputs for the 
 | Series | Role | Interval | Upstream |
 |---|---|---|---|
 | Bitcoin spot | Now, gap, chart tip, progress, realized-price ratio | Every 10 minutes | Free Bitcoin price API. Planning figure: a CoinGecko demo key, about 10,000 credits a month and about a year of history. |
-| Gold | Developing z-score only, until the cross check below | Every 10 minutes | A separate free gold quote, so it does not spend the Bitcoin key. |
+| Gold | Developing z-score only, until the cross check below | Every 10 minutes | `GOLD_QUOTE_URL`. When `GOLD_QUOTE_API_KEY` is set, the job sends it as `X-API-Key`. The XAUUSD snapshot last trade is the developing print. |
 | Realized price | Denominator of the ratio | Once a day | Coin Metrics community. |
 | New daily Bitcoin close | Friday fit and the official history | Once a day | Coin Metrics community `PriceUSD`. |
 | History back to 2010 | The one-time backfill | Once | Coin Metrics community. |
@@ -64,7 +64,7 @@ A poll every 10 minutes is about 4,300 calls a month for Bitcoin. That fits a 10
 
 CoinGecko's short history is not the power-law source. The official daily close, the Friday refit, and the reproduced fires use Coin Metrics community daily bars. The community API allows 10 requests per 6 seconds per IP. One new row a day is the whole ongoing use.
 
-The free gold quote feeds the developing score. It does not replace the official Friday z-score until a check shows the z-score still crosses zero on the same Fridays. Until that check, the official gold series remains the study series, COMEX filled forward at most 10 days, and the study fire dates stay the record.
+That gold quote feeds the developing score. The operator's URL is the sifting.io commodities snapshot for XAUUSD, and the snapshot requires gzip. It does not replace the official Friday z-score until a check shows the z-score still crosses zero on the same Fridays. Until that check, the official gold series remains the study series, COMEX filled forward at most 10 days, and the study fire dates stay the record.
 
 On a rate-limit response or any other upstream failure, the job keeps the last good print, backs off, and does not retry in a loop. The page continues to show that print and its as-of time.
 
@@ -89,6 +89,8 @@ The pull request body contains `Fixes #N`. Merging to `main` closes the issue. R
 Later changes use the same unit. Open an issue when the change alters a locked rule, a sentence on the page, the stack, a signal, a vendor, or behavior a holder can see. A wording fix that leaves behavior and locked sentences alone can ship on a pull request with no new issue. The six studies under "Next tests" in `docs/2-signal-strategy.md` get an issue when a study starts.
 
 Issues are public. They carry no API keys, no `.env` values, no holdings, and no net worth. No project board and no extra labels are required.
+
+A finished change lands without a separate prompt to commit, push, open a pull request, or merge. Commit it, push the branch, open the pull request into `main`, and merge it. The pull request body contains `Fixes #N` when an issue should close. Tests for that change pass before the merge. `.env` files and other secrets stay uncommitted. An unfinished attempt, a question, or a throwaway experiment does not get a pull request. Do not force-push.
 
 ## Left for later
 

@@ -97,20 +97,60 @@ export async function fetchBitcoinSpot(origin: string, key: string, fetchImpl: F
   return usd;
 }
 
+function positivePrice(value: unknown): number | null {
+  const price = typeof value === "number" ? value : typeof value === "string" && value.trim() !== "" ? Number(value) : Number.NaN;
+  return price > 0 ? price : null;
+}
+
+function isoFromEpochMs(value: unknown): string | null {
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) return null;
+  return new Date(value).toISOString().replace(".000Z", "Z");
+}
+
 export async function fetchGoldQuote(
   url: string,
   fetchImpl: FetchLike,
   nowIso: string,
+  apiKey = "",
 ): Promise<{ usd: number; asOf: string; filled: boolean }> {
-  const body = await getJson(fetchImpl, url);
+  const headers: Record<string, string> = { Accept: "application/json", "Accept-Encoding": "gzip" };
+  const key = apiKey.trim();
+  if (key !== "") headers["X-API-Key"] = key;
+  const body = await getJson(fetchImpl, url, headers);
   if (typeof body !== "object" || body === null) throw new VendorFailure("network");
-  const record = body as { usd?: unknown; price?: unknown; asOf?: unknown; filled?: unknown };
-  const usd = typeof record.usd === "number" ? record.usd : typeof record.price === "number" ? record.price : null;
-  if (usd == null || !(usd > 0)) throw new VendorFailure("network");
+  const record = body as {
+    usd?: unknown;
+    price?: unknown;
+    asOf?: unknown;
+    filled?: unknown;
+    data?: unknown;
+    meta?: { as_of?: unknown };
+  };
+  const direct = positivePrice(record.usd) ?? positivePrice(record.price);
+  if (direct != null) {
+    return {
+      usd: direct,
+      asOf: typeof record.asOf === "string" && record.asOf.trim() !== "" ? record.asOf : nowIso,
+      filled: record.filled === true,
+    };
+  }
+  if (!Array.isArray(record.data)) throw new VendorFailure("network");
+  let row: { p?: unknown; t?: unknown } | null = null;
+  for (const item of record.data) {
+    if (typeof item !== "object" || item === null) continue;
+    const candidate = item as { s?: unknown; p?: unknown; t?: unknown };
+    if (typeof candidate.s === "string" && candidate.s.toUpperCase() === "XAUUSD") {
+      row = candidate;
+      break;
+    }
+  }
+  const usd = row == null ? null : positivePrice(row.p);
+  if (row == null || usd == null) throw new VendorFailure("network");
+  const metaAsOf = typeof record.meta?.as_of === "string" && record.meta.as_of.trim() !== "" ? record.meta.as_of : null;
   return {
     usd,
-    asOf: typeof record.asOf === "string" ? record.asOf : nowIso,
-    filled: record.filled === true,
+    asOf: isoFromEpochMs(row.t) ?? metaAsOf ?? nowIso,
+    filled: false,
   };
 }
 
