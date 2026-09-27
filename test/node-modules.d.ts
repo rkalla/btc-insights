@@ -106,6 +106,11 @@ declare module "node:child_process" {
       stdio: ["ignore", "ignore", "pipe"];
     },
   ): ChildProcess;
+  export function execFileSync(
+    file: string,
+    args: readonly string[],
+    options: { cwd: string; encoding: "utf8"; maxBuffer?: number },
+  ): string;
 }
 
 interface ImportMeta {
