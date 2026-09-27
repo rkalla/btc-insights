@@ -7,6 +7,7 @@ const fixtureNames = [
   "friday-2026-09-25.json",
   "live-2026-09-25.json",
   "live-later.json",
+  "published-record.json",
   "settings-blank.json",
   "settings-sample.json",
 ];
@@ -24,7 +25,9 @@ function utcWeekday(isoDate: string): number {
 }
 
 test("reads every fixture", () => {
-  const names = readdirSync(new URL("../fixtures/", import.meta.url)).sort();
+  const names = readdirSync(new URL("../fixtures/", import.meta.url))
+    .filter((name) => name.endsWith(".json"))
+    .sort();
   assert.deepEqual(names, fixtureNames);
   for (const name of names) {
     const parsed = readFixture(name).value;
