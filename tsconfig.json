@@ -7,6 +7,8 @@
     "strict": true,
     "erasableSyntaxOnly": true,
     "noEmit": true,
+    // linkedom's published types reference the DOM lib. This project does not load it.
+    "skipLibCheck": true,
     // Node runs the tests as TypeScript, so imports end in .ts.
     "allowImportingTsExtensions": true
   },
