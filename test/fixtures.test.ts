@@ -150,6 +150,10 @@ test("Friday sample matches the 26 September 2026 wireframe", () => {
     }
     assert.equal(sells.find((fire) => fire.date === date)?.status, "completed");
   }
+  assert.deepEqual(
+    sells.map((fire) => fire.resultLabel),
+    ["Jun 2013", "Apr 2014", "Aug 2014", "Sep 2017", "Mar 2018", "May 2018", "May 2021", "Dec 2021"],
+  );
 
   const weeklyDates = friday.chart.weekly.map((point) => point.date);
   assert.deepEqual(friday.chart.trend.map((point) => point.date), weeklyDates);
@@ -159,11 +163,11 @@ test("Friday sample matches the 26 September 2026 wireframe", () => {
   assert.equal(friday.chart.weekly.find((point) => point.date === "2026-09-25")?.close, 84413);
   for (const fire of friday.chart.fires) {
     assert.equal(utcWeekday(fire.date), 5, fire.date);
-    assert.equal(
-      friday.chart.weekly.find((point) => point.date === fire.date)?.close,
-      fire.price,
-      fire.date,
-    );
+    const close = friday.chart.weekly.find((point) => point.date === fire.date)?.close;
+    assert.equal(close === undefined, false, fire.date);
+    if (fire.type === "buy") {
+      assert.equal(close, fire.price, fire.date);
+    }
   }
   const endTrend = friday.chart.trend.find((point) => point.date === "2026-09-25");
   assert.equal(endTrend?.value, 141000);
@@ -204,7 +208,7 @@ test("live slices move the print and not the cash word", () => {
   assert.equal(live.gapPct, -0.41);
   assert.equal(live.trendUsd, 141000);
   assert.equal(live.spotAsOf, "2026-09-25T00:00:00Z");
-  assert.equal(live.printLabel, "Fri 25 Sep 2026 close");
+  assert.equal(live.printLabel, "25 Sep 2026 daily close");
   assert.equal(live.isOfficialClose, true);
   assert.equal(live.developing, null);
   assert.equal(live.realizedRatio, 1.59);
@@ -223,6 +227,14 @@ test("live slices move the print and not the cash word", () => {
   assert.equal(moved.missingClose, false);
   assert.equal(moved.progress.lead === live.progress.lead, false);
   assert.equal(moved.chartTip.value, 90000);
+  const spot = 90000;
+  const low = 15758;
+  const rise = spot / low - 1;
+  const share = (entry: number): number => Math.round(((spot / entry - 1) / rise) * 100);
+  assert.equal(moved.progress.rows.find((row) => row.name === "Build")?.sharePct, share(16806));
+  assert.equal(moved.progress.rows.find((row) => row.name === "Lump in")?.sharePct, share(48026));
+  assert.equal(share(16806), 92);
+  assert.equal(share(48026), 19);
 });
 
 test("settings fixtures keep amounts empty except the sample cash pile", () => {

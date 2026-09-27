@@ -343,7 +343,7 @@
         "price": 100,
         "status": "completed",
         "titleLabel": "Sell roll",
-        "resultLabel": "Completed."
+        "resultLabel": "Jun 2013"
       },
       {
         "type": "sell",
@@ -351,7 +351,7 @@
         "price": 450,
         "status": "completed",
         "titleLabel": "Sell roll",
-        "resultLabel": "Completed."
+        "resultLabel": "Apr 2014"
       },
       {
         "type": "sell",
@@ -359,7 +359,7 @@
         "price": 500,
         "status": "completed",
         "titleLabel": "Sell roll",
-        "resultLabel": "Completed."
+        "resultLabel": "Aug 2014"
       },
       {
         "type": "buy",
@@ -375,7 +375,7 @@
         "price": 4500,
         "status": "completed",
         "titleLabel": "Sell roll",
-        "resultLabel": "Completed."
+        "resultLabel": "Sep 2017"
       },
       {
         "type": "sell",
@@ -383,7 +383,7 @@
         "price": 11000,
         "status": "completed",
         "titleLabel": "Sell roll",
-        "resultLabel": "Completed."
+        "resultLabel": "Mar 2018"
       },
       {
         "type": "sell",
@@ -391,7 +391,7 @@
         "price": 9000,
         "status": "completed",
         "titleLabel": "Sell roll",
-        "resultLabel": "Completed."
+        "resultLabel": "May 2018"
       },
       {
         "type": "buy",
@@ -415,7 +415,7 @@
         "price": 56000,
         "status": "completed",
         "titleLabel": "Sell roll",
-        "resultLabel": "Completed."
+        "resultLabel": "May 2021"
       },
       {
         "type": "sell",
@@ -423,7 +423,7 @@
         "price": 49000,
         "status": "completed",
         "titleLabel": "Sell roll",
-        "resultLabel": "Completed."
+        "resultLabel": "Dec 2021"
       },
       {
         "type": "buy",

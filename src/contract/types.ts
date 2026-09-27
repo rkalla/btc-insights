@@ -164,10 +164,18 @@ export interface DashboardVM {
   };
   rails: { cash: CashPosture | null; coins: CoinPosture };
   cash: FridayDocument["cash"];
-  coins: { word: string; tone: Tone; sentences: string[]; chips: string[] };
+  coins: {
+    posture: CoinPosture;
+    word: string;
+    tone: Tone;
+    sentences: string[];
+    offChips: string[];
+    taxLine?: string;
+    declarationDateLabel?: string;
+  };
   disagreement: string | null;
   caveats: FridayDocument["caveats"];
-  chart: FridayDocument["chart"] & { spot: number };
+  chart: FridayDocument["chart"] & { spot: { date: ISODate; value: number } };
   context: FridayDocument["context"];
   longView: FridayDocument["longView"];
   cycles: FridayDocument["cycles"];

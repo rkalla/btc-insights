@@ -31,15 +31,9 @@ export function chartMoney(usd: number): string {
   const millions = abs >= 1_000_000;
   const scaled = abs / (millions ? 1_000_000 : 1000);
   const suffix = millions ? "M" : "k";
-  return `${sign}$${scaledDigits(scaled)}${suffix}`;
-}
-
-function scaledDigits(value: number): string {
-  const rounded = Math.round(value * 10) / 10;
-  if (rounded === Math.trunc(rounded)) {
-    return String(Math.trunc(rounded));
-  }
-  return rounded.toFixed(1);
+  const rounded = Math.round(scaled * 10) / 10;
+  const digits = rounded === Math.trunc(rounded) ? String(Math.trunc(rounded)) : rounded.toFixed(1);
+  return `${sign}$${digits}${suffix}`;
 }
 
 // The page prints a minus, U+2212, not a hyphen.
@@ -55,11 +49,10 @@ export function signedPercent(fraction: number): string {
 }
 
 export function sentenceDate(isoDate: string): string {
-  const year = Number(isoDate.slice(0, 4));
+  const year = isoDate.slice(0, 4);
   const month = Number(isoDate.slice(5, 7));
   const day = Number(isoDate.slice(8, 10));
-  const utc = new Date(Date.UTC(year, month - 1, day));
-  return `${utc.getUTCDate()} ${MONTHS[utc.getUTCMonth()]} ${utc.getUTCFullYear()}`;
+  return `${day} ${MONTHS[month - 1]} ${year}`;
 }
 
 export function fridayLabel(isoDate: string): string {
