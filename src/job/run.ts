@@ -1,5 +1,6 @@
+import { existsSync } from "node:fs";
 import { chmod, readFile, realpath, rename, rm, stat, writeFile } from "node:fs/promises";
-import { join, relative } from "node:path";
+import { dirname, join, relative } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { sentenceDate } from "../contract/format.ts";
@@ -29,8 +30,21 @@ const STATE_MODE = 0o600;
 export const FRIDAY_RETRY_MS = 60_000;
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
-const RECORD_FIXTURE = fileURLToPath(new URL("../../fixtures/published-record.json", import.meta.url));
-const HISTORY_FIXTURE = fileURLToPath(new URL("../../fixtures/history/btc-daily.json", import.meta.url));
+
+function findFixtures(moduleUrl: string): { record: string; history: string } {
+  let dir = dirname(fileURLToPath(moduleUrl));
+  for (;;) {
+    const record = join(dir, "fixtures", "published-record.json");
+    if (existsSync(record)) {
+      return { record, history: join(dir, "fixtures", "history", "btc-daily.json") };
+    }
+    const parent = dirname(dir);
+    if (parent === dir) throw new Error("fixtures missing");
+    dir = parent;
+  }
+}
+
+const FIXTURES = findFixtures(import.meta.url);
 
 interface StoredGold {
   usd: number;
@@ -98,10 +112,6 @@ export function addUtcDays(isoDate: string, days: number): string {
 
 function isoStamp(now: Date): string {
   return now.toISOString().replace(".000Z", "Z");
-}
-
-function dayOf(now: Date): string {
-  return now.toISOString().slice(0, 10);
 }
 
 function errorCode(error: unknown): string | null {
@@ -237,7 +247,9 @@ function mergeRows(history: HistoryRow[], extra: readonly HistoryRow[]): History
 async function readHistory(ctx: Ctx, extra: readonly HistoryRow[]): Promise<HistoryRow[]> {
   const stored = asRows(await readJson(join(ctx.stateDir, "history.json")));
   if (stored.length > 0) return mergeRows(stored, extra);
-  return mergeRows(asRows(await readJson(ctx.historyPath)), extra);
+  const seeded = asRows(await readJson(ctx.historyPath));
+  if (seeded.length === 0) throw new Error("history seed missing");
+  return mergeRows(seeded, extra);
 }
 
 async function writeLive(
@@ -256,6 +268,24 @@ async function writeLive(
         break;
       } catch (error) {
         if (errorCode(error) !== "EEXIST") throw error;
+        let running = false;
+        try {
+          const held = Number.parseInt((await readFile(lockPath, "utf8")).trim(), 10);
+          if (Number.isInteger(held) && held > 0) {
+            try {
+              process.kill(held, 0);
+              running = true;
+            } catch (signalError) {
+              running = errorCode(signalError) !== "ESRCH";
+            }
+          }
+        } catch (readError) {
+          if (errorCode(readError) !== "ENOENT") throw readError;
+        }
+        if (!running) {
+          await rm(lockPath, { force: true });
+          continue;
+        }
         await delay(20);
       }
     }
@@ -328,7 +358,7 @@ async function storeDailyRows(ctx: Ctx, state: StoredState, rows: readonly Histo
 
 async function runLive(ctx: Ctx): Promise<number> {
   let state = await readState(ctx.stateDir);
-  const today = dayOf(ctx.now());
+  const today = ctx.now().toISOString().slice(0, 10);
   if (state != null && (state.lastMetricsDate == null || state.lastMetricsDate < today)) {
     const start = state.lastMetricsDate != null ? addUtcDays(state.lastMetricsDate, 1) : today;
     if (start <= today) {
@@ -593,8 +623,8 @@ async function execute(options: RunOptions): Promise<number> {
     geckoOrigin: (env.COINGECKO_BASE_URL ?? "").trim() || DEFAULT_GECKO_ORIGIN,
     metricsBase: (env.COINMETRICS_BASE_URL ?? "").trim() || DEFAULT_METRICS_BASE,
     pace: createPace(),
-    recordPath: (env.RECORD_PATH ?? "").trim() || RECORD_FIXTURE,
-    historyPath: (env.HISTORY_PATH ?? "").trim() || HISTORY_FIXTURE,
+    recordPath: (env.RECORD_PATH ?? "").trim() || FIXTURES.record,
+    historyPath: (env.HISTORY_PATH ?? "").trim() || FIXTURES.history,
   };
   if (mode === "friday") return runFriday(ctx);
   return runLive(ctx);

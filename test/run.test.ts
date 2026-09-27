@@ -660,6 +660,144 @@ test("a live write does not clear missingClose set after the state was read", as
   }
 });
 
+function deadPid(): number {
+  for (let pid = 1_000_000; pid < 1_000_200; pid += 1) {
+    try {
+      process.kill(pid, 0);
+    } catch {
+      return pid;
+    }
+  }
+  return 1_000_199;
+}
+
+function waitFor(child: ReturnType<typeof spawn>): Promise<{ code: number; stderr: string }> {
+  return new Promise((resolve, reject) => {
+    let stderr = "";
+    child.stderr.setEncoding("utf8");
+    child.stderr.on("data", (chunk: string) => {
+      stderr += chunk;
+    });
+    const timer = setTimeout(() => {
+      child.kill();
+      reject(new Error(`timed out\n${stderr}`));
+    }, 15_000);
+    child.on("error", (error: Error) => {
+      clearTimeout(timer);
+      reject(error);
+    });
+    child.on("close", (status: number | null) => {
+      clearTimeout(timer);
+      resolve({ code: status ?? 1, stderr });
+    });
+  });
+}
+
+test("a missing history seed does not write an empty history", async () => {
+  const { root, dataDir, stateDir } = scene();
+  writePrivateState(stateDir, "2026-09-25", null);
+  const stub = await startStub((_url, response) => {
+    sendJson(response, 200, {
+      data: [{ time: "2026-09-26T00:00:00.000000000Z", PriceUSD: "91000", CapMVRVCur: "1.5" }],
+    });
+  });
+  try {
+    const lines: string[] = [];
+    const code = await run({
+      env: {
+        DATA_DIR: dataDir,
+        STATE_DIR: stateDir,
+        COINGECKO_API_KEY: "",
+        COINMETRICS_BASE_URL: stub.origin,
+        GOLD_QUOTE_URL: "",
+        HISTORY_PATH: join(root, "missing-history.json"),
+      },
+      fetch: stubFetch(stub.origin),
+      now: () => new Date(FIXED_NOW),
+      sleep: async () => undefined,
+      stderr: (line) => lines.push(line),
+    });
+    assert.equal(code, 1);
+    assert.deepEqual(lines, ["history seed missing"]);
+    assert.equal(existsSync(join(stateDir, "history.json")), false);
+  } finally {
+    await stub.close();
+    cleanup(root);
+  }
+});
+
+test("a lock whose pid is not running is removed", async () => {
+  const { root, dataDir, stateDir } = scene();
+  writePrivateState(stateDir, "2026-09-26");
+  writeFileSync(join(stateDir, ".live.lock"), `${deadPid()}\n`);
+  const stub = await startStub((_url, response) => {
+    sendJson(response, 200, { bitcoin: { usd: 90000 } });
+  });
+  try {
+    const code = await run({
+      env: {
+        DATA_DIR: dataDir,
+        STATE_DIR: stateDir,
+        COINGECKO_API_KEY: "demo-test-key",
+        COINGECKO_BASE_URL: stub.origin,
+        COINMETRICS_BASE_URL: stub.origin,
+        GOLD_QUOTE_URL: "",
+      },
+      fetch: stubFetch(stub.origin),
+      now: () => new Date(FIXED_NOW),
+      sleep: async () => {
+        throw new Error("waited on a dead lock");
+      },
+      stderr: () => undefined,
+    });
+    assert.equal(code, 0);
+    const live = JSON.parse(readFileSync(join(dataDir, "live.json"), "utf8")) as { spotUsd: number };
+    assert.equal(live.spotUsd, 90000);
+    assert.equal(existsSync(join(stateDir, ".live.lock")), false);
+  } finally {
+    await stub.close();
+    cleanup(root);
+  }
+});
+
+test("built job/run.mjs resolves the committed fixtures", async () => {
+  const build = await waitFor(spawn(process.execPath, [join(repoRoot, "scripts/build.mjs")], {
+    cwd: repoRoot,
+    env: { PATH: process.env.PATH ?? "" },
+    stdio: ["ignore", "ignore", "pipe"],
+  }));
+  assert.equal(build.code, 0, build.stderr);
+  const { root, dataDir, stateDir } = scene();
+  writePrivateState(stateDir, "2020-01-01", null);
+  const stub = await startStub((_url, response) => {
+    sendJson(response, 200, {
+      data: [{ time: "2020-01-02T00:00:00.000000000Z", PriceUSD: "1", CapMVRVCur: "1" }],
+    });
+  });
+  try {
+    const child = await waitFor(spawn(process.execPath, [join(repoRoot, "job/run.mjs")], {
+      cwd: "/tmp",
+      env: {
+        PATH: process.env.PATH ?? "",
+        DATA_DIR: dataDir,
+        STATE_DIR: stateDir,
+        COINGECKO_API_KEY: "",
+        COINMETRICS_BASE_URL: stub.origin,
+        GOLD_QUOTE_URL: "",
+      },
+      stdio: ["ignore", "ignore", "pipe"],
+    }));
+    assert.equal(child.code, 0, child.stderr);
+    const history = readFileSync(join(stateDir, "history.json"), "utf8");
+    assert.equal(history.includes("2010-07-18"), true);
+    assert.equal(history.includes("2020-01-02"), true);
+    assert.equal(existsSync(join(dataDir, "history.json")), false);
+  } finally {
+    await stub.close();
+    cleanup(root);
+  }
+});
+
 test(".env.example has empty keys and the community Coin Metrics URL", () => {
   const example = readFileSync(new URL("../.env.example", import.meta.url), "utf8");
   assert.equal(

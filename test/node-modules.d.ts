@@ -50,6 +50,7 @@ declare module "node:path" {
   export function join(...parts: string[]): string;
   export function resolve(...parts: string[]): string;
   export function relative(from: string, to: string): string;
+  export function dirname(path: string): string;
 }
 
 declare module "node:os" {
@@ -125,6 +126,7 @@ declare const process: {
   argv: string[];
   execPath: string;
   pid: number;
+  kill(pid: number, signal?: number): boolean;
   umask(mask: number): number;
   exit(code: number): never;
   stderr: { write(chunk: string): void };
