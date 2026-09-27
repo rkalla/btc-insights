@@ -6,7 +6,9 @@
     "moduleResolution": "nodenext",
     "strict": true,
     "erasableSyntaxOnly": true,
-    "noEmit": true
+    "noEmit": true,
+    // Node runs the tests as TypeScript, so imports end in .ts.
+    "allowImportingTsExtensions": true
   },
   "include": ["test/**/*.ts"]
 }

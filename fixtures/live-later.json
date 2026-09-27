@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "officialCloseDate": "2026-09-25",
+  "spotUsd": 90000,
+  "spotAsOf": "2026-09-26T12:00:00Z",
+  "gapPct": -0.36,
+  "trendUsd": 141000,
+  "printLabel": "Sat 26 Sep 2026 print",
+  "isOfficialClose": false,
+  "developing": null,
+  "realizedRatio": 1.7,
+  "realizedAsOf": "2026-09-25",
+  "gold": null,
+  "chartTip": {
+    "date": "2026-09-26",
+    "value": 90000
+  },
+  "progress": {
+    "title": "Progress",
+    "range": "26 Sep 2026 · spot $90,000",
+    "isProgress": true,
+    "lead": "From the low so far +471%. That is 68% of the +692% rise to the high. Price is 28% under the high.",
+    "rows": [
+      {
+        "signal": "cross",
+        "name": "Buy cross, Mar 2023",
+        "sharePct": 48,
+        "detail": "17 Mar 2023 at $27,451 · +228% so far"
+      },
+      {
+        "signal": "cross",
+        "name": "Buy cross, Sep 2026",
+        "sharePct": 2,
+        "detail": "18 Sep 2026 at $80,944 · +11% so far"
+      },
+      {
+        "signal": "build",
+        "name": "Build",
+        "sharePct": 93,
+        "detail": "Same 9 Fridays, avg $16,806 · +436% so far"
+      },
+      {
+        "signal": "lump",
+        "name": "Lump in",
+        "sharePct": 18,
+        "detail": "116 Fridays to date, avg $48,026 · +87% so far"
+      }
+    ],
+    "note": "Shares are of the +471% rise from the low, not of the rise to the high."
+  },
+  "stale": false,
+  "missingClose": false
+}

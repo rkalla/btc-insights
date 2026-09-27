@@ -1,0 +1,13 @@
+{
+  "standingAmount": null,
+  "standingEvery": null,
+  "buildAmount": null,
+  "cashAvailable": 100000,
+  "coinsHeld": null,
+  "netWorth": null,
+  "targetShare": null,
+  "ceilingShare": null,
+  "thesisBroken": false,
+  "thesisDate": null,
+  "account": null
+}

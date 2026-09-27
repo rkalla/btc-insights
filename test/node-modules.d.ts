@@ -1,6 +1,7 @@
 declare module "node:assert/strict" {
   interface Assert {
     equal(actual: unknown, expected: unknown, message?: string): void;
+    deepEqual(actual: unknown, expected: unknown, message?: string): void;
   }
   const assert: Assert;
   export default assert;
@@ -8,6 +9,7 @@ declare module "node:assert/strict" {
 
 declare module "node:fs" {
   export function readFileSync(path: URL | string, encoding: "utf8"): string;
+  export function readdirSync(path: URL | string): string[];
 }
 
 declare module "node:test" {
