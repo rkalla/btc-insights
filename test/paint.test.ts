@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { test } from "node:test";
 import { parseHTML } from "linkedom";
+import { applyOverlay, type FridayStateOverlay } from "../src/compose/plain.ts";
 import { compose } from "../src/compose/view-model.ts";
 import type { CashPosture, DashboardVM, FridayDocument, LiveSlice, Tone } from "../src/contract/types.ts";
+import { BANNED_THIS_WEEK } from "../src/copy/thisWeek.ts";
 import { paintDashboard } from "../src/painter/dashboard.ts";
 import { paintSettings } from "../src/painter/settings.ts";
 import { parseSettings } from "../src/settings/store.ts";
@@ -59,57 +61,81 @@ const blank = parseSettings(readText("settings-blank.json"));
 const sampleVm = compose(friday, later, sample, OPENED);
 const blankVm = compose(friday, later, blank, OPENED);
 
-test("sample settings paint All in, the record, and the footer", () => {
+const OPEN_BANNED = new RegExp(`\\b(?:${BANNED_THIS_WEEK.join("|")})\\b`, "i");
+const LATE_OPENED = "2026-09-27T21:14:00.000Z";
+const official = JSON.parse(readText("live-2026-09-25.json")) as LiveSlice;
+
+function openText(html: string): string {
+  const withoutDetails = html.replace(/<details\b[^>]*>[\s\S]*?<\/details>/gi, "");
+  const withoutGlossary = withoutDetails.replace(/<section\b[^>]*\bid="glossary"[\s\S]*?<\/section>/i, "");
+  return withoutGlossary.replace(/<[^>]+>/g, " ");
+}
+
+function assertPlain(html: string, label: string): void {
+  const open = openText(html);
+  const hit = open.match(OPEN_BANNED);
+  assert.equal(hit, null, `${label}: ${hit?.[0] ?? ""}`);
+  assert.equal(html.includes("{"), false, label);
+  assert.equal(html.includes("undefined"), false, label);
+  assert.equal(parse(html).querySelectorAll("h1").length, 1, label);
+}
+
+test("sample settings paint the plain evidence page", () => {
   const html = paintDashboard(sampleVm);
   const document = parse(html);
+  assertPlain(html, "sample");
 
-  assert.equal(document.querySelectorAll("h1").length, 1);
-  assert.equal(document.querySelector("h1")?.textContent, "The evidence behind this week's advice");
-  assert.equal(
-    document.querySelector(".lede p")?.textContent,
-    "This page shows the rules and history behind This week. It uses some technical terms, and each one is explained at the bottom.",
-  );
+  assert.equal(document.querySelector("h1")?.textContent, "Why this week says Buy strongly");
+  assert.equal(document.querySelector(".lede p")?.textContent, "Here's the reasoning behind this week's advice, in plain words. Tap Show the numbers under any section for the exact figures.");
+  assert.equal(document.querySelector(".lede a")?.getAttribute("href"), "/");
   assert.equal(document.querySelector("a.brand")?.textContent, "BTC Friday");
   assert.equal(document.querySelector("header.site a[aria-current='page']")?.textContent, "Evidence");
   assert.equal(document.querySelector("header.site a[aria-current='page']")?.getAttribute("href"), "/evidence/");
-  assert.equal(document.querySelector("h2.posture")?.textContent, "Buy strongly");
-  assert.equal(document.querySelector(".cash .rule")?.textContent, "Rule: All in, from the buy cross");
-  assert.equal(document.querySelector("h2.posture-sm")?.textContent, "Keep");
-  assert.equal(document.querySelector(".coins .rule")?.textContent, "Rule: Hold");
-  assert.equal(document.querySelector(".cash .label")?.textContent, "New money");
-  assert.equal(document.querySelector(".coins .label")?.textContent, "Bitcoin you own");
-  assert.equal(document.querySelector("#caveats-label")?.textContent, "Things to know");
-  assert.equal(document.querySelector("#chart-title")?.textContent, "Price");
-  assert.equal(document.querySelector("#context-label")?.textContent, "The readings behind the call");
-  assert.equal(document.querySelector("#lv-label")?.textContent, "The long view");
-  assert.equal(document.querySelector(".cycles .label")?.textContent, "How early each signal was");
-  assert.equal(html.includes("01 ·"), false);
-  assert.equal(document.querySelector(".spectrum"), null);
-  assert.equal(
-    document.querySelector(".action")?.textContent,
-    "Buy now, or by the Friday 2 Oct 2026 close. Up to $100,000.",
-  );
-  assert.equal(html.split("Up to $100,000.").length, 2);
-  assert.equal(
-    document.querySelector(".record dd.lead")?.textContent,
-    "4 of 4. Floor about 60% (Wilson 90%). 4 episodes.",
-  );
-  assert.equal(html.includes("Position on the spectrum only. Not a confidence scale."), false);
-  assert.equal(
-    document.querySelector("footer.foot")?.textContent?.includes("BTC Friday is research, not personal financial advice."),
-    true,
-  );
-  assert.equal(document.querySelector("footer.foot")?.textContent?.includes("fee-only financial adviser."), true);
-  assert.equal(document.querySelector("footer.foot a[href='/settings.html']")?.textContent, "Settings");
-  assert.equal(document.querySelector("footer.foot a.repo")?.getAttribute("href"), "https://github.com/rkalla/btc-insights");
-  assert.equal(document.querySelector("footer.foot a.repo span")?.textContent, "GitHub");
-  assert.equal(document.querySelector("footer.foot a.repo svg")?.getAttribute("aria-hidden"), "true");
+  assert.equal(document.querySelector(".clock-line"), null);
+  assert.equal(document.querySelector(".window"), null);
+  assert.equal(document.querySelector(".chips"), null);
+  assert.equal(document.querySelector("h2.posture"), null);
+  assert.equal(html.includes("Selected marker"), false);
+  assert.equal(html.includes("Use your cash available to invest"), false);
+  assert.equal(html.includes("Standing contribution continues."), false);
+  assert.equal(html.includes("Rule: All in"), false);
+  assert.equal(openText(html).includes("Wilson"), false);
+  assert.equal(html.includes("Wilson"), true);
+  assert.equal(openText(html).includes("all 4 times"), true);
+  assert.equal(openText(html).includes("4 of 4"), false);
+  assert.equal(html.includes("99% or more"), true);
+  assert.equal(html.includes("Missed 2019\u201320 and 2025\u201326"), true);
+  assert.equal(html.includes("stayed off before those drops"), false);
+  assert.equal(document.querySelector(".show-fires")?.textContent, "Show past signals");
   assert.equal(document.querySelector("#glossary-title")?.textContent, "What the terms mean");
-  assert.equal(document.querySelectorAll("#glossary dt").length, 17);
   assert.equal(document.querySelector("#glossary a.term"), null);
-  assert.equal(document.querySelectorAll("a.term[href='#buy-cross']").length, 1);
-  assert.equal(document.querySelector("a.term[href='#long-run-trend']")?.textContent, "Long-run trend");
-  assert.equal(document.querySelector("a.term[href='#average-200w']")?.textContent, "200-week average");
+  assert.equal(html.indexOf('id="glossary"') < html.indexOf("<footer"), true);
+  assert.equal(document.querySelector("details.cycles")?.getAttribute("open"), null);
+  assert.equal(document.querySelector("#cyc-title")?.textContent, "How early each signal was");
+  assert.equal(document.querySelector(".cycles .name")?.textContent, "Buy strongly signal");
+  assert.equal(html.includes("Add each week"), true);
+  assert.equal(html.includes("Add at once"), true);
+  assert.equal(html.includes(">Build<"), false);
+  assert.equal(html.includes(">Lump in<"), false);
+  const summaries = texts(document, "details.numbers summary").map((item) => item.replace(/\s+/g, " ").trim());
+  assert.equal(summaries.length > 0, true);
+  for (const summary of summaries) {
+    assert.equal(summary.startsWith("Show the numbers for "), true, summary);
+  }
+  assert.deepEqual(texts(document, "table.history th"), ["Year", "Price", "A year later"]);
+  assert.equal(html.includes("Drawdown"), false);
+  assert.equal(html.includes(">Spread<"), false);
+  assert.equal(texts(document, "table.history td").includes("$289"), true);
+  assert.equal(texts(document, "table.history td").includes("$80,944"), true);
+  assert.equal(texts(document, "table.history td").includes("+127%"), true);
+  assert.equal(texts(document, "table.history td").includes("In progress"), true);
+  assert.equal(document.querySelector(".cautious")?.textContent?.includes("6 times in 10 or better"), true);
+  assert.equal(document.querySelector(".record dd.lead")?.textContent, "4 of 4. Floor about 60% (Wilson 90%). 4 episodes.");
+  assert.equal(document.querySelector(".record dd.status")?.textContent, "This fire is open. Not high confidence.");
+  assert.equal(document.querySelector(".holder a")?.getAttribute("href"), "/settings.html");
+  assert.equal(document.querySelector(".holder")?.textContent?.includes("Keep any Bitcoin you already own"), true);
+  assert.equal(openText(html).includes("Trim off"), false);
+  assert.equal(openText(html).includes("Exit off"), false);
   assert.deepEqual(texts(document, "ul.legend li"), [
     "Bitcoin price (Friday closes)",
     "Long-run trend",
@@ -120,181 +146,117 @@ test("sample settings paint All in, the record, and the footer", () => {
     "Caution signal",
   ]);
   assert.equal(document.querySelector(".disagreement"), null);
-  assert.equal(html.includes("Sell roll is also in its pause"), false);
   assert.equal(exactTextCount(document, "High confidence"), 0);
-  assert.equal(html.includes("Not high confidence"), true);
-  assert.equal(document.querySelector(".rail"), null);
-  assert.equal(html.includes("Fri 18 Sep"), true);
-  assert.equal(html.includes("last grace"), true);
-  assert.equal(html.includes("6 days left"), true);
-  assert.equal(
-    document.querySelector(".clock-line")?.textContent,
-    "Official call: Fri 25 Sep 2026 close · Next close Fri 2 Oct · Friday close is 00:00 UTC Saturday · Opened 26 Sep 2026",
-  );
-  assert.equal(html.includes("Next close Fri 2 Oct"), true);
-  assert.equal(html.includes("Next close Fri 2 Oct 2026"), false);
-  assert.equal(
-    document.querySelector("#cyc-title")?.textContent,
-    "Share of that cycle's percentage gain, buying the signal and holding to the cycle high",
-  );
-  assert.equal(document.querySelector("svg.chart-svg") != null, true);
-  assert.equal(html.includes('data-layer="price"'), true);
-  assert.equal(document.querySelector(".now .stat .k")?.textContent, "Now, against Friday's trend");
-  assert.equal(html.includes("Gap against the Friday trend"), false);
-  assert.equal(
-    texts(document, ".caveat .b").some((body) =>
-      body.startsWith("At Friday's close (25 Sep 2026), gap about \u221241%"),
-    ),
-    true,
-  );
+  assert.equal(document.querySelector("a.term[href='#buy-cross']") != null, true);
+  assert.equal(/long-run trend/i.test(document.querySelector("a.term[href='#long-run-trend']")?.textContent ?? ""), true);
+  assert.equal(document.querySelector("#cycle-capture"), null);
+  assert.equal(document.querySelector("#rule-names"), null);
   assert.equal(document.querySelectorAll("#chart-alt").length, 1);
   assert.equal(document.querySelector("a[aria-label='Settings']")?.getAttribute("href"), "/settings.html");
+  assert.equal(
+    document.querySelector("footer.foot")?.textContent?.includes("BTC Friday is research, not personal financial advice."),
+    true,
+  );
+  assert.equal(document.querySelector("footer.foot a.repo")?.getAttribute("href"), "https://github.com/rkalla/btc-insights");
+  assert.equal(texts(document, ".watched li").join(" "), "Hash-rate collapse signature break with no migration prohibition across major markets");
+  assert.equal(openText(html).includes("trigger"), false);
 
   const icons = document.querySelectorAll("svg");
   for (let i = 0; i < icons.length; i += 1) {
     const svg = icons[i];
-    if (svg?.getAttribute("role") === "img") {
-      continue;
-    }
+    if (svg?.getAttribute("role") === "img") continue;
     assert.equal(svg?.getAttribute("aria-hidden"), "true");
   }
 });
 
-test("the clock line keeps the next-close year when it is the following year", () => {
-  const html = paintDashboard({
-    ...sampleVm,
-    official: {
-      ...sampleVm.official,
-      closeDate: "2026-12-25",
-      closeLabel: "Fri 25 Dec 2026",
-      nextCloseDate: "2027-01-01",
-      nextCloseLabel: "Fri 1 Jan 2027",
-    },
-  });
-  const line = parse(html).querySelector(".clock-line")?.textContent ?? "";
-  assert.equal(line.includes("Next close Fri 1 Jan 2027"), true);
-  assert.equal(line.includes("Next close Fri 1 Jan ·"), false);
-});
-
-test("blank settings name the cash pile and do not invent $100,000", () => {
+test("blank settings do not invent a dollar amount or the cash instruction", () => {
   const html = paintDashboard(blankVm);
   const document = parse(html);
-  assert.equal(
-    document.querySelector(".action")?.textContent,
-    "Buy now, or by the Friday 2 Oct 2026 close. Use your cash available to invest.",
-  );
-  assert.equal(html.includes("Use your cash available to invest."), true);
+  assertPlain(html, "blank");
+  assert.equal(document.querySelector("h1")?.textContent, "Why this week says Buy strongly");
+  assert.equal(html.includes("Use your cash available to invest."), false);
   assert.equal(html.includes("$100,000"), false);
-  assert.equal(document.querySelector("h2.posture")?.textContent, "Buy strongly");
+  assert.equal(document.querySelector(".holder")?.textContent?.includes("Settings"), true);
 });
 
-test("each cash posture paints its word and record sentence", () => {
-  const cases: {
-    word: string;
-    shown: string;
-    rule: string;
-    posture: CashPosture;
-    tone: Tone;
-    record: string;
-    sentences: string[];
-  }[] = [
+test("each cash posture paints its own step and not the all-in record", () => {
+  const cases: { posture: CashPosture; step: string; tone: Tone; record: string; banned: string }[] = [
     {
-      word: "All in",
-      shown: "Buy strongly",
-      rule: "Rule: All in, from the buy cross",
       posture: "ALL_IN",
+      step: "Buy strongly",
       tone: "buy",
-      record: "4 of 4. Floor about 60% (Wilson 90%). 4 episodes.",
-      sentences: [],
+      record: "all 4 times",
+      banned: "7 of 8",
     },
     {
-      word: "Build",
-      shown: "Add",
-      rule: "Rule: Build",
       posture: "BUILD",
+      step: "Add",
       tone: "buy",
-      record: "79% of 91 weeks. 4 spells.",
-      sentences: [
-        "One tranche, sliced this Friday, while under cost.",
-        "A stand-down pause ends. Standing contribution resumes.",
-      ],
+      record: "79% of 91 weeks",
+      banned: "all 4 times",
     },
     {
-      word: "Stand down",
-      shown: "Pause",
-      rule: "Rule: Stand down",
       posture: "STAND_DOWN",
+      step: "Pause",
       tone: "sell",
-      record: "7 of 8. Floor about 59%. About six episodes.",
-      sentences: [
-        "Pause new money for up to 12 months, or until All in or Build.",
-        "At 12 months the cash follows the gap switch.",
-      ],
+      record: "7 of 8",
+      banned: "all 4 times",
     },
     {
-      word: "Lump in",
-      shown: "Add",
-      rule: "Rule: Lump in",
       posture: "LUMP_IN",
+      step: "Add",
       tone: "buy",
-      record: "6 of 6 finished regimes. Floor 69%.",
-      sentences: [
-        "Cash available goes in on the Friday it is available.",
-        "Standing contribution continues.",
-      ],
+      record: "all 6 finished stretches",
+      banned: "all 4 times",
     },
     {
-      word: "Slow in",
-      shown: "Go slow",
-      rule: "Rule: Slow in",
       posture: "SLOW_IN",
+      step: "Go slow",
       tone: "buy",
-      record: "2 of 3 regimes. Floor 25%.",
-      sentences: ["A new lump sum spreads over 12 months.", "Standing contribution continues."],
+      record: "2 of 3 times",
+      banned: "all 4 times",
     },
     {
-      word: "Stay the course",
-      shown: "Steady",
-      rule: "Rule: Stay the course",
       posture: "STAY",
+      step: "Steady",
       tone: "neutral",
-      record: "No event record.",
-      sentences: ["Standing contribution only."],
+      record: "None needed",
+      banned: "all 4 times",
     },
   ];
 
   for (const item of cases) {
-    const vm: DashboardVM =
-      item.posture === "ALL_IN"
-        ? sampleVm
-        : {
-            ...sampleVm,
-            rails: { cash: item.posture, coins: sampleVm.rails.coins },
-            countdown: null,
-            cash: {
-              posture: item.posture,
-              word: item.word,
-              tone: item.tone,
-              sentences: item.sentences,
-              recordRows: [{ key: "RECORD", text: item.record }],
-              highConfidence: false,
-            },
-          };
+    const vm: DashboardVM = item.posture === "ALL_IN"
+      ? sampleVm
+      : {
+          ...sampleVm,
+          rails: { cash: item.posture, coins: sampleVm.rails.coins },
+          countdown: null,
+          cash: {
+            posture: item.posture,
+            word: item.posture,
+            tone: item.tone,
+            sentences: ["Use your cash available to invest.", "Standing contribution continues."],
+            recordRows: [{ key: "RECORD", text: "4 of 4. Floor about 60% (Wilson 90%). 4 episodes." }],
+            highConfidence: false,
+          },
+        };
     const html = paintDashboard(vm);
-    const document = parse(html);
-    assert.equal(document.querySelector("h2.posture")?.textContent, item.shown, item.word);
-    assert.equal(document.querySelector(".cash .rule")?.textContent, item.rule, item.word);
-    assert.equal(document.querySelector(".record dd")?.textContent, item.record, item.word);
-    assert.equal(document.querySelector(".spectrum"), null, item.word);
-    assert.equal(
-      document.querySelector("h2.posture")?.getAttribute("class"),
-      `posture posture--${item.tone}`,
-      item.word,
-    );
+    const open = openText(html);
+    assertPlain(html, item.posture);
+    assert.equal(parse(html).querySelector("h1")?.textContent, `Why this week says ${item.step}`, item.posture);
+    assert.equal(open.includes(item.record), true, item.posture);
+    assert.equal(open.includes(item.banned), false, item.posture);
+    assert.equal(open.includes("Use your cash available to invest"), false, item.posture);
+    assert.equal(open.includes("Wilson"), false, item.posture);
+    if (item.posture !== "ALL_IN") {
+      assert.equal(open.includes("On Sep 18"), false, item.posture);
+      assert.equal(open.includes("our strongest buy signal"), false, item.posture);
+    }
   }
 });
 
-test("exit and a missing close leave the cash rail with no active segment", () => {
+test("exit and a missing close do not reuse the all-in story", () => {
   const exitVm: DashboardVM = {
     ...sampleVm,
     rails: { cash: null, coins: "EXIT" },
@@ -318,17 +280,23 @@ test("exit and a missing close leave the cash rail with no active segment", () =
       declarationDateLabel: "26 Sep 2026",
     },
   };
-  const exitDoc = parse(paintDashboard(exitVm));
-  assert.equal(exitDoc.querySelector(".spectrum"), null);
-  assert.equal(exitDoc.querySelector("h2.posture")?.textContent, "Pause");
-  assert.equal(exitDoc.querySelector(".cash .rule"), null);
-  assert.equal(exitDoc.querySelector("h2.posture-sm")?.textContent, "Exit");
-  assert.equal(exitDoc.querySelector(".coins .rule"), null);
-  assert.equal(exitDoc.querySelector(".coins")?.textContent?.includes("Sell all."), true);
+  const exitHtml = paintDashboard(exitVm);
+  const exitDoc = parse(exitHtml);
+  assertPlain(exitHtml, "exit");
+  assert.equal(exitDoc.querySelector("h1")?.textContent, "Why this week says Pause");
+  assert.equal(exitDoc.querySelector(".chips"), null);
+  assert.equal(exitDoc.querySelector("h2.posture-sm"), null);
+  assert.equal(openText(exitHtml).includes("No floor"), false);
+  assert.equal(exitDoc.querySelector(".holder")?.textContent?.includes("26 Sep 2026"), true);
+  assert.equal(exitDoc.querySelector(".holder")?.textContent?.includes("tax bill"), true);
+  assert.equal(openText(exitHtml).includes("all 4 times"), false);
+  assert.equal(openText(exitHtml).includes("7 of 8"), false);
 
   const noCall: DashboardVM = {
     ...sampleVm,
     rails: { cash: null, coins: "HOLD" },
+    missingClose: true,
+    outOfDate: true,
     countdown: null,
     cash: {
       posture: "NO_CALL",
@@ -338,24 +306,30 @@ test("exit and a missing close leave the cash rail with no active segment", () =
       recordRows: [],
       highConfidence: false,
     },
+    context: [],
   };
-  const noCallDoc = parse(paintDashboard(noCall));
-  assert.equal(noCallDoc.querySelector(".spectrum"), null);
-  assert.equal(noCallDoc.querySelector("h2.posture")?.textContent, "No update");
-  assert.equal(noCallDoc.querySelector(".cash .rule")?.textContent, "Rule: No call");
-  assert.equal(noCallDoc.querySelector("h2.posture-sm")?.textContent, "Keep");
-  assert.equal(noCallDoc.querySelector(".record"), null);
+  const noCallHtml = paintDashboard(noCall);
+  const noCallDoc = parse(noCallHtml);
+  assertPlain(noCallHtml, "no-call");
+  assert.equal(noCallDoc.querySelector("h1")?.textContent, "Why this week says No update");
+  assert.equal(noCallDoc.querySelector("#signal-h")?.textContent, "No signal turned on");
+  assert.equal(openText(noCallHtml).includes("didn't arrive"), true);
+  assert.equal(openText(noCallHtml).includes("all 4 times"), false);
+  assert.equal(openText(noCallHtml).includes("On Sep 18"), false);
 });
 
-test("disagreement and caveats are omitted unless the view model has them", () => {
+test("disagreement and caveats stay in the numbers and are omitted when absent", () => {
   const text = "Sell roll is also in its pause. All in still wins. The week is not cut in half.";
-  const shown = parse(paintDashboard({ ...sampleVm, disagreement: text }));
-  assert.equal(shown.querySelector(".disagreement")?.textContent?.includes(text), true);
+  const shown = paintDashboard({ ...sampleVm, disagreement: text });
+  assert.equal(parse(shown).querySelector(".disagreement")?.textContent?.includes(text), true);
+  assert.equal(openText(shown).includes("Sell roll"), false);
+  assertPlain(shown, "disagreement");
 
-  const hidden = parse(paintDashboard({ ...sampleVm, disagreement: null, caveats: [] }));
-  assert.equal(hidden.querySelector(".disagreement"), null);
-  assert.equal(hidden.querySelector(".caveats"), null);
-  assert.equal(parse(paintDashboard(sampleVm)).querySelector(".caveats") != null, true);
+  const hidden = paintDashboard({ ...sampleVm, disagreement: null, caveats: [] });
+  assert.equal(parse(hidden).querySelector(".disagreement"), null);
+  assert.equal(hidden.includes("At Friday's close (25 Sep 2026)"), false);
+  assert.equal(paintDashboard(sampleVm).includes("At Friday's close (25 Sep 2026)"), true);
+  assert.equal(paintDashboard(sampleVm).includes("The 200-week average is a map line. It does not time a buy."), true);
 });
 
 test("a true high-confidence flag does not add a separate High confidence element", () => {
@@ -371,6 +345,49 @@ test("a true high-confidence flag does not add a separate High confidence elemen
   const document = parse(html);
   assert.equal(exactTextCount(document, "High confidence"), 0);
   assert.equal(document.querySelector(".record dd.status")?.textContent, "This fire is open. Not high confidence.");
+  assert.equal(openText(html).includes("This fire is open"), false);
+});
+
+test("every fixture state paints one plain heading", () => {
+  const names = readdirSync(new URL("../fixtures/states/", import.meta.url))
+    .filter((name) => name.endsWith(".json"))
+    .sort();
+  const steps: Record<string, string> = {
+    "build.json": "Add",
+    "lump-in.json": "Add",
+    "no-call.json": "No update",
+    "slow-in.json": "Go slow",
+    "stale.json": "Buy strongly",
+    "stand-down.json": "Pause",
+    "stay.json": "Steady",
+  };
+  for (const name of names) {
+    const patch = JSON.parse(readText(`states/${name}`)) as FridayStateOverlay;
+    const vm = compose(applyOverlay(friday, patch), official, blank, LATE_OPENED);
+    const html = paintDashboard(vm);
+    const open = openText(html);
+    assertPlain(html, name);
+    assert.equal(parse(html).querySelector("h1")?.textContent, `Why this week says ${steps[name]}`, name);
+    assert.equal(open.includes("On Sep 18"), false, name);
+    assert.equal(open.includes("our strongest buy signal"), false, name);
+    assert.equal(open.includes("all 4 times"), false, name);
+    if (name === "stand-down.json") {
+      assert.equal(open.includes("On Mar 6"), true, name);
+      assert.equal(open.includes("7 of 8"), true, name);
+    }
+    if (name === "stale.json") {
+      assert.equal(open.includes("hasn't updated since"), true, name);
+      assert.equal(open.includes("41%"), false, name);
+    }
+    if (name === "build.json") {
+      assert.equal(open.includes("average holder paid"), true, name);
+      assert.equal(open.includes("41%"), false, name);
+    }
+    if (name === "no-call.json") {
+      assert.equal(open.includes("didn't arrive"), true, name);
+      assert.equal(open.includes("41%"), false, name);
+    }
+  }
 });
 
 test("settings is a blank sheet with the reference fields", () => {

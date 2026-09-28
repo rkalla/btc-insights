@@ -1,4 +1,7 @@
 .topbar{order:1}.row-1{order:3}.disagreement{order:4}.caveats{order:5}.row-2{order:6}.longview{order:7}.cycles{order:8}.foot{order:9}
+.page .longview,.page .cycles,.page .disagreement{order:0}
+.page .glossary{order:1}
+.page .foot{order:2}
 .lede{order:0;display:flex;flex-direction:column;gap:8px;min-width:0}
 .clock-line{order:1;margin:0;font-size:14px;line-height:1.45;color:var(--ink-3);overflow-wrap:anywhere}
 .glossary{order:10;display:flex;flex-direction:column;gap:16px}
@@ -136,6 +139,21 @@ ul.legend li{display:flex;align-items:center;gap:6px;min-width:0}
 .glossary dt{font-weight:600}
 .glossary dd{margin:4px 0 0;color:var(--ink-2);font-size:15px;line-height:1.5}
 a.term{text-decoration-line:underline;text-decoration-style:dotted;text-underline-offset:3px}
+ul.short,ol.timeline,ul.watched{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:8px}
+ul.short li,ol.timeline li,ul.watched li{line-height:1.45}
+.timeline{font-variant-numeric:tabular-nums}
+details.numbers,details.cycles{min-width:0}
+details.numbers summary,details.cycles summary{cursor:pointer;font-weight:600;font-size:16px;min-height:44px;display:flex;align-items:center}
+details .for{font-weight:500;color:var(--ink-2)}
+details.numbers p,details.cycles .note{margin:8px 0 0}
+table.history{width:100%;border-collapse:collapse;font-size:15px;font-variant-numeric:tabular-nums}
+table.history th,table.history td{text-align:left;padding:8px 8px 8px 0;border-bottom:1px solid var(--line);vertical-align:top}
+table.history th{font-size:13px;color:var(--ink-3);font-weight:600}
+.check{display:flex;flex-direction:column;gap:4px;padding:14px 0 0;border-top:1px solid var(--line);min-width:0}
+.check h3{margin:0;font-size:16px;font-weight:600}
+.check .status{margin:0;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+.check p{margin:0}
+.cautious{margin:0}
 
 .loading-lines{display:flex;flex-direction:column;gap:10px;min-width:0;max-width:100%}
 .loading-bar{display:block;height:1.5em;width:100%;max-width:100%;background:var(--neutral-tint);border-radius:3px;animation:none}

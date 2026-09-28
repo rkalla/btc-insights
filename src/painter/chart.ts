@@ -151,12 +151,12 @@ export function chartSvg(
 
   const buyCount = fires.filter((fire) => fire.type === "buy").length;
   const sellCount = fires.filter((fire) => fire.type === "sell").length;
-  const buyPhrase = firePhrase(buyCount, "buy-cross");
+  const buyPhrase = signalPhrase(buyCount, "buy signal");
   const buyTitle = buyPhrase.charAt(0).toUpperCase() + buyPhrase.slice(1);
   const title =
-    `Bitcoin price on a log scale against its power-law trend, 2013 to ${sentenceDate(spot.date)}. ` +
-    `${buyTitle} and ${firePhrase(sellCount, "sell-roll")} are marked. ` +
-    `A table of the fires follows the chart.`;
+    `Bitcoin's price on a log scale against its long-run trend, 2013 to ${sentenceDate(spot.date)}. ` +
+    `${buyTitle} and ${signalPhrase(sellCount, "caution signal")} are marked. ` +
+    `A table of the signals follows the chart.`;
 
   const svg = [
     `<svg class="chart-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${fmt(width)} ${fmt(height)}" width="${fmt(width)}" height="${fmt(height)}" role="img" aria-labelledby="chart-alt" overflow="hidden" style="font-size:${fontSize}px;font-variant-numeric:tabular-nums">`,
@@ -365,15 +365,22 @@ function markerText(fire: Fire): string {
   const day = Number(fire.date.slice(8, 10));
   const year = fire.date.slice(0, 4);
   const monthName = FULL_MONTHS[month - 1] ?? year;
+  const name = plainSignal(fire.titleLabel);
   if (fire.type === "sell") {
-    return `${fire.titleLabel}, ${monthName} ${year}.`;
+    return `${name}, ${monthName} ${year}.`;
   }
   const when = `${day} ${monthName} ${year}`;
   if (fire.status === "open") {
-    return `${fire.titleLabel}, ${when}. Open, not in the completed count.`;
+    return `${name}, ${when}. Open, not in the completed count.`;
   }
   const pct = fire.resultLabel.replace(/^Finished year:?\s*/i, "").replace(/\.$/, "");
-  return `${fire.titleLabel}, ${when}. Finished year ${pct}.`;
+  return `${name}, ${when}. Finished year ${pct}.`;
+}
+
+function plainSignal(label: string): string {
+  if (/sell roll/i.test(label)) return "Caution signal";
+  if (/buy cross/i.test(label)) return "Buy strongly signal";
+  return label;
 }
 
 // The open-fire label steps 4px until its box clears the price and 200-week lines.
@@ -488,21 +495,21 @@ function orient(ax: number, ay: number, bx: number, by: number, cx: number, cy: 
 function fireTable(fires: readonly Fire[]): string {
   const rows = fires
     .map((fire) => {
-      return `<tr><td>${esc(fire.titleLabel)}</td><td><time datetime="${fire.date}">${esc(sentenceDate(fire.date))}</time></td><td>${esc(fire.resultLabel)}</td></tr>`;
+      return `<tr><td>${esc(plainSignal(fire.titleLabel))}</td><td><time datetime="${fire.date}">${esc(sentenceDate(fire.date))}</time></td><td>${esc(fire.resultLabel)}</td></tr>`;
     })
     .join("");
   return (
     `<div class="sr-only">` +
-    `<table><caption>Signal fires shown on the chart</caption>` +
+    `<table><caption>Signals shown on the chart</caption>` +
     `<thead><tr><th>Signal</th><th>Date</th><th>Finished year</th></tr></thead>` +
     `<tbody>${rows}</tbody></table></div>`
   );
 }
 
-function firePhrase(count: number, kind: string): string {
+function signalPhrase(count: number, noun: string): string {
   const words = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
-  const noun = count === 1 ? "fire" : "fires";
-  return `${words[count] ?? String(count)} ${kind} ${noun}`;
+  const name = count === 1 ? noun : `${noun}s`;
+  return `${words[count] ?? String(count)} ${name}`;
 }
 
 function sortByDate<T extends { date: string }>(points: readonly T[]): T[] {

@@ -156,7 +156,7 @@ test("fixture chart marks fires, the open ring, and no floor band", () => {
   assert.equal(svg.includes('role="img"'), true);
   assert.equal(svg.includes("<title"), true);
   assert.equal(
-    svg.includes("Five buy-cross fires and eight sell-roll fires are marked."),
+    svg.includes("Five buy signals and eight caution signals are marked."),
     true,
   );
   assert.deepEqual(layersOf(svg), LAYERS);
@@ -168,7 +168,7 @@ test("fixture chart marks fires, the open ring, and no floor band", () => {
   assert.equal(march.includes('tabindex="0"'), true);
   assert.equal(march.includes('role="button"'), true);
   assert.equal(march.includes('r="11"'), true);
-  assert.equal(march.includes("Buy cross, 17 March 2023. Finished year +138%."), true);
+  assert.equal(march.includes("Buy strongly signal, 17 March 2023. Finished year +138%."), true);
   assert.equal(/tabindex="[1-9]/.test(svg), false);
   const buttonDates = [...svg.matchAll(/<g class="marker" data-date="([^"]+)"/g)].map((match) => match[1]);
   assert.deepEqual(buttonDates, chart.fires.map((fire) => fire.date).sort());

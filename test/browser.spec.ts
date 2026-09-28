@@ -22,8 +22,8 @@ for (const width of [1440, 1100, 390]) {
   test(`dashboard at ${width}`, async ({ page }) => {
     await page.setViewportSize({ width, height: 1000 });
     await page.goto("/evidence/");
-    await expect(page.getByRole("heading", { name: "Buy strongly" })).toBeVisible();
-    await expect(page.locator("body")).toContainText("Rule: All in, from the buy cross");
+    await expect(page.getByRole("heading", { level: 1, name: "Why this week says Buy strongly" })).toBeVisible();
+    await expect(page.locator("body")).toContainText("Here's the reasoning behind this week's advice");
     await expect(page.locator("header.site a[aria-current='page']")).toHaveText("Evidence");
     await expect(page.getByRole("link", { name: "GitHub" })).toHaveAttribute(
       "href",
@@ -31,8 +31,10 @@ for (const width of [1440, 1100, 390]) {
     );
     await expect(page.locator(".spectrum")).toHaveCount(0);
     await expect(page.locator(".disagreement")).toHaveCount(0);
-    await expect(page.locator("body")).toContainText("Use your cash available to invest.");
+    await expect(page.locator("body")).not.toContainText("Use your cash available to invest.");
+    await expect(page.locator("body")).not.toContainText("Standing contribution continues.");
     await expect(page.locator("body")).not.toContainText("$100,000");
+    await expect(page.locator("body")).not.toContainText("Selected marker");
     const show = page.locator(".show-fires");
     if (width < 768) {
       await expect(show).toBeVisible();
@@ -107,7 +109,7 @@ for (const width of [1440, 390]) {
 test("no horizontal scroll at 320", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 700 });
   await page.goto("/evidence/");
-  await expect(page.getByRole("heading", { name: "Buy strongly" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Why this week says Buy strongly" })).toBeVisible();
   expect(await overflows(page)).toBe(false);
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1, name: "A strong week to buy Bitcoin." })).toBeVisible();
@@ -121,7 +123,7 @@ test("axe is clean on the dashboard and settings", async ({ page }) => {
   for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 1000 });
     await page.goto("/evidence/");
-    await expect(page.getByRole("heading", { name: "Buy strongly" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Why this week says Buy strongly" })).toBeVisible();
     const dashboard = await new AxeBuilder({ page }).analyze();
     expect(dashboard.violations, `${width} ${JSON.stringify(dashboard.violations, null, 2)}`).toEqual([]);
   }
@@ -134,7 +136,7 @@ test("axe is clean on the dashboard and settings", async ({ page }) => {
 test("a desktop marker opens one popover and escape returns focus", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/evidence/");
-  await expect(page.getByRole("heading", { name: "Buy strongly" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Why this week says Buy strongly" })).toBeVisible();
   const marker = page.locator('.marker[data-date="2023-03-17"]');
   const pop = page.locator(".fire-popover");
   await marker.click();
@@ -156,15 +158,15 @@ test("a desktop marker opens one popover and escape returns focus", async ({ pag
 test("show fires lists newest first under 768", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 800 });
   await page.goto("/evidence/");
-  await expect(page.getByRole("heading", { name: "Buy strongly" })).toBeVisible();
-  await page.getByRole("button", { name: "Show fires" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Why this week says Buy strongly" })).toBeVisible();
+  await page.getByRole("button", { name: "Show past signals" }).click();
   const dialog = page.getByRole("dialog", { name: "Fires" });
   await expect(dialog).toBeVisible();
   await expect(dialog.locator(".fire-row").first()).toContainText("Open. Not in the completed count.");
   await expect(dialog.locator(".fire-row").last()).toContainText("Jun 2013");
   await page.getByRole("button", { name: "Close" }).click();
   await expect(dialog).toBeHidden();
-  await expect(page.getByRole("button", { name: "Show fires" })).toBeFocused();
+  await expect(page.getByRole("button", { name: "Show past signals" })).toBeFocused();
 });
 
 test("save writes the device settings and returns to the dashboard", async ({ page }) => {
@@ -338,12 +340,12 @@ test("/this-week/ still shows this week", async ({ page }) => {
 test("a later evidence poll failure keeps the loaded dashboard", async ({ page }) => {
   await page.clock.install({ time: new Date("2026-09-27T18:00:00-07:00") });
   await page.goto("/evidence/");
-  await expect(page.getByRole("heading", { name: "Buy strongly" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Why this week says Buy strongly" })).toBeVisible();
   await page.route("**/data/live.json", (route) => route.abort());
   const failed = page.waitForRequest("**/data/live.json");
   await page.clock.fastForward(10 * 60 * 1000);
   await failed;
-  await expect(page.getByRole("heading", { name: "Buy strongly" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Why this week says Buy strongly" })).toBeVisible();
   await expect(page.getByText("The dashboard could not load its data.")).toHaveCount(0);
 });
 
@@ -381,7 +383,7 @@ for (const width of [390, 1440]) {
         await expect(page.getByRole("heading", { level: 1, name: "A strong week to buy Bitcoin." })).toBeVisible();
         await expect(page).toHaveTitle("This week · BTC Friday");
       } else if (path === "/evidence/") {
-        await expect(page.getByRole("heading", { name: "Buy strongly" })).toBeVisible();
+        await expect(page.getByRole("heading", { level: 1, name: "Why this week says Buy strongly" })).toBeVisible();
         await expect(page).toHaveTitle("Evidence · BTC Friday");
       } else {
         await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
@@ -418,7 +420,7 @@ for (const width of [320, 390, 412]) {
         if (path === "/") {
           await expect(page.getByRole("heading", { level: 1, name: "A strong week to buy Bitcoin." })).toBeVisible();
         } else if (path === "/evidence/") {
-          await expect(page.getByRole("heading", { name: "Buy strongly" })).toBeVisible();
+          await expect(page.getByRole("heading", { level: 1, name: "Why this week says Buy strongly" })).toBeVisible();
         } else {
           await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
         }
