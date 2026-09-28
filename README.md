@@ -10,4 +10,5 @@ npm run build
 
 - [Tech stack approach](docs/12-tech-stack-approach.md), including the [Work log](docs/12-tech-stack-approach.md#work-log)
 - [Friday wireframe](docs/7-friday-wireframe.md)
+- [Human-first revision](docs/17-human-first-implementation-plan.md)
 - [Deploy](docs/deploy.md)
