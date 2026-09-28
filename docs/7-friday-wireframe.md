@@ -2,6 +2,8 @@
 
 Locked on 26 September 2026, and amended the same day to match `docs/10-claude-design-reference.html`. Structure only. Boxes, labels, and the words each box is allowed to say. No color, type, logo, or spacing system. A later change is a new draft, not a quiet edit of this page.
 
+`docs/17-human-first-implementation-plan.md` is that later change for the home page. This wireframe remains the Evidence page until that plan ships. Where the two disagree about a This week sentence, the plan wins.
+
 A picture of the sample page is `docs/mockups/friday-wireframe.png`. The file name still says Friday because that was the first draft. The page is a dashboard the holder can open on any day.
 
 This is one read-only page for a single holder, plus a settings sheet of blanks. The page does not trade, does not compute tax, and does not let the holder pick a posture. The posture comes from `docs/2-signal-strategy.md`. The sample fill is the 26 September 2026 worked example, with the dollar shapes from that spec filled in so the page can be read. Settings themselves start blank.
