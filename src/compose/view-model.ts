@@ -7,9 +7,11 @@ import type {
   HolderSettings,
   LiveSlice,
 } from "../contract/types.ts";
+import { COPY_WRITTEN_FOR } from "../copy/thisWeek.ts";
 import { applyHolder } from "../settings/holder.ts";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
 const STALE_AFTER_MS = 26 * 60 * 60 * 1000;
 
 export function compose(
@@ -130,7 +132,28 @@ export function compose(
     },
     footer: [friday.footer[0], friday.footer[1]],
     countdown,
+    presentation: friday.presentation ?? COPY_WRITTEN_FOR,
+    standDownFireDate: friday.standDownFireDate ?? null,
+    missingClose: live.missingClose,
+    outOfDate: pageIsLate(friday, live.missingClose, openedAt),
   };
+}
+
+// Same clock as This week: late only after the next Friday close, plus six hours.
+function pageIsLate(friday: FridayDocument, missingClose: boolean, openedAt: string): boolean {
+  if (missingClose) return true;
+  const nextMs = Date.parse(fridayCloseInstant(friday.official.nextCloseDate));
+  const openedMs = Date.parse(openedAt);
+  if (!Number.isFinite(nextMs) || !Number.isFinite(openedMs)) return false;
+  if (!(openedMs > nextMs + SIX_HOURS_MS)) return false;
+  return friday.official.closeDate < friday.official.nextCloseDate;
+}
+
+function fridayCloseInstant(isoDate: string): string {
+  const year = Number(isoDate.slice(0, 4));
+  const month = Number(isoDate.slice(5, 7));
+  const day = Number(isoDate.slice(8, 10));
+  return new Date(Date.UTC(year, month - 1, day + 1)).toISOString();
 }
 
 // The Friday bar is stored at 00:00Z and finishes at the next UTC midnight.

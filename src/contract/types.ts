@@ -194,4 +194,8 @@ export interface DashboardVM {
   cycles: FridayDocument["cycles"];
   footer: FridayDocument["footer"];
   countdown: string | null;
+  presentation: PresentationFacts;
+  standDownFireDate: string | null;
+  missingClose: boolean;
+  outOfDate: boolean;
 }

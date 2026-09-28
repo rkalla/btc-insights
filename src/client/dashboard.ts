@@ -1,7 +1,7 @@
 import { sentenceDate } from "../contract/format.ts";
 import type { FridayDocument, LiveSlice } from "../contract/types.ts";
 import { compose } from "../compose/view-model.ts";
-import { chartSvg } from "../painter/chart.ts";
+import { chartSvg, plainSignal } from "../painter/chart.ts";
 import { paintDashboard } from "../painter/dashboard.ts";
 import { blankSettings, loadSettings } from "../settings/store.ts";
 import type { HolderSettings } from "../contract/types.ts";
@@ -431,7 +431,7 @@ function ensureSheet(): HTMLElement {
   head.className = "sheet-head";
   const title = document.createElement("h2");
   title.id = "fires-title";
-  title.textContent = "Fires";
+  title.textContent = "Past signals";
   const close = document.createElement("button");
   close.type = "button";
   close.className = "btn btn--ghost sheet-close";
@@ -463,10 +463,11 @@ function trapSheet(event: KeyboardEvent): void {
 }
 
 function fireLines(fire: FridayDocument["chart"]["fires"][number]): { title: string; result: string } {
+  const name = plainSignal(fire.titleLabel);
   const title =
     fire.type === "sell"
-      ? `${fire.titleLabel} · ${fire.resultLabel}`
-      : `${fire.titleLabel} · ${sentenceDate(fire.date)}`;
+      ? `${name} · ${fire.resultLabel}`
+      : `${name} · ${sentenceDate(fire.date)}`;
   return { title, result: title.includes(fire.resultLabel) ? "" : fire.resultLabel };
 }
 
