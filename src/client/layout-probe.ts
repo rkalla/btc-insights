@@ -1,5 +1,24 @@
 const HIT = "layout-probe-hit";
 
+export function layoutProbeOverflow(
+  elements: Iterable<Element>,
+  limit: number,
+  rectOf: (el: Element) => { width: number; height: number; right: number },
+): Element[] {
+  const hits: Element[] = [];
+  for (const el of elements) {
+    if (el.closest(".sr-only, .layout-probe, .layout-probe-sample") != null) {
+      el.classList.remove(HIT);
+      continue;
+    }
+    const rect = rectOf(el);
+    const over = rect.width > 0 && rect.height > 0 && rect.right > limit + 0.5;
+    el.classList.toggle(HIT, over);
+    if (over) hits.push(el);
+  }
+  return hits;
+}
+
 export function installLayoutProbe(): void {
   if (typeof window === "undefined" || typeof document === "undefined") return;
   const body = document.body;
@@ -24,18 +43,7 @@ export function installLayoutProbe(): void {
   const paint = (): void => {
     observer?.disconnect();
     const root = document.documentElement;
-    const limit = root.clientWidth;
-    const hits: Element[] = [];
-    for (const el of body.querySelectorAll("*")) {
-      if (el === panel || el === sample || panel.contains(el)) {
-        el.classList.remove(HIT);
-        continue;
-      }
-      const rect = el.getBoundingClientRect();
-      const over = rect.width > 0 && rect.height > 0 && rect.right > limit + 0.5;
-      el.classList.toggle(HIT, over);
-      if (over) hits.push(el);
-    }
+    const hits = layoutProbeOverflow(body.querySelectorAll("*"), root.clientWidth, (el) => el.getBoundingClientRect());
     const viewport = window.visualViewport;
     const lines = [
       `innerWidth ${window.innerWidth}`,
