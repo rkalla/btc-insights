@@ -2,6 +2,8 @@ import * as esbuild from "esbuild";
 import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { siteHeader } from "../src/painter/site-header.ts";
+import { thisWeekShell } from "../src/painter/this-week.ts";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const dist = join(root, "dist");
@@ -44,38 +46,60 @@ const iconLinks = `<link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" type="image/png" href="/favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">`;
 
-const css = readFileSync(join(root, "src", "painter", "dashboard.css"), "utf8").replaceAll(
-  "../../public/fonts/",
-  "../fonts/",
-);
-if (
-  css.includes("public/fonts") ||
-  css.includes("fonts.googleapis.com") ||
-  css.includes("fonts.gstatic.com") ||
-  !css.includes('url("../fonts/geist-latin-400-normal.woff2")')
-) {
-  console.error("font css was not rewritten");
-  process.exit(1);
+function writeCss(name) {
+  const css = readFileSync(join(root, "src", "painter", name), "utf8").replaceAll(
+    "../../public/fonts/",
+    "../fonts/",
+  );
+  if (
+    css.includes("public/fonts") ||
+    css.includes("fonts.googleapis.com") ||
+    css.includes("fonts.gstatic.com") ||
+    !css.includes('url("../fonts/geist-latin-400-normal.woff2")')
+  ) {
+    console.error(`font css was not rewritten for ${name}`);
+    process.exit(1);
+  }
+  if (name === "this-week.css") {
+    if (css.includes("geist-mono") || css.includes("monospace") || css.includes("650")) {
+      console.error("this week css uses a forbidden face or weight");
+      process.exit(1);
+    }
+    if (/\bred\b|\bgreen\b|#f00\b|#0f0\b|#ff0000\b|#00ff00\b/i.test(css)) {
+      console.error("this week css uses red or green");
+      process.exit(1);
+    }
+  }
+  writeFileSync(join(dist, "assets", name), css);
 }
-writeFileSync(join(dist, "assets", "dashboard.css"), css);
+
+writeCss("dashboard.css");
+writeCss("this-week.css");
 
 const loading = readFileSync(join(root, "src", "painter", "loading.html"), "utf8");
+writeFileSync(join(dist, "index.html"), thisWeekShell(iconLinks));
+
+mkdirSync(join(dist, "this-week"), { recursive: true });
+writeFileSync(join(dist, "this-week", "index.html"), thisWeekShell(iconLinks));
+
+mkdirSync(join(dist, "evidence"), { recursive: true });
 writeFileSync(
-  join(dist, "index.html"),
+  join(dist, "evidence", "index.html"),
   `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bitcoin dashboard</title>
+<title>Evidence · BTC Friday</title>
 ${iconLinks}
-<link rel="stylesheet" href="assets/dashboard.css">
+<link rel="stylesheet" href="/assets/dashboard.css">
 </head>
 <body>
 <div class="page">
+${siteHeader("evidence")}
 ${loading}
 </div>
-<script type="module" src="assets/dashboard.js"></script>
+<script type="module" src="/assets/dashboard.js"></script>
 </body>
 </html>
 `,
@@ -103,6 +127,7 @@ await esbuild.build({
   entryPoints: {
     dashboard: join(root, "src", "client", "dashboard.ts"),
     settings: join(root, "src", "client", "settings.ts"),
+    "this-week": join(root, "src", "client", "this-week.ts"),
   },
   bundle: true,
   format: "esm",

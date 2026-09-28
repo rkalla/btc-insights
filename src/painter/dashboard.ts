@@ -1,60 +1,163 @@
 import { money, sentenceDate, signedPercent } from "../contract/format.ts";
-import type { DashboardVM, Tone } from "../contract/types.ts";
+import type { CashPosture, DashboardVM } from "../contract/types.ts";
 import { chartSvg } from "./chart.ts";
-import { brandIcon, caveatIcon, legendSwatch, lockIcon, settingsIcon } from "./icons.ts";
+import { caveatIcon, legendSwatch } from "./icons.ts";
+import { siteHeader } from "./site-header.ts";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
-
-const COIN_RAIL = [
-  ["EXIT", "Exit"],
-  ["TRIM", "Trim"],
-  ["HOLD", "Hold"],
-] as const;
-
-const CASH_RAIL = [
-  ["STAND_DOWN", "Stand down"],
-  ["STAY", "Stay the course"],
-  ["SLOW_IN", "Slow in"],
-  ["BUILD", "Build"],
-  ["LUMP_IN", "Lump in"],
-  ["ALL_IN", "All in"],
-] as const;
 
 const CHART_WIDE = 1000;
 const CHART_NARROW = 360;
 
+const EVIDENCE_HREF = "/evidence/";
+const SETTINGS_HREF = "/settings.html";
+const FOOTER =
+  "BTC Friday is research, not personal financial advice. It looks at Bitcoin's price history, and history can be wrong about the future. It doesn't know your full situation, doesn't trade for you and doesn't calculate taxes. Before investing money you can't afford to lose, talk to a fee-only financial adviser.";
+
+const EVIDENCE_TITLE = "The evidence behind this week's advice";
+const EVIDENCE_INTRO =
+  "This page shows the rules and history behind This week. It uses some technical terms, and each one is explained at the bottom.";
+
+// NO_NEW_BUY uses the Pause step. The plan names no rule line for it.
+const CASH_FACE: Record<CashPosture, { word: string; rule: string | null }> = {
+  ALL_IN: { word: "Buy strongly", rule: "Rule: All in, from the buy cross" },
+  LUMP_IN: { word: "Add", rule: "Rule: Lump in" },
+  BUILD: { word: "Add", rule: "Rule: Build" },
+  STAY: { word: "Steady", rule: "Rule: Stay the course" },
+  SLOW_IN: { word: "Go slow", rule: "Rule: Slow in" },
+  STAND_DOWN: { word: "Pause", rule: "Rule: Stand down" },
+  NO_NEW_BUY: { word: "Pause", rule: null },
+  NO_CALL: { word: "No update", rule: "Rule: No call" },
+};
+
+const GLOSSARY: readonly { id: string; term: string; meaning: string; pattern: RegExp }[] = [
+  {
+    id: "long-run-trend",
+    term: "Long-run trend (power law)",
+    meaning: "The smooth curve Bitcoin's price has followed since 2010, fitted on a log scale. We compare today's price with it.",
+    pattern: /long-run trend|power law/i,
+  },
+  {
+    id: "gap",
+    term: "Gap",
+    meaning: "How far the price is above or below the trend, in percent. \u221241% means 41% below.",
+    pattern: /\bgap\b/i,
+  },
+  {
+    id: "bands",
+    term: "20% below and 55% above lines",
+    meaning: "The edges of the normal range. Between them, nothing unusual is happening.",
+    pattern: /20% below(?: and 55% above lines)?|55% above/i,
+  },
+  {
+    id: "buy-cross",
+    term: "Buy cross (our strongest buy signal)",
+    meaning: "Sets up when Bitcoin is cheap against gold and at least 20% below its trend. Turns on when Bitcoin's price in gold climbs back to its one-year average.",
+    pattern: /buy cross/i,
+  },
+  {
+    id: "armed",
+    term: "Armed",
+    meaning: "The buy cross has set up but hasn't turned on yet.",
+    pattern: /\barmed\b/i,
+  },
+  {
+    id: "z-score",
+    term: "Z-score",
+    meaning: "How unusual Bitcoin's price in gold is compared with the past 52 weeks. Zero is average; negative means cheap against gold.",
+    pattern: /z-score/i,
+  },
+  {
+    id: "gold-flag",
+    term: "Gold flag",
+    meaning: "A warning that a signal came partly from gold rising, not only Bitcoin falling.",
+    pattern: /gold flag/i,
+  },
+  {
+    id: "sell-roll",
+    term: "Sell roll (caution signal)",
+    meaning: "Turns on when Bitcoin has run more than 55% above its trend and then falls 10% from its peak. It pauses new money; it doesn't sell coins.",
+    pattern: /sell roll|caution signal/i,
+  },
+  {
+    id: "realized-price",
+    term: "Realized price",
+    meaning: "Roughly what the average holder paid, based on the price when each coin last moved. Below it, the average holder is at a loss.",
+    pattern: /realized price/i,
+  },
+  {
+    id: "thermometer",
+    term: "Thermometer",
+    meaning: "A combined hot-or-cold reading from several inputs. It's shown for context and doesn't change the advice.",
+    pattern: /thermometer/i,
+  },
+  {
+    id: "average-200w",
+    term: "200-week average",
+    meaning: "The average of the last 200 Friday prices, about four years. A slow-moving reference line.",
+    pattern: /200-week average/i,
+  },
+  {
+    id: "floor",
+    term: "Floor",
+    meaning: "A cautious estimate of how often a signal works, allowing for how few times it has happened. Technically, the lower end of a 90% Wilson interval.",
+    pattern: /\bfloor\b/i,
+  },
+  {
+    id: "episode",
+    term: "Episode, regime, spell, stretch",
+    meaning: "One continuous period when a signal or condition was on.",
+    pattern: /\b(?:episodes?|regimes?|spells?|stretches?)\b/i,
+  },
+  {
+    id: "friday-close",
+    term: "Friday close",
+    meaning: "The price at 00:00 UTC on Saturday, which is 5:00 pm Friday in Arizona. The advice changes only then.",
+    pattern: /friday closes?/i,
+  },
+  {
+    id: "grace",
+    term: "Grace window",
+    meaning: "After the buy cross turns on, two more Friday closes to act before the advice moves on.",
+    pattern: /grace window|\bgrace\b/i,
+  },
+  {
+    id: "cycle-capture",
+    term: "Cycle capture",
+    meaning: "How much of a cycle's rise, from its low to its high, a buyer caught by buying when a signal turned on and holding to the high. It shows timing, not odds.",
+    pattern: /cycle capture/i,
+  },
+  {
+    id: "rule-names",
+    term: "Rule names",
+    meaning: "All in = Buy strongly. Lump in = Add, at once. Build = Add, each week. Stay the course = Steady. Slow in = Go slow. Stand down = Pause. Exit = Sell, your decision.",
+    pattern: /\b(?:stay the course|slow in|stand down|lump in|all in)\b/i,
+  },
+];
+
 export function paintDashboard(vm: DashboardVM): string {
-  return `<div class="page">
-${header(vm)}
+  const body = `${siteHeader("evidence")}
+${lede()}
 ${clockLine(vm)}
-${spectrum(vm)}
 ${row1(vm)}
 ${disagreement(vm)}
 ${caveats(vm)}
 ${row2(vm)}
 ${longView(vm)}
 ${cycles(vm)}
-${footer(vm)}
+${footer()}`;
+  return `<div class="page">
+${linkTerms(body)}
+${glossary()}
 </div>`;
 }
 
-function header(vm: DashboardVM): string {
-  const opened = openedLabel(vm.openedAt);
-  return `<header class="topbar">
-  <div class="brand">
-    ${brandIcon()}
-    <h1 class="brand-name">Bitcoin dashboard</h1>
-    <span class="brand-sep"></span>
-    <span class="brand-sub">Read-only · one holder</span>
-  </div>
-  <div class="clocks">
-    <span class="clock">${lockIcon()}<span class="k">Official call</span><span class="v">${esc(officialCloseValue(vm.official.closeLabel))}</span></span>
-    <span class="clock"><span class="k">Next close</span><span class="v">${esc(vm.official.nextCloseLabel)}</span></span>
-    <span class="clock clock--utc">00:00 UTC Sat</span>
-    <span class="opened">Opened ${esc(opened)}</span>
-    <a class="icon-btn" href="settings.html" aria-label="Settings">${settingsIcon()}</a>
-  </div>
-</header>`;
+function lede(): string {
+  return `<section class="lede">
+  <h1>${esc(EVIDENCE_TITLE)}</h1>
+  <p>${esc(EVIDENCE_INTRO)}</p>
+  <p><a href="#glossary">What the terms mean</a></p>
+</section>`;
 }
 
 function clockLine(vm: DashboardVM): string {
@@ -67,24 +170,7 @@ function clockLine(vm: DashboardVM): string {
   const text =
     `Official call: ${officialCloseValue(vm.official.closeLabel)} · Next close ${nextClose} · ` +
     `Friday close is 00:00 UTC Saturday · Opened ${openedLabel(vm.openedAt)}`;
-  return `<p class="clock-line" style="order:1;margin:-8px 0 0">${esc(text)}</p>`;
-}
-
-function spectrum(vm: DashboardVM): string {
-  return `<section class="panel spectrum" aria-label="Where this week's call sits on the spectrum">
-  <div class="rails">
-    <div class="rail-group rail-group--coins">
-      <span class="label" id="rail-coins-label">02 · Coins held</span>
-      <ol class="rail rail--coins" aria-labelledby="rail-coins-label">${railItems(COIN_RAIL, vm.rails.coins, vm.coins.tone)}</ol>
-    </div>
-    <div class="rail-divider"></div>
-    <div class="rail-group rail-group--cash">
-      <span class="label" id="rail-cash-label">01 · Cash</span>
-      <ol class="rail rail--cash" aria-labelledby="rail-cash-label">${railItems(CASH_RAIL, vm.rails.cash, vm.cash.tone)}</ol>
-    </div>
-  </div>
-  <div class="spectrum-axis"><span>← Out of Bitcoin</span><span class="mid">Position on the spectrum only. Not a confidence scale.</span><span>Into Bitcoin →</span></div>
-</section>`;
+  return `<p class="clock-line">${esc(text)}</p>`;
 }
 
 function row1(vm: DashboardVM): string {
@@ -98,11 +184,14 @@ function row1(vm: DashboardVM): string {
 }
 
 function cashPanel(vm: DashboardVM): string {
+  const face = CASH_FACE[vm.cash.posture];
   const [first, ...rest] = vm.cash.sentences;
   const sub = rest.join(" ");
+  const rule = face.rule == null ? "" : `<p class="rule">${esc(face.rule)}</p>`;
   return `<article class="panel cash" aria-labelledby="cash-posture">
-    <div class="panel-head" style="align-items:center"><span class="label">01 · Cash</span><span class="tag">Official call</span></div>
-    <h2 class="posture posture--${vm.cash.tone}" id="cash-posture">${esc(vm.cash.word)}</h2>
+    <div class="panel-head" style="align-items:center"><span class="label">New money</span><span class="tag">Official call</span></div>
+    <h2 class="posture posture--${vm.cash.tone}" id="cash-posture">${esc(face.word)}</h2>
+    ${rule}
     ${first == null || first === "" ? "" : `<p class="action">${esc(first)}</p>`}
     ${sub === "" ? "" : `<p class="action-sub">${esc(sub)}</p>`}
     ${windowBlock(vm)}
@@ -152,14 +241,19 @@ function coinsPanel(vm: DashboardVM): string {
   if (tax != null && tax !== "" && !lines.includes(tax)) {
     lines.push(tax);
   }
+  const face = vm.coins.posture === "HOLD"
+    ? { word: "Keep", rule: "Rule: Hold" }
+    : { word: vm.coins.word, rule: null };
+  const rule = face.rule == null ? "" : `<p class="rule">${esc(face.rule)}</p>`;
   const paragraphs = lines.map((line) => `<p>${esc(line)}</p>`).join("");
   const chips =
     vm.coins.offChips.length === 0
       ? ""
       : `<div class="chips">${vm.coins.offChips.map((chip) => `<span class="chip">${esc(chip)}</span>`).join("")}</div>`;
   return `<article class="panel coins" aria-labelledby="coins-posture">
-      <span class="label">02 · Coins</span>
-      <h2 class="posture-sm posture--${vm.coins.tone}" id="coins-posture">${esc(vm.coins.word)}</h2>
+      <span class="label">Bitcoin you own</span>
+      <h2 class="posture-sm posture--${vm.coins.tone}" id="coins-posture">${esc(face.word)}</h2>
+      ${rule}
       ${paragraphs}
       ${chips}
     </article>`;
@@ -182,7 +276,7 @@ function nowPanel(vm: DashboardVM): string {
       <div class="panel-head" style="align-items:center"><span class="label">Now · ${esc(vm.now.printLabel)}</span><span class="chip" style="${chipStyle}">${esc(chip)}</span></div>
       <div class="spot">${esc(money(vm.now.spotUsd))}</div>
       <div class="stats">
-        <div class="stat well"><span class="k">Gap against the Friday trend</span><span class="v">${esc(signedPercent(vm.now.gapPct))}</span></div>
+        <div class="stat well"><span class="k">Now, against Friday's trend</span><span class="v">${esc(signedPercent(vm.now.gapPct))}</span></div>
         <div class="stat well"><span class="k">Trend</span><span class="v">≈ ${esc(money(vm.now.trendUsd))}</span></div>
       </div>
       <p class="note">${esc(note)}</p>
@@ -205,7 +299,7 @@ function caveats(vm: DashboardVM): string {
       return `<li class="caveat">${caveatIcon(caveat.kind)}<div><span class="t">${esc(caveat.title)}</span><span class="b">${esc(caveat.body)}</span></div></li>`;
     })
     .join("");
-  return `<section class="panel caveats" aria-labelledby="caveats-label"><span class="label" id="caveats-label">04 · Caveats</span><ul class="caveat-list">${items}</ul></section>`;
+  return `<section class="panel caveats" aria-labelledby="caveats-label"><span class="label" id="caveats-label">Things to know</span><ul class="caveat-list">${items}</ul></section>`;
 }
 
 function row2(vm: DashboardVM): string {
@@ -214,7 +308,7 @@ function row2(vm: DashboardVM): string {
   const through = sentenceDate(vm.chart.spot.date);
   return `<section class="row row-2">
   <figure class="panel chart" aria-labelledby="chart-title">
-    <div class="panel-head"><span class="label" id="chart-title">05 · Price</span><span class="note">Log price · weekly closes · 2013 to ${esc(through)}</span></div>
+    <div class="panel-head"><span class="label" id="chart-title">Price</span><span class="note">Log price · weekly closes · 2013 to ${esc(through)}</span></div>
     ${legend()}
     ${drawn.wide}
     ${drawn.narrow}
@@ -228,15 +322,15 @@ function row2(vm: DashboardVM): string {
 
 function legend(): string {
   const items = [
-    [legendSwatch("price"), "Price"],
-    [legendSwatch("trend"), "Trend"],
-    [legendSwatch("upper"), "+55%"],
-    [legendSwatch("lower"), "\u221220%"],
+    [legendSwatch("price"), "Bitcoin price (Friday closes)"],
+    [legendSwatch("trend"), "Long-run trend"],
+    [legendSwatch("lower"), "20% below trend"],
+    [legendSwatch("upper"), "55% above trend"],
     [legendSwatch("average"), "200-week average"],
-    [legendSwatch("buy"), "Buy cross"],
-    [legendSwatch("sell"), "Sell roll"],
+    [legendSwatch("buy"), "Buy signal"],
+    [legendSwatch("sell"), "Caution signal"],
   ] as const;
-  return `<ul class="legend" aria-hidden="true">${items.map(([swatch, label]) => `<li>${swatch}${label}</li>`).join("")}</ul>`;
+  return `<ul class="legend" aria-label="Chart legend">${items.map(([swatch, label]) => `<li>${swatch}${esc(label)}</li>`).join("")}</ul>`;
 }
 
 function charts(vm: DashboardVM): { wide: string; narrow: string; table: string } {
@@ -275,7 +369,7 @@ function context(vm: DashboardVM): string {
     })
     .join("");
   return `<aside class="panel context" aria-labelledby="context-label">
-    <div class="panel-head"><span class="label" id="context-label">06 · Context</span><span class="note">Official Friday readings</span></div>
+    <div class="panel-head"><span class="label" id="context-label">The readings behind the call</span><span class="note">Official Friday readings</span></div>
     <p class="note" style="margin:10px 0 14px">These blocks are the Friday close. None of them change the call on a later day. A developing z-score does not arm or fire.</p>
     <div class="readings">${readings}</div>
   </aside>`;
@@ -290,7 +384,7 @@ function longView(vm: DashboardVM): string {
     .join("");
   return `<section class="panel longview" aria-labelledby="lv-label">
   <div class="lv-left">
-    <span class="label" id="lv-label">07 · Five and ten years</span>
+    <span class="label" id="lv-label">The long view</span>
     <p class="lv-statement">${esc(vm.longView.statement)}</p>
     <p class="note" style="font-size:13.5px">${esc(vm.longView.caveat)}</p>
   </div>
@@ -306,7 +400,7 @@ function cycles(vm: DashboardVM): string {
   const cards = vm.cycles.cards.map(cycleCard).join("");
   return `<section class="panel cycles" aria-labelledby="cyc-title">
   <div class="cycles-head">
-    <div><span class="label">08 · Cycle capture</span><h2 class="cycles-title" id="cyc-title">${esc(title)}</h2></div>
+    <div><span class="label">How early each signal was</span><h2 class="cycles-title" id="cyc-title">${esc(title)}</h2></div>
     ${note}
   </div>
   <ul class="key" aria-hidden="true"><li><span class="sw sw--cross"></span>Buy cross</li><li><span class="sw sw--build"></span>Build</li><li><span class="sw sw--lump"></span>Lump in</li></ul>
@@ -329,23 +423,65 @@ function cycleCard(card: DashboardVM["cycles"]["cards"][number]): string {
   return `<article class="cycle${now}"><div><h3>${esc(card.title)}</h3><span class="range">${esc(card.range)}</span></div>${lead}${rows}${note}</article>`;
 }
 
-function footer(vm: DashboardVM): string {
-  return `<footer class="footer"><span>${esc(vm.footer[0])}</span><span>${esc(vm.footer[1])}</span></footer>`;
+function footer(): string {
+  return `<footer class="foot" id="about"><div class="foot-inner"><p>${esc(FOOTER)}</p><div class="foot-links"><a href="${EVIDENCE_HREF}">Evidence</a><a href="${SETTINGS_HREF}">Settings</a></div></div></footer>`;
 }
 
-function railItems(
-  items: readonly (readonly [string, string])[],
-  active: string | null,
-  tone: Tone,
-): string {
-  return items
-    .map(([key, label]) => {
-      if (active !== key) {
-        return `<li>${esc(label)}</li>`;
+function glossary(): string {
+  const rows = GLOSSARY
+    .map((entry) => `<dt id="${entry.id}">${esc(entry.term)}</dt><dd>${esc(entry.meaning)}</dd>`)
+    .join("");
+  return `<section class="panel glossary" id="glossary" aria-labelledby="glossary-title"><h2 id="glossary-title">What the terms mean</h2><dl>${rows}</dl></section>`;
+}
+
+function linkTerms(html: string): string {
+  const parts = html.split(/(<[^>]+>)/);
+  const used = new Set<string>();
+  const skip: string[] = [];
+  return parts
+    .map((part) => {
+      if (part.startsWith("<")) {
+        const name = /^<\s*\/?\s*([a-zA-Z0-9]+)/.exec(part)?.[1]?.toLowerCase() ?? "";
+        if (name !== "" && !part.endsWith("/>")) {
+          if (/^<\s*\//.test(part)) {
+            if (skip[skip.length - 1] === name) skip.pop();
+          } else if (name === "a" || name === "svg" || /\bsr-only\b/.test(part)) {
+            skip.push(name);
+          }
+        }
+        return part;
       }
-      return `<li class="is-active tone-${tone}" aria-current="step">${esc(label)}</li>`;
+      return skip.length > 0 || part === "" ? part : linkText(part, used);
     })
     .join("");
+}
+
+function linkText(text: string, used: Set<string>): string {
+  let rest = text;
+  let out = "";
+  while (rest.length > 0) {
+    let best: { id: string; index: number; raw: string } | null = null;
+    for (const term of GLOSSARY) {
+      if (used.has(term.id)) continue;
+      const match = term.pattern.exec(rest);
+      if (match == null || match[0].length === 0) continue;
+      if (
+        best == null ||
+        match.index < best.index ||
+        (match.index === best.index && match[0].length > best.raw.length)
+      ) {
+        best = { id: term.id, index: match.index, raw: match[0] };
+      }
+    }
+    if (best == null) {
+      out += rest;
+      break;
+    }
+    out += `${rest.slice(0, best.index)}<a class="term" href="#${best.id}">${best.raw}</a>`;
+    used.add(best.id);
+    rest = rest.slice(best.index + best.raw.length);
+  }
+  return out;
 }
 
 function officialCloseValue(label: string): string {

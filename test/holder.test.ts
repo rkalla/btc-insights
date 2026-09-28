@@ -298,6 +298,65 @@ test("sped-up sentence when standDownPause is true", () => {
   assert.equal(held.coins.sentences.includes("Sped up: finish by the end of the pause."), false);
 });
 
+test("IRA omits the tax bill; blank, taxable, and fund keep it", () => {
+  const line = "A sale can create a tax bill. Rate not computed.";
+  const sell = "Sell from the ceiling down to the target, highest-cost lots first.";
+  const sped = "Sped up: finish by the end of the pause.";
+  const paused: FridayDocument = { ...friday, standDownPause: true };
+
+  for (const account of [null, "taxable", "fund"] as const) {
+    const label = account ?? "blank";
+    const trim = applyHolder(paused, settings({ ...trimReady, account }), 50000);
+    assert.equal(trim.coins.posture, "TRIM", label);
+    assert.deepEqual(trim.coins.sentences, [sell, line, sped], label);
+    assert.equal(trim.coins.taxLine, line, label);
+
+    const exited = applyHolder(
+      friday,
+      settings({ ...trimReady, account, thesisBroken: true, thesisDate: "2026-09-26" }),
+      50000,
+    );
+    assert.equal(exited.coins.posture, "EXIT", label);
+    assert.deepEqual(exited.coins.sentences, ["Sell all.", "No floor."], label);
+    assert.equal(exited.coins.taxLine, line, label);
+    assert.equal(exited.cash.word, "No new buy", label);
+    assert.deepEqual(exited.cash.sentences, ["No new buy."], label);
+  }
+
+  const ira = applyHolder(paused, settings({ ...trimReady, account: "ira" }), 50000);
+  assert.equal(ira.coins.posture, "TRIM");
+  assert.deepEqual(ira.coins.sentences, [sell, sped]);
+  assert.equal(ira.coins.taxLine, undefined);
+  assert.equal(JSON.stringify(ira.coins).includes("tax bill"), false);
+  assert.equal(ira.cash.word, "All in");
+  assert.equal(ira.cash.sentences[0]?.endsWith("Use your cash available to invest."), true);
+
+  const iraExit = applyHolder(
+    friday,
+    settings({ ...trimReady, account: "ira", thesisBroken: true, thesisDate: "2026-09-26" }),
+    50000,
+  );
+  assert.equal(iraExit.coins.posture, "EXIT");
+  assert.deepEqual(iraExit.coins.sentences, ["Sell all.", "No floor."]);
+  assert.equal(iraExit.coins.taxLine, undefined);
+  assert.equal(JSON.stringify(iraExit).includes("tax bill"), false);
+  assert.equal(iraExit.cash.word, "No new buy");
+
+  const under = applyHolder(
+    friday,
+    settings({ ...trimReady, account: "ira", ceilingShare: 50.01 }),
+    50000,
+  );
+  assert.equal(under.coins.posture, "HOLD");
+  assert.equal(under.coins.offChips[0], "Trim off · share under the ceiling");
+
+  const dollars = applyHolder(friday, settings({ account: "ira", cashAvailable: 100000 }), 84413);
+  assert.equal(
+    dollars.cash.sentences[0],
+    "Buy now, or by the Friday 2 Oct 2026 close. Up to $100,000.",
+  );
+});
+
 test("account type round-trips and does not change a sentence", () => {
   const withIra = settings({ account: "ira", cashAvailable: 100000 });
   const without = settings({ cashAvailable: 100000 });

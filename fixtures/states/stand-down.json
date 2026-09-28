@@ -1,0 +1,6 @@
+{
+  "cash": { "posture": "STAND_DOWN" },
+  "standDownPause": true,
+  "standDownFireDate": "2026-03-06",
+  "armedWait": false
+}

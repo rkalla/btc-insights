@@ -4,6 +4,11 @@ import { isDeclarationDate } from "./validate.ts";
 
 const TAX_LINE = "A sale can create a tax bill. Rate not computed.";
 
+// A retirement account does not get a tax reminder. Blank, taxable, and fund still do.
+function taxLineFor(account: HolderSettings["account"]): string | undefined {
+  return account === "ira" ? undefined : TAX_LINE;
+}
+
 export function applyHolder(friday: FridayDocument, settings: HolderSettings, spotUsd: number) {
   const exiting = exitOn(settings);
   const cash = cloneCash(friday.cash);
@@ -46,10 +51,9 @@ function holdCoins(friday: FridayDocument, settings: HolderSettings): DashboardV
 }
 
 function trimCoins(friday: FridayDocument, settings: HolderSettings): DashboardVM["coins"] {
-  const sentences = [
-    "Sell from the ceiling down to the target, highest-cost lots first.",
-    TAX_LINE,
-  ];
+  const taxLine = taxLineFor(settings.account);
+  const sentences = ["Sell from the ceiling down to the target, highest-cost lots first."];
+  if (taxLine != null) sentences.push(taxLine);
   if (friday.standDownPause) {
     sentences.push("Sped up: finish by the end of the pause.");
   }
@@ -59,19 +63,20 @@ function trimCoins(friday: FridayDocument, settings: HolderSettings): DashboardV
     tone: "sell",
     sentences,
     offChips: [exitOffChip(settings)],
-    taxLine: TAX_LINE,
+    ...(taxLine == null ? {} : { taxLine }),
   };
 }
 
 function exitCoins(settings: HolderSettings): DashboardVM["coins"] {
   const date = settings.thesisDate ?? "";
+  const taxLine = taxLineFor(settings.account);
   return {
     posture: "EXIT",
     word: "Exit",
     tone: "sell",
     sentences: ["Sell all.", "No floor."],
     offChips: [],
-    taxLine: TAX_LINE,
+    ...(taxLine == null ? {} : { taxLine }),
     declarationDateLabel: sentenceDate(date),
   };
 }

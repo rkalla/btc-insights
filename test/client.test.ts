@@ -107,6 +107,11 @@ test("built page scripts do not name a market client", () => {
   } catch {
     return;
   }
+  try {
+    js += readFileSync(new URL("../dist/assets/this-week.js", import.meta.url), "utf8");
+  } catch {
+    // The This week bundle is checked once the page has been built.
+  }
   const banned = ["coingecko", "coinmetrics", "api_key", "GOLD_QUOTE", "wss://", "WebSocket"];
   for (const word of banned) {
     assert.equal(js.includes(word), false, word);

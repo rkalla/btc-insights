@@ -30,7 +30,7 @@ a{color:var(--buy)} a:hover{color:var(--buy-hover)}
 
 /* ===== 2. Page and grid ===== */
 .page{max-width:1440px;margin:0 auto;padding:var(--pad-y) var(--pad-x);display:flex;flex-direction:column;gap:var(--gap)}
-.topbar{order:1}.spectrum{order:2}.row-1{order:3}.disagreement{order:4}.caveats{order:5}.row-2{order:6}.longview{order:7}.cycles{order:8}.footer{order:9}
+.topbar{order:1}.row-1{order:3}.disagreement{order:4}.caveats{order:5}.row-2{order:6}.longview{order:7}.cycles{order:8}.footer{order:9}
 .row{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:var(--gap)}
 .panel{background:var(--surface-1);border:1px solid var(--border);border-radius:var(--r-panel);padding:var(--panel-pad)}
 .label{font-family:var(--font-mono);font-size:11px;line-height:1.3;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3);font-weight:400}
@@ -41,42 +41,15 @@ a{color:var(--buy)} a:hover{color:var(--buy-hover)}
 
 /* ===== 3. Top bar ===== */
 .topbar{display:flex;justify-content:space-between;align-items:center;min-height:56px;gap:16px}
-.brand{display:flex;align-items:center;gap:14px}
-.brand-name{margin:0;font-size:17px;font-weight:600;letter-spacing:-.01em;line-height:1.3}
 .show-fires{display:none;align-self:flex-start;align-items:center;height:44px;padding:0 16px;background:transparent;border:1px solid var(--border-strong);border-radius:var(--r-well);color:var(--text-1);font:500 14px var(--font-sans);cursor:pointer}
-.brand-sep{width:1px;height:18px;background:var(--border-strong)}
-.brand-sub{font-size:13px;color:var(--text-2)}
-.clocks{display:flex;align-items:center;gap:10px}
-.clock{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border:1px solid var(--border-strong);border-radius:var(--r-chip);font-size:13px;white-space:nowrap}
-.clock .k{color:var(--text-2)} .clock .v{font-weight:600}
-.clock--utc{font-family:var(--font-mono);font-size:12px;color:var(--text-2)}
-.opened{font-size:13px;color:var(--text-2);padding:0 8px;white-space:nowrap}
-.icon-btn{width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--border-strong);border-radius:var(--r-well);background:var(--surface-1);color:var(--text-1);cursor:pointer}
-.icon-btn:hover{border-color:var(--text-3)}
-.clock-line{display:none;font-size:12.5px;color:var(--text-2)}
-
-/* ===== 4. Spectrum strip ===== */
-.spectrum{padding:16px 20px;display:flex;flex-direction:column;gap:10px}
-.rails{display:flex;gap:28px;align-items:flex-end}
-.rail-group{display:flex;flex-direction:column;gap:8px}
-.rail-group--coins{width:340px;flex-shrink:0}
-.rail-group--cash{flex-grow:1}
-.rail-divider{width:1px;align-self:stretch;background:var(--border)}
-.rail{list-style:none;margin:0;padding:0;display:grid;gap:4px}
-.rail--coins{grid-template-columns:repeat(3,minmax(0,1fr))}
-.rail--cash{grid-template-columns:repeat(6,minmax(0,1fr))}
-.rail li{height:38px;display:flex;align-items:center;justify-content:center;border-radius:var(--r-chip);background:var(--surface-3);color:var(--text-3);font-size:13.5px;text-align:center;padding:0 6px}
-.rail li.is-active{font-weight:700}
-.rail li.is-active.tone-buy{background:var(--buy);color:var(--on-buy)}
-.rail li.is-active.tone-neutral{background:var(--text-1);color:var(--bg)}
-.rail li.is-active.tone-sell{background:var(--sell);color:var(--on-buy)}
-.spectrum-axis{display:flex;justify-content:space-between;gap:12px;font-family:var(--font-mono);font-size:11px;color:var(--text-3)}
+.clock-line{display:block;order:1;margin:0;font-size:12.5px;color:var(--text-2)}
 
 /* ===== 5. Row 1: Cash, Coins, Now ===== */
 .cash{grid-column:span 7;padding:28px;display:flex;flex-direction:column}
 .side{grid-column:span 5;display:flex;flex-direction:column;gap:var(--gap)}
 .tag{display:inline-flex;align-items:center;height:26px;padding:0 10px;border:1px solid var(--border-accent);border-radius:var(--r-pill);font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--buy)}
-.posture{margin:14px 0 0;font-size:104px;font-weight:700;line-height:.95;letter-spacing:-.04em}
+.posture{margin:14px 0 0;font-size:clamp(32px, 9vw, 72px);font-weight:700;line-height:1.05;letter-spacing:-.03em;text-wrap:balance;max-width:100%}
+.rule{margin:8px 0 0;font-size:14px;line-height:1.4;color:var(--text-2)}
 .posture--buy{color:var(--buy)} .posture--neutral{color:var(--text-1)} .posture--sell{color:var(--sell)}
 .action{margin:18px 0 0;font-size:25px;font-weight:500;line-height:1.3;letter-spacing:-.01em;text-wrap:pretty}
 .action-sub{margin:8px 0 0;font-size:15px;line-height:1.5;color:var(--text-2)}
@@ -191,50 +164,68 @@ ul.legend li{display:flex;align-items:center;gap:6px}
 
 /* ===== 11. Footer ===== */
 .footer{display:flex;justify-content:space-between;gap:24px;padding:4px 4px 0;font-size:12.5px;color:var(--text-3)}
+.foot{order:9;border-top:1px solid var(--border);padding:8px 4px 0;font-size:14px;line-height:1.55;color:var(--text-3)}
+.foot p{margin:0 0 10px;max-width:70ch}
+.foot-links{display:flex;flex-wrap:wrap;gap:18px}
+.lede{order:0;display:flex;flex-direction:column;gap:8px;max-width:68ch}
+.lede h1{margin:0;font-size:clamp(28px,4vw,40px);font-weight:700;letter-spacing:-.02em;line-height:1.15}
+.lede p{margin:0;font-size:16px;line-height:1.5;color:var(--text-2)}
+.glossary{order:10;display:flex;flex-direction:column;gap:16px}
+.glossary h2{margin:0;font-size:22px;font-weight:600;letter-spacing:-.01em}
+.glossary dl{margin:0;display:flex;flex-direction:column;gap:16px}
+.glossary dt{font-weight:600}
+.glossary dd{margin:4px 0 0;color:var(--text-2);font-size:14.5px;line-height:1.5;max-width:70ch}
+a.term{text-decoration-line:underline;text-decoration-style:dotted;text-underline-offset:3px}
+.site{order:0;margin:calc(var(--pad-y) * -1) calc(var(--pad-x) * -1) 0;padding:0 var(--pad-x);border-bottom:1px solid var(--border);background:var(--bg)}
+.site-inner{display:grid;grid-template-columns:1fr auto;grid-template-areas:"brand gear" "tabs tabs";align-items:center}
+.site .brand{grid-area:brand;display:inline-flex;align-items:center;gap:10px;height:56px;color:var(--text-1);text-decoration:none;font-weight:700;font-size:19px;letter-spacing:-.01em;justify-self:start}
+.site .brand-mark{width:22px;height:22px;border-radius:7px;background:var(--buy);position:relative;flex:none}
+.site .brand-mark::after{content:"";position:absolute;left:6px;top:6px;width:10px;height:10px;border-radius:50%;background:var(--on-buy)}
+.site .tabs{grid-area:tabs;display:flex;gap:4px;margin:0 -4px;padding:0;list-style:none}
+.site .tabs a{display:inline-flex;align-items:center;height:44px;padding:0 12px;border-radius:10px;color:var(--text-2);text-decoration:none;font-size:16px;font-weight:500;position:relative}
+.site .tabs a:hover{color:var(--text-1);background:var(--surface-3)}
+.site .tabs a[aria-current="page"]{color:var(--text-1);font-weight:600}
+.site .tabs a[aria-current="page"]::after{content:"";position:absolute;left:12px;right:12px;bottom:0;height:3px;border-radius:3px 3px 0 0;background:var(--text-1)}
+.site .gear{grid-area:gear;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:44px;height:44px;padding:0 10px;border-radius:10px;color:var(--text-2);text-decoration:none;font-size:16px;font-weight:500}
+.site .gear:hover{color:var(--text-1);background:var(--surface-3)}
+.site .gear-label{display:none}
+@media (min-width:600px){
+  .site-inner{grid-template-columns:auto 1fr auto;grid-template-areas:"brand tabs gear";height:64px}
+  .site .tabs{margin:0 0 0 20px;align-self:stretch;align-items:stretch}
+  .site .tabs a{height:auto;border-radius:0}
+  .site .tabs a:hover{background:transparent}
+  .site .gear-label{display:inline}
+}
 
 /* ===== 12. Breakpoints ===== */
 @media (max-width:1279px){
   :root{--pad-x:24px}
   .chart,.context{grid-column:span 12}
   .readings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:24px}
-  .clock--utc,.opened{display:none}
 }
 @media (max-width:1023px){
   .cash{grid-column:span 12}
   .side{grid-column:span 12;flex-direction:row}
   .side > *{flex:1 1 0}
-  .posture{font-size:88px}
   .caveat-list{grid-template-columns:1fr;gap:16px}
   .longview{grid-template-columns:1fr;gap:20px}
   .cycle-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .cycles-head{flex-direction:column;gap:8px}
-  .clocks .clock{display:none}
-  .clock-line{display:block}
   .chart-svg--wide{font-size:14.5px}
-  .rail-group--coins{width:260px}
 }
 @media (max-width:767px){
   :root{--pad-x:16px;--pad-y:16px;--panel-pad:20px}
-  .row-1{order:2}.spectrum{order:3}
   .side{flex-direction:column}
   .cash{padding:20px}
-  .posture{font-size:64px}
   .posture-sm{font-size:48px}
   .action{font-size:21px}
   .spot{font-size:40px}
-  .rails{flex-direction:column;align-items:stretch;gap:14px}
-  .rail-divider{display:none}
-  .rail-group--coins{width:auto}
-  .rail--cash{grid-template-columns:repeat(3,minmax(0,1fr))}
-  .rail li{font-size:12.5px;height:36px}
-  .spectrum-axis .mid{display:none}
   .readings{display:block}
   .cycle-grid{grid-template-columns:1fr}
   .chart-svg--wide{display:none}
   .chart-svg--narrow{display:block}
   .show-fires{display:inline-flex}
   .chart-foot{flex-direction:column;gap:6px}
-  .brand-sep,.brand-sub{display:none}
   .footer{flex-direction:column;gap:4px}
   .record{grid-template-columns:72px 1fr;font-size:12.5px}
   .panel-head{flex-wrap:wrap;row-gap:6px}
@@ -321,14 +312,12 @@ main.page .panel h2{margin:0;font-size:18px;font-weight:600;letter-spacing:-.01e
 .loading-bar--spot{font-size:52px;height:1em;width:5.5em}
 .loading-bar--stat{font-size:22px;height:1.5em;width:4.2em}
 .loading-bar--rail{height:38px;width:100%}
-.loading-bar--clock{height:32px;width:148px}
 .loading-bar--line{font-size:12.5px;height:1.5em;width:100%}
 .loading-bar--chart{height:240px;width:100%}
 .loading-bar--title{font-size:24px;height:1.3em;width:100%}
 main[aria-busy="true"]{display:flex;flex-direction:column;gap:var(--gap);min-width:0}
 @media (max-width:1023px){
   .loading-bar--posture{font-size:88px}
-  .loading-bar--clock{display:none}
 }
 @media (max-width:767px){
   .loading-bar--posture{font-size:64px}
