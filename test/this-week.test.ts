@@ -321,6 +321,19 @@ test("an official Friday close is labeled and aged from the next UTC midnight", 
   assert.equal(quoteAged.chart.spot.date, "2026-09-25");
   const quoteOnTheLine = compose(friday, quote, holder, "2026-09-26T02:00:00Z");
   assert.equal(quoteOnTheLine.now.stale, false);
+
+  const flagged = { ...official, stale: true };
+  const publishedEarly = compose(friday, flagged, holder, "2026-09-26T03:00:00Z");
+  assert.equal(publishedEarly.now.stale, false);
+  assert.equal(publishedEarly.now.staleNote, null);
+  assert.equal(publishedEarly.chart.spot.date, "2026-09-25");
+  assert.equal(flagged.spotAsOf, "2026-09-25T00:00:00Z");
+  const publishedLate = compose(friday, flagged, holder, "2026-09-27T02:00:00Z");
+  assert.equal(publishedLate.now.stale, true);
+  assert.equal(publishedLate.now.staleNote, "The latest print is from 26 Sep 2026. Levels may be out of date.");
+  assert.equal(publishedLate.chart.spot.date, "2026-09-25");
+  assert.equal(compose(friday, flagged, holder, "not-a-time").now.stale, true);
+  assert.equal(compose(friday, { ...flagged, spotAsOf: "bogusT00:00:00Z" }, holder, "2026-09-26T03:00:00Z").now.stale, true);
 });
 
 test("add at once, add each week, and steady", () => {

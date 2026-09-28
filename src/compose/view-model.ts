@@ -53,10 +53,13 @@ export function compose(
   let stale = live.stale;
   const onClose = live.isOfficialClose && live.spotAsOf.endsWith("T00:00:00Z");
   const spotMs = quoteInstant(live.spotAsOf, live.isOfficialClose);
-  if (!stale) {
-    const ageMs = Date.parse(openedAt) - spotMs;
-    // Exactly 26 hours after the true close counts. A live quote must be older than that.
-    stale = Number.isFinite(ageMs) && (onClose ? ageMs >= STALE_AFTER_MS : ageMs > STALE_AFTER_MS);
+  const openedMs = Date.parse(openedAt);
+  if (onClose && Number.isFinite(spotMs) && Number.isFinite(openedMs)) {
+    // The file flag is measured from the stored Friday midnight, a day before the bar finishes.
+    stale = openedMs - spotMs >= STALE_AFTER_MS;
+  } else if (!stale) {
+    const ageMs = openedMs - spotMs;
+    stale = Number.isFinite(ageMs) && ageMs > STALE_AFTER_MS;
   }
   let staleNote: string | null = null;
   if (stale) {
