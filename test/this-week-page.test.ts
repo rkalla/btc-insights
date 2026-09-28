@@ -185,6 +185,59 @@ test("every fixture state paints one column without a leftover placeholder", () 
   }
 });
 
+test("emphasis bolds the amount frames and leaves the regular-buy parenthetical plain", () => {
+  const lump = paint(readJson("fixtures/states/lump-in.json") as FridayStateOverlay, holder({
+    cashAvailable: 10000,
+    standingAmount: 200,
+    standingEvery: "week",
+  }));
+  const lumpSteps = lump.querySelector(".steps")?.innerHTML ?? "";
+  assert.equal(lumpSteps.includes("<strong>$10,000</strong> into Bitcoin when you have it"), true);
+  assert.equal(lumpSteps.includes("<strong><strong>"), false);
+  assert.equal(lumpSteps.includes("($200 a week)"), true);
+  assert.equal(lumpSteps.includes("<strong>$200</strong>"), false);
+
+  const blankLump = paint(readJson("fixtures/states/lump-in.json") as FridayStateOverlay);
+  assert.equal(
+    blankLump.querySelector(".steps")?.innerHTML.includes("<strong>the money you've set aside</strong> into Bitcoin when you have it"),
+    true,
+  );
+
+  const weekly = paint(readJson("fixtures/states/build.json") as FridayStateOverlay, holder({ buildAmount: 2600 }));
+  assert.equal(weekly.querySelector(".steps")?.innerHTML.includes("<strong>$100</strong> to Bitcoin this week"), true);
+  const blankWeekly = paint(readJson("fixtures/states/build.json") as FridayStateOverlay);
+  assert.equal(
+    blankWeekly.querySelector(".steps")?.innerHTML.includes("<strong>a small, fixed amount</strong>"),
+    true,
+  );
+
+  const funded = paint({}, holder({
+    cashAvailable: 10000,
+    standingAmount: 200,
+    standingEvery: "week",
+    coinsHeld: 1,
+    netWorth: 470000,
+    targetShare: 10,
+    ceilingShare: 15,
+  }));
+  const fundedSteps = funded.querySelector(".steps")?.innerHTML ?? "";
+  assert.equal(fundedSteps.includes('<strong class="nw">Friday, Oct 2, 5:00 pm</strong>'), true);
+  assert.equal(fundedSteps.includes("Sell about <strong>$37,400</strong>"), true);
+  assert.equal(fundedSteps.includes("($200 a week)"), true);
+  assert.equal(fundedSteps.includes("<strong>$200</strong>"), false);
+
+  const pause = paint(readJson("fixtures/states/stand-down.json") as FridayStateOverlay, holder({
+    coinsHeld: 1,
+    netWorth: 470000,
+    targetShare: 10,
+    ceilingShare: 15,
+  }));
+  const pauseSteps = pause.querySelector(".steps")?.innerHTML ?? "";
+  assert.equal(pauseSteps.includes("happened by <strong>Mar 6, 2027</strong>, that"), true);
+  assert.equal(pauseSteps.includes("Finish by <strong>Mar 6, 2027</strong>."), true);
+  assert.equal(pauseSteps.includes("Sell about <strong>$37,400</strong>"), true);
+});
+
 test("an out-of-date week keeps the call and hides the update line", () => {
   const document = paint({}, holder(), {}, "2026-10-03T12:00:00.000Z");
   assert.equal(document.querySelector(".stale")?.textContent?.includes("Don't act on it until it does."), true);

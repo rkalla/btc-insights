@@ -214,62 +214,29 @@ function splitFirstSentence(text: string): { answer: string; body: string } {
   return { answer: match[0].trim(), body: text.slice(match[0].length).trim() };
 }
 
-interface Mark {
-  start: number;
-  end: number;
-  nowrap: boolean;
-}
-
 function emphasize(text: string): string {
-  const marks: Mark[] = [];
-  addGroup(marks, text, /Put (.+) into Bitcoin by (.+) your time/, [
-    { group: 1, nowrap: false },
-    { group: 2, nowrap: true },
-  ]);
-  addGroup(marks, text, /Add (.+) to Bitcoin this week/, [{ group: 1, nowrap: false }]);
-  addGroup(marks, text, /Finish by (.+)\./, [{ group: 1, nowrap: false }]);
-  addGroup(marks, text, /happened by (.+?), that/, [{ group: 1, nowrap: false }]);
-  for (const match of text.matchAll(/\$\d[\d,]*(?:\.\d+)?/g)) {
-    const start = match.index ?? 0;
-    marks.push({ start, end: start + match[0].length, nowrap: false });
-  }
-  marks.sort((a, b) => a.start - b.start || b.end - a.end || Number(b.nowrap) - Number(a.nowrap));
-  const chosen: Mark[] = [];
-  let cursor = 0;
-  for (const mark of marks) {
-    if (mark.end <= mark.start || mark.start < cursor) continue;
-    chosen.push(mark);
-    cursor = mark.end;
-  }
-  if (chosen.length === 0) return esc(text);
-  let html = "";
-  let at = 0;
-  for (const mark of chosen) {
-    html += esc(text.slice(at, mark.start));
-    const cls = mark.nowrap ? ` class="nw"` : "";
-    html += `<strong${cls}>${esc(text.slice(mark.start, mark.end))}</strong>`;
-    at = mark.end;
-  }
-  html += esc(text.slice(at));
-  return html;
+  let html = esc(text);
+  html = html.replace(
+    /Put (.+?) into Bitcoin by (.+?) your time/,
+    'Put <strong>$1</strong> into Bitcoin by <strong class="nw">$2</strong> your time',
+  );
+  html = html.replace(
+    /Put (.+?) into Bitcoin when you have it/,
+    "Put <strong>$1</strong> into Bitcoin when you have it",
+  );
+  html = html.replace(/Add (.+?) to Bitcoin this week/, "Add <strong>$1</strong> to Bitcoin this week");
+  html = html.replace(/Finish by ([^.]+)\./, "Finish by <strong>$1</strong>.");
+  html = html.replace(/happened by (.+?), that/, "happened by <strong>$1</strong>, that");
+  return html.replace(/\$\d[\d,]*(?:\.\d+)?/g, (amount, index: number, source: string) => {
+    if (source[index - 1] === "(" || insideStrong(source, index)) return amount;
+    return `<strong>${amount}</strong>`;
+  });
 }
 
-function addGroup(
-  marks: Mark[],
-  text: string,
-  regex: RegExp,
-  groups: { group: number; nowrap: boolean }[],
-): void {
-  const match = regex.exec(text);
-  if (match?.index == null) return;
-  for (const item of groups) {
-    const value = match[item.group];
-    if (value == null || value === "") continue;
-    const local = match[0].indexOf(value);
-    if (local < 0) continue;
-    const start = match.index + local;
-    marks.push({ start, end: start + value.length, nowrap: item.nowrap });
-  }
+function insideStrong(source: string, index: number): boolean {
+  const open = source.lastIndexOf("<strong", index);
+  if (open < 0) return false;
+  return source.lastIndexOf("</strong>", index) < open;
 }
 
 function esc(text: string): string {
