@@ -1,6 +1,6 @@
 import type { PlainView } from "../compose/plain.ts";
 import type { WeekCopy } from "../copy/thisWeek.ts";
-import { footerLinks, siteHeader } from "./site-header.ts";
+import { siteFooter, siteHeader } from "./site-header.ts";
 
 export const WEEK_LOADING = "Loading this week's advice.";
 export const WEEK_NEEDS_JS = "This week needs JavaScript to show the advice.";
@@ -28,6 +28,7 @@ export function thisWeekShell(iconLinks: string): string {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>This week · BTC Friday</title>
 ${iconLinks}
+<link rel="stylesheet" href="/assets/site.css">
 <link rel="stylesheet" href="/assets/this-week.css">
 </head>
 <body>
@@ -55,7 +56,7 @@ ${risk(view)}
 ${priceBlock(view.copy)}
 ${evidenceLink(view.copy)}
 </main>
-${footer(view.copy)}`;
+${siteFooter()}`;
 }
 
 function metaLine(copy: WeekCopy): string {
@@ -177,10 +178,6 @@ function priceParts(price: string): { label: string; amount: string; when: strin
 
 function evidenceLink(copy: WeekCopy): string {
   return `<a class="evidence" href="${EVIDENCE_HREF}"><span class="copy"><span class="t">${esc(copy.evidence)}</span><span class="s">${esc(copy.evidenceSub)}</span></span>${arrowIcon()}</a>`;
-}
-
-function footer(copy: WeekCopy): string {
-  return `<footer class="foot" id="about"><div class="foot-inner"><p>${esc(copy.footer)}</p>${footerLinks()}</div></footer>`;
 }
 
 function linkSettings(text: string): string {

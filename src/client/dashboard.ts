@@ -3,9 +3,9 @@ import type { FridayDocument, LiveSlice } from "../contract/types.ts";
 import { compose } from "../compose/view-model.ts";
 import { chartSvg } from "../painter/chart.ts";
 import { paintDashboard } from "../painter/dashboard.ts";
-import { siteHeader } from "../painter/site-header.ts";
 import { blankSettings, loadSettings } from "../settings/store.ts";
 import type { HolderSettings } from "../contract/types.ts";
+import { installLayoutProbe } from "./layout-probe.ts";
 import { connectPoll, type PollHandle } from "./poll.ts";
 
 const PHONE = "(max-width: 767px)";
@@ -26,6 +26,7 @@ let lastScrollY = 0;
 
 function boot(): void {
   if (typeof document === "undefined") return;
+  installLayoutProbe();
   poll = connectPoll(
     {
       now: () => Date.now(),
@@ -130,11 +131,10 @@ function mount(vm: ReturnType<typeof compose>): void {
   const painted = holder.content.querySelector(".page");
   if (painted == null) return;
   page.replaceChildren(...Array.from(painted.childNodes));
-  const header = page.querySelector("header");
+  page.querySelector(":scope > header.site")?.remove();
   const main = document.createElement("main");
   main.className = "dashboard-main";
-  const rest = Array.from(page.childNodes).filter((node) => node !== header);
-  main.append(...rest);
+  main.append(...Array.from(page.childNodes));
   page.append(main);
   watchChart();
 }
@@ -513,7 +513,7 @@ function showError(): void {
   openMarkerDate = null;
   const page = document.querySelector(".page");
   if (!(page instanceof HTMLElement)) return;
-  page.innerHTML = `${siteHeader("evidence")}<main class="load-error-host"><section class="panel load-error"><p>${LOAD_ERROR}</p><button type="button" class="btn btn--primary">Try again</button></section></main>`;
+  page.innerHTML = `<main class="load-error-host"><section class="panel load-error"><p>${LOAD_ERROR}</p><button type="button" class="btn btn--primary">Try again</button></section></main>`;
   page.querySelector("button")?.addEventListener("click", () => {
     location.reload();
   });

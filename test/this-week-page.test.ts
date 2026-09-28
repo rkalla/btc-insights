@@ -79,6 +79,9 @@ test("the shell is the header, a loading sentence, and a no-javascript sentence"
   assert.equal(shell.includes('rel="icon" href="/favicon.ico" sizes="48x48"'), true);
   assert.equal(shell.includes('rel="icon" type="image/png" href="/favicon-32.png" sizes="32x32"'), true);
   assert.equal(shell.includes('rel="apple-touch-icon" href="/apple-touch-icon.png"'), true);
+  assert.equal(shell.includes('href="/assets/site.css"'), true);
+  assert.equal(shell.includes('href="/assets/this-week.css"'), true);
+  assert.equal(shell.includes("evidence.css"), false);
   assert.equal(shell.includes("Buy strongly"), false);
   assert.equal(shell.includes("$"), false);
   assert.equal(document.querySelector("h1"), null);
@@ -93,15 +96,20 @@ test("the shell is the header, a loading sentence, and a no-javascript sentence"
 });
 
 test("this week css uses the light tokens and not a mono face", () => {
+  const site = readFileSync(new URL("../src/painter/site.css", import.meta.url), "utf8");
   const css = readFileSync(new URL("../src/painter/this-week.css", import.meta.url), "utf8");
-  assert.equal(css.includes("--paper:#F7F6F2"), true);
-  assert.equal(css.includes("--buy:#1F5ED6"), true);
-  assert.equal(css.includes("--caution:#A5520E"), true);
+  assert.equal(site.includes("--paper:#F7F6F2"), true);
+  assert.equal(site.includes("--buy:#1F5ED6"), true);
+  assert.equal(site.includes("--caution:#A5520E"), true);
+  assert.equal(site.includes("fonts.googleapis.com"), false);
+  assert.equal(site.includes("fonts.gstatic.com"), false);
   assert.equal(css.includes("fonts.googleapis.com"), false);
   assert.equal(css.includes("fonts.gstatic.com"), false);
   assert.equal(css.includes("650"), false);
   assert.equal(css.includes("Geist Mono"), false);
   assert.equal(css.includes("monospace"), false);
+  assert.equal(site.includes("Geist Mono"), false);
+  assert.equal(site.includes("monospace"), false);
   assert.equal(css.includes("devbar"), false);
   assert.equal(/@keyframes\s+shimmer/i.test(css), false);
   assert.equal(/\bred\b|\bgreen\b/i.test(css), false);

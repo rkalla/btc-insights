@@ -2,6 +2,7 @@ import { composePlain, type PlainView } from "../compose/plain.ts";
 import type { FridayDocument, HolderSettings, LiveSlice } from "../contract/types.ts";
 import { paintThisWeek, WEEK_LOAD_ERROR, WEEK_TRY_AGAIN } from "../painter/this-week.ts";
 import { blankSettings, loadSettings } from "../settings/store.ts";
+import { installLayoutProbe } from "./layout-probe.ts";
 import { connectPoll, type PollHandle } from "./poll.ts";
 
 let friday: FridayDocument | null = null;
@@ -11,6 +12,7 @@ let poll: PollHandle | null = null;
 
 function boot(): void {
   if (typeof document === "undefined") return;
+  installLayoutProbe();
   poll = connectPoll(
     {
       now: () => Date.now(),

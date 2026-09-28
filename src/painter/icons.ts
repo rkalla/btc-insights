@@ -1,12 +1,8 @@
-const MUTED = "#9BA6B5";
-const SELL = "#F2A65A";
-
-export function backIcon(): string {
-  return icon(
-    18,
-    `<path d="M15 6L9 12L15 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`,
-  );
-}
+const INK = "#15171C";
+const INK_2 = "#4A505C";
+const MUTED = "#5F6570";
+const BUY = "#1F5ED6";
+const SELL = "#A5520E";
 
 export function caveatIcon(kind: "gold" | "fireWeek" | "fit" | "sameWeek" | "armedWait"): string {
   switch (kind) {
@@ -41,17 +37,17 @@ export function caveatIcon(kind: "gold" | "fireWeek" | "fit" | "sameWeek" | "arm
 export function legendSwatch(kind: "price" | "trend" | "upper" | "lower" | "average" | "buy" | "sell"): string {
   switch (kind) {
     case "price":
-      return legendLine("#E6EAF0", "2");
+      return legendLine(INK, "2");
     case "trend":
-      return legendLine("#7F8A9A", "1.5");
+      return legendLine(INK_2, "1.5");
     case "upper":
       return legendLine(SELL, "1.5", "2 3");
     case "lower":
-      return legendLine("#6CB4FF", "1.5", "2 3");
+      return legendLine(BUY, "1.5", "2 3");
     case "average":
-      return legendLine("#5F6A7A", "1.2", "5 3");
+      return legendLine(MUTED, "1.2", "1 3");
     case "buy":
-      return glyph("0 0 12 12", 11, 11, `<circle cx="6" cy="6" r="5" fill="#6CB4FF"/>`);
+      return glyph("0 0 12 12", 11, 11, `<circle cx="6" cy="6" r="5" fill="${BUY}"/>`);
     case "sell":
       return glyph("0 0 12 12", 11, 11, `<path d="M6 1L11 6L6 11L1 6Z" fill="${SELL}"/>`);
   }
