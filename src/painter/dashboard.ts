@@ -441,22 +441,19 @@ function linkTerms(html: string): string {
   return parts
     .map((part) => {
       if (part.startsWith("<")) {
-        noteSkip(part, skip);
+        const name = /^<\s*\/?\s*([a-zA-Z0-9]+)/.exec(part)?.[1]?.toLowerCase() ?? "";
+        if (name !== "" && !part.endsWith("/>")) {
+          if (/^<\s*\//.test(part)) {
+            if (skip[skip.length - 1] === name) skip.pop();
+          } else if (name === "a" || name === "svg" || /\bsr-only\b/.test(part)) {
+            skip.push(name);
+          }
+        }
         return part;
       }
       return skip.length > 0 || part === "" ? part : linkText(part, used);
     })
     .join("");
-}
-
-function noteSkip(tag: string, skip: string[]): void {
-  const name = /^<\s*\/?\s*([a-zA-Z0-9]+)/.exec(tag)?.[1]?.toLowerCase() ?? "";
-  if (name === "" || tag.endsWith("/>")) return;
-  if (/^<\s*\//.test(tag)) {
-    if (skip[skip.length - 1] === name) skip.pop();
-    return;
-  }
-  if (name === "a" || name === "svg" || /\bsr-only\b/.test(tag)) skip.push(name);
 }
 
 function linkText(text: string, used: Set<string>): string {
