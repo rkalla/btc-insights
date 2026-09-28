@@ -10,7 +10,9 @@ async function overflows(page: Page): Promise<boolean> {
 }
 
 test("bundles do not name a market client", () => {
-  const js = `${readFileSync("dist/assets/dashboard.js", "utf8")}${readFileSync("dist/assets/settings.js", "utf8")}`;
+  const js = ["dist/assets/dashboard.js", "dist/assets/settings.js", "dist/assets/this-week.js"]
+    .map((path) => readFileSync(path, "utf8"))
+    .join("\n");
   for (const word of ["coingecko", "coinmetrics", "api_key", "GOLD_QUOTE", "wss://", "WebSocket"]) {
     expect(js.includes(word), word).toBe(false);
   }
@@ -114,6 +116,128 @@ test("save writes the device settings and returns to the dashboard", async ({ pa
   await expect(page.locator("body")).toContainText("Up to $2,500.");
   const saved = await page.evaluate(() => localStorage.getItem("btc-insights.settings.v1"));
   expect(saved).toContain("2500");
+});
+
+test("this week bundle has no font host or market host", () => {
+  const html = readFileSync("dist/this-week/index.html", "utf8");
+  const css = readFileSync("dist/assets/this-week.css", "utf8");
+  const js = readFileSync("dist/assets/this-week.js", "utf8");
+  const blob = `${html}\n${css}\n${js}`.toLowerCase();
+  for (const word of ["fonts.googleapis.com", "fonts.gstatic.com", "coingecko", "coinmetrics", "api_key", "wss://", "websocket"]) {
+    expect(blob.includes(word), word).toBe(false);
+  }
+  expect(blob.includes("https://") || blob.includes("http://"), "remote url").toBe(false);
+  expect(html).toContain('rel="icon" href="/favicon.ico" sizes="48x48"');
+  expect(html).toContain('rel="icon" type="image/png" href="/favicon-32.png" sizes="32x32"');
+  expect(html).toContain('rel="apple-touch-icon" href="/apple-touch-icon.png"');
+  expect(html).not.toContain("devbar");
+  const index = readFileSync("dist/index.html", "utf8");
+  expect(index).toContain("Bitcoin dashboard");
+  expect(index).toContain("assets/dashboard.js");
+  expect(index).not.toContain("this-week");
+  expect(index).not.toContain("Loading this week's advice.");
+});
+
+for (const width of [320, 390, 1440]) {
+  test(`this week at ${width}`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.goto("/this-week/");
+    await expect(page.getByRole("heading", { level: 1, name: "A strong week to buy Bitcoin." })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+    const current = page.locator('ol.scale li[aria-current="step"]');
+    await expect(current).toHaveCount(1);
+    await expect(current).toContainText("Buy strongly");
+    await expect(page.getByRole("list", { name: "Advice scale, from most cautious to most eager" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "This week" })).toHaveAttribute("aria-current", "page");
+    const order = await page.locator("body").evaluate(() => {
+      return [...document.querySelectorAll("header.site, #week > *, footer.foot")].map((node) => {
+        return `${node.tagName}.${node.getAttribute("class") ?? ""}`;
+      });
+    });
+    expect(order).toEqual([
+      "HEADER.site",
+      "P.meta",
+      "SECTION.card verdict tone-buy",
+      "SECTION.card todo tone-buy",
+      "SECTION.card why",
+      "SECTION.card record",
+      "SECTION.card risk",
+      "SECTION.price",
+      "A.evidence",
+      "FOOTER.foot",
+    ]);
+    const today = page.getByRole("region", { name: "Bitcoin today" });
+    await expect(today).toContainText("Bitcoin today");
+    await expect(today).not.toContainText("%");
+    await expect(page.getByRole("link", { name: /See the evidence behind this/ })).toBeVisible();
+    await expect(page.getByText("Loading this week's advice.", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button")).toHaveCount(0);
+    await expect(page.locator("figure, canvas")).toHaveCount(0);
+    expect(await overflows(page)).toBe(false);
+    const result = await new AxeBuilder({ page }).analyze();
+    expect(result.violations, JSON.stringify(result.violations, null, 2)).toEqual([]);
+  });
+}
+
+test("loading is the header and one sentence", async ({ page }) => {
+  await page.route("**/data/friday.json", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    await route.continue();
+  });
+  await page.goto("/this-week/", { waitUntil: "domcontentloaded" });
+  await expect(page.getByText("Loading this week's advice.", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "BTC Friday" })).toBeVisible();
+  await expect(page.locator("#week")).not.toContainText("$");
+  await expect(page.locator(".loading-bar")).toHaveCount(0);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(0);
+});
+
+test("this week shell without javascript", async ({ browser }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  const page = await context.newPage();
+  try {
+    await page.setViewportSize({ width: 390, height: 800 });
+    await page.goto("/this-week/");
+    await expect(page.getByText("This week needs JavaScript to show the advice.", { exact: true })).toBeVisible();
+    await expect(page.getByText("Loading this week's advice.", { exact: true })).toBeHidden();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveCount(0);
+  } finally {
+    await context.close();
+  }
+});
+
+test("a failed first load offers try again", async ({ page }) => {
+  await page.route("**/data/friday.json", (route) => route.abort());
+  await page.goto("/this-week/");
+  await expect(page.getByText("The advice could not load. Nothing here is a call.", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(0);
+  await expect(page.locator("#week")).not.toContainText("$");
+  await page.unroute("**/data/friday.json");
+  await page.getByRole("button", { name: "Try again" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "A strong week to buy Bitcoin." })).toBeVisible();
+});
+
+test("a later poll failure keeps the last page", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-09-27T18:00:00-07:00") });
+  await page.goto("/this-week/");
+  await expect(page.getByRole("heading", { level: 1, name: "A strong week to buy Bitcoin." })).toBeVisible();
+  await page.route("**/data/live.json", (route) => route.abort());
+  const failed = page.waitForRequest("**/data/live.json");
+  await page.clock.fastForward(10 * 60 * 1000);
+  await failed;
+  await expect(page.getByRole("heading", { level: 1, name: "A strong week to buy Bitcoin." })).toBeVisible();
+  await expect(page.getByText("The advice could not load. Nothing here is a call.")).toHaveCount(0);
+});
+
+test("this week does not call a market host", async ({ page }) => {
+  const hosts = new Set<string>();
+  page.on("request", (request) => {
+    hosts.add(new URL(request.url()).host);
+  });
+  await page.goto("/this-week/");
+  await expect(page.getByRole("heading", { level: 1, name: "A strong week to buy Bitcoin." })).toBeVisible();
+  expect([...hosts]).toEqual(["127.0.0.1:4173"]);
 });
 
 test("settings validate on blur and save, and cancel does not write", async ({ page }) => {

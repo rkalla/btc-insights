@@ -22,7 +22,8 @@ const types = new Map([
 ]);
 
 function distFile(pathname) {
-  const rel = pathname === "/" ? "index.html" : pathname.replace(/^\/+/, "");
+  let rel = pathname.replace(/^\/+/, "");
+  if (rel === "" || rel.endsWith("/")) rel += "index.html";
   const full = normalize(join(dist, rel));
   if (full !== dist && !full.startsWith(dist + sep)) return null;
   return full;
@@ -31,6 +32,11 @@ function distFile(pathname) {
 const server = createServer((req, res) => {
   const url = new URL(req.url ?? "/", `http://${host}`);
   const pathname = decodeURIComponent(url.pathname);
+  if (pathname === "/this-week") {
+    res.writeHead(308, { location: "/this-week/" });
+    res.end();
+    return;
+  }
   const fixture = fixtures.get(pathname);
   const filePath = fixture ?? distFile(pathname);
   if (filePath == null) {
