@@ -42,6 +42,16 @@ export interface ContextReading {
   fromCloseLabel?: string;
 }
 
+export interface PresentationFacts {
+  schema: 1;
+  buyStrongly: { wins: 4; total: 4; tenths: 6; worstDipPct: 27 };
+  lumpIn: { wins: 6; total: 6; tenths: 7; openSinceLabel: "November 2025" };
+  build: { up50Pct: 79; weeks: 91; stretches: 4 };
+  slowIn: { wins: 2; total: 3 };
+  standDown: { wins: 7; total: 8; stretchesAbout: 6 };
+  history: { year: number; fireDate: string; oneYearPct: number | null }[];
+}
+
 export interface FridayDocument {
   schema: 1;
   official: {
@@ -51,6 +61,8 @@ export interface FridayDocument {
     nextCloseLabel: string;
   };
   standDownPause: boolean;
+  // Twelve calendar months after this Friday is the pause end. Omitted when this week is not a stand-down.
+  standDownFireDate?: ISODate | null;
   armedWait: boolean;
   dollarSlot: null | { pile: "cashAvailable" };
   cash: {
@@ -114,6 +126,7 @@ export interface FridayDocument {
     closeLabel: string;
     context: FridayDocument["context"];
   };
+  presentation: PresentationFacts;
 }
 
 export interface LiveSlice {

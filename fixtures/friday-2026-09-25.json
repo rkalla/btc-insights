@@ -8007,5 +8007,61 @@
     "Research rule. A large position needs the holder's full balance sheet.",
     "This page does not trade and does not compute tax."
   ],
-  "previousOfficial": null
+  "previousOfficial": null,
+  "presentation": {
+    "schema": 1,
+    "buyStrongly": {
+      "wins": 4,
+      "total": 4,
+      "tenths": 6,
+      "worstDipPct": 27
+    },
+    "lumpIn": {
+      "wins": 6,
+      "total": 6,
+      "tenths": 7,
+      "openSinceLabel": "November 2025"
+    },
+    "build": {
+      "up50Pct": 79,
+      "weeks": 91,
+      "stretches": 4
+    },
+    "slowIn": {
+      "wins": 2,
+      "total": 3
+    },
+    "standDown": {
+      "wins": 7,
+      "total": 8,
+      "stretchesAbout": 6
+    },
+    "history": [
+      {
+        "year": 2015,
+        "fireDate": "2015-07-24",
+        "oneYearPct": 127
+      },
+      {
+        "year": 2019,
+        "fireDate": "2019-05-03",
+        "oneYearPct": 59
+      },
+      {
+        "year": 2020,
+        "fireDate": "2020-07-31",
+        "oneYearPct": 269
+      },
+      {
+        "year": 2023,
+        "fireDate": "2023-03-17",
+        "oneYearPct": 138
+      },
+      {
+        "year": 2026,
+        "fireDate": "2026-09-18",
+        "oneYearPct": null
+      }
+    ]
+  }
 }

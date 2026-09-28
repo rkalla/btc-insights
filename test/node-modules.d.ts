@@ -51,8 +51,8 @@ declare module "node:crypto" {
 
 declare module "node:test" {
   function test(name: string, fn: () => void | Promise<void>): void;
-  export default test;
   export { test };
+  export default test;
 }
 
 declare module "node:path" {

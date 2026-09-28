@@ -1,5 +1,6 @@
 import { chartMoney } from "../contract/format.ts";
 import type { FridayDocument } from "../contract/types.ts";
+import { COPY_WRITTEN_FOR } from "../copy/thisWeek.ts";
 import { cashCopy, coinHold, disagreement, type CashFlags } from "./copy.ts";
 import { progressCard } from "./cycle.ts";
 import type { ProgressAnchors } from "./cycle.ts";
@@ -159,5 +160,18 @@ export function buildFriday(history: readonly HistoryRow[], record: PublishedRec
     },
     footer: record.footer,
     previousOfficial: record.previousOfficial,
+    presentation: {
+      schema: 1,
+      buyStrongly: { ...COPY_WRITTEN_FOR.buyStrongly },
+      lumpIn: { ...COPY_WRITTEN_FOR.lumpIn },
+      build: { ...COPY_WRITTEN_FOR.build },
+      slowIn: { ...COPY_WRITTEN_FOR.slowIn },
+      standDown: { ...COPY_WRITTEN_FOR.standDown },
+      history: COPY_WRITTEN_FOR.history.map((row) => ({
+        year: row.year,
+        fireDate: row.fireDate,
+        oneYearPct: row.oneYearPct,
+      })),
+    },
   };
 }
