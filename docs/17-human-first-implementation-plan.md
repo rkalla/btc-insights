@@ -2,7 +2,7 @@
 
 > **For agentic workers:** Execute this file with `/execute-plan docs/17-human-first-implementation-plan.md`. The `## PR Plan` at the end is the DAG that skill parses. Implement one pull request at a time, from the sections named in that pull request. Do not implement the pages in the same change that adds this file. This revision is tracked by one issue, [#18](https://github.com/rkalla/btc-insights/issues/18). Do not open another issue for these pull requests. Earlier pull requests contain `Refs #18`. The pull request that makes This week the public home page contains `Fixes #18`. Review fixes stay on #18.
 
-**Status:** Ready to execute. 27 September 2026.
+**Status:** Shipped. 27 September 2026. A later restyle overrides the dark Evidence theme and the Evidence wording rule. That work is `docs/19-restyle-implementation-plan.md` and issue [#28](https://github.com/rkalla/btc-insights/issues/28).
 
 **Goal:** Make `btcfriday.app` answer three questions in five seconds: what to do, by when, and how sure. Today's dashboard stays one click away, and the signal rules stay as they are.
 
