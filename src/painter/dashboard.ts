@@ -30,116 +30,110 @@ const CASH_FACE: Record<CashPosture, { word: string; rule: string | null }> = {
   NO_CALL: { word: "No update", rule: "Rule: No call" },
 };
 
-const GLOSSARY: readonly { id: string; term: string; meaning: string }[] = [
+const GLOSSARY: readonly { id: string; term: string; meaning: string; pattern: RegExp }[] = [
   {
     id: "long-run-trend",
     term: "Long-run trend (power law)",
     meaning: "The smooth curve Bitcoin's price has followed since 2010, fitted on a log scale. We compare today's price with it.",
+    pattern: /long-run trend|power law/i,
   },
   {
     id: "gap",
     term: "Gap",
     meaning: "How far the price is above or below the trend, in percent. \u221241% means 41% below.",
+    pattern: /\bgap\b/i,
   },
   {
     id: "bands",
     term: "20% below and 55% above lines",
     meaning: "The edges of the normal range. Between them, nothing unusual is happening.",
+    pattern: /20% below(?: and 55% above lines)?|55% above/i,
   },
   {
     id: "buy-cross",
     term: "Buy cross (our strongest buy signal)",
     meaning: "Sets up when Bitcoin is cheap against gold and at least 20% below its trend. Turns on when Bitcoin's price in gold climbs back to its one-year average.",
+    pattern: /buy cross/i,
   },
   {
     id: "armed",
     term: "Armed",
     meaning: "The buy cross has set up but hasn't turned on yet.",
+    pattern: /\barmed\b/i,
   },
   {
     id: "z-score",
     term: "Z-score",
     meaning: "How unusual Bitcoin's price in gold is compared with the past 52 weeks. Zero is average; negative means cheap against gold.",
+    pattern: /z-score/i,
   },
   {
     id: "gold-flag",
     term: "Gold flag",
     meaning: "A warning that a signal came partly from gold rising, not only Bitcoin falling.",
+    pattern: /gold flag/i,
   },
   {
     id: "sell-roll",
     term: "Sell roll (caution signal)",
     meaning: "Turns on when Bitcoin has run more than 55% above its trend and then falls 10% from its peak. It pauses new money; it doesn't sell coins.",
+    pattern: /sell roll|caution signal/i,
   },
   {
     id: "realized-price",
     term: "Realized price",
     meaning: "Roughly what the average holder paid, based on the price when each coin last moved. Below it, the average holder is at a loss.",
+    pattern: /realized price/i,
   },
   {
     id: "thermometer",
     term: "Thermometer",
     meaning: "A combined hot-or-cold reading from several inputs. It's shown for context and doesn't change the advice.",
+    pattern: /thermometer/i,
   },
   {
     id: "average-200w",
     term: "200-week average",
     meaning: "The average of the last 200 Friday prices, about four years. A slow-moving reference line.",
+    pattern: /200-week average/i,
   },
   {
     id: "floor",
     term: "Floor",
     meaning: "A cautious estimate of how often a signal works, allowing for how few times it has happened. Technically, the lower end of a 90% Wilson interval.",
+    pattern: /\bfloor\b/i,
   },
   {
     id: "episode",
     term: "Episode, regime, spell, stretch",
     meaning: "One continuous period when a signal or condition was on.",
+    pattern: /\b(?:episodes?|regimes?|spells?|stretches?)\b/i,
   },
   {
     id: "friday-close",
     term: "Friday close",
     meaning: "The price at 00:00 UTC on Saturday, which is 5:00 pm Friday in Arizona. The advice changes only then.",
+    pattern: /friday closes?/i,
   },
   {
     id: "grace",
     term: "Grace window",
     meaning: "After the buy cross turns on, two more Friday closes to act before the advice moves on.",
+    pattern: /grace window|\bgrace\b/i,
   },
   {
     id: "cycle-capture",
     term: "Cycle capture",
     meaning: "How much of a cycle's rise, from its low to its high, a buyer caught by buying when a signal turned on and holding to the high. It shows timing, not odds.",
+    pattern: /cycle capture/i,
   },
   {
     id: "rule-names",
     term: "Rule names",
     meaning: "All in = Buy strongly. Lump in = Add, at once. Build = Add, each week. Stay the course = Steady. Slow in = Go slow. Stand down = Pause. Exit = Sell, your decision.",
+    pattern: /\b(?:stay the course|slow in|stand down|lump in|all in)\b/i,
   },
 ];
-
-const TERM_LINKS: readonly { id: string; pattern: RegExp }[] = [
-  { id: "long-run-trend", pattern: /long-run trend|power law/i },
-  { id: "bands", pattern: /20% below(?: and 55% above lines)?|55% above/i },
-  { id: "buy-cross", pattern: /buy cross/i },
-  { id: "sell-roll", pattern: /sell roll|caution signal/i },
-  { id: "realized-price", pattern: /realized price/i },
-  { id: "average-200w", pattern: /200-week average/i },
-  { id: "z-score", pattern: /z-score/i },
-  { id: "gold-flag", pattern: /gold flag/i },
-  { id: "thermometer", pattern: /thermometer/i },
-  { id: "friday-close", pattern: /friday closes?/i },
-  { id: "grace", pattern: /grace window|\bgrace\b/i },
-  { id: "cycle-capture", pattern: /cycle capture/i },
-  { id: "floor", pattern: /\bfloor\b/i },
-  { id: "armed", pattern: /\barmed\b/i },
-  { id: "gap", pattern: /\bgap\b/i },
-  { id: "episode", pattern: /\b(?:episodes?|regimes?|spells?|stretches?)\b/i },
-  { id: "rule-names", pattern: /\b(?:stay the course|slow in|stand down|lump in|all in)\b/i },
-];
-
-const SKIP_TAGS = new Set(["a", "svg", "title", "script", "style"]);
-const VOID_TAGS = new Set(["area", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "wbr"]);
 
 export function paintDashboard(vm: DashboardVM): string {
   const body = `${siteHeader("evidence")}
@@ -443,28 +437,26 @@ function glossary(): string {
 function linkTerms(html: string): string {
   const parts = html.split(/(<[^>]+>)/);
   const used = new Set<string>();
-  const stack: { name: string; skip: boolean }[] = [];
+  const skip: string[] = [];
   return parts
     .map((part) => {
       if (part.startsWith("<")) {
-        const name = /^<\s*\/?\s*([a-zA-Z0-9]+)/.exec(part)?.[1]?.toLowerCase() ?? "";
-        if (name === "") return part;
-        if (/^<\s*\//.test(part)) {
-          const at = stack.map((frame) => frame.name).lastIndexOf(name);
-          if (at >= 0) stack.splice(at);
-          return part;
-        }
-        if (!part.endsWith("/>") && !VOID_TAGS.has(name)) {
-          const parent = stack[stack.length - 1]?.skip === true;
-          const hidden = /class="[^"]*\bsr-only\b/.test(part) || /\baria-hidden="true"/.test(part);
-          stack.push({ name, skip: parent || hidden || SKIP_TAGS.has(name) });
-        }
+        noteSkip(part, skip);
         return part;
       }
-      if (stack.some((frame) => frame.skip) || part === "") return part;
-      return linkText(part, used);
+      return skip.length > 0 || part === "" ? part : linkText(part, used);
     })
     .join("");
+}
+
+function noteSkip(tag: string, skip: string[]): void {
+  const name = /^<\s*\/?\s*([a-zA-Z0-9]+)/.exec(tag)?.[1]?.toLowerCase() ?? "";
+  if (name === "" || tag.endsWith("/>")) return;
+  if (/^<\s*\//.test(tag)) {
+    if (skip[skip.length - 1] === name) skip.pop();
+    return;
+  }
+  if (name === "a" || name === "svg" || /\bsr-only\b/.test(tag)) skip.push(name);
 }
 
 function linkText(text: string, used: Set<string>): string {
@@ -472,7 +464,7 @@ function linkText(text: string, used: Set<string>): string {
   let out = "";
   while (rest.length > 0) {
     let best: { id: string; index: number; raw: string } | null = null;
-    for (const term of TERM_LINKS) {
+    for (const term of GLOSSARY) {
       if (used.has(term.id)) continue;
       const match = term.pattern.exec(rest);
       if (match == null || match[0].length === 0) continue;

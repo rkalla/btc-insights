@@ -24,8 +24,8 @@ test("dashboard.css does not call a font host or define shimmer", () => {
   assert.equal(css.includes("fonts.gstatic.com"), false);
   assert.equal(/@keyframes\s+shimmer\b/i.test(css), false);
   assert.equal(css.includes("font-display:swap"), true);
-  assert.equal(css.includes(".topbar{order:1}.spectrum{order:2}.row-1{order:3}"), true);
-  assert.equal(css.includes(".row-1{order:2}.spectrum{order:3}"), true);
+  assert.equal(css.includes(".topbar{order:1}.row-1{order:3}.disagreement{order:4}"), true);
+  assert.equal(css.includes(".glossary{order:10;"), true);
   assert.equal(css.includes(".loading-bar{"), true);
   assert.equal(css.includes("animation:none"), true);
 });

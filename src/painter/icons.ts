@@ -1,27 +1,6 @@
 const MUTED = "#9BA6B5";
 const SELL = "#F2A65A";
 
-export function brandIcon(): string {
-  return icon(
-    24,
-    `<rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="#6CB4FF" stroke-width="2"/><path d="M8 15L11 11L13.5 13L16.5 8.5" fill="none" stroke="#6CB4FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`,
-  );
-}
-
-export function lockIcon(): string {
-  return icon(
-    14,
-    `<rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="${MUTED}" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="${MUTED}" stroke-width="2"/>`,
-  );
-}
-
-export function settingsIcon(): string {
-  return icon(
-    18,
-    `<path d="M4 7H14M18 7H20M4 17H8M12 17H20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="7" r="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="10" cy="17" r="2" fill="none" stroke="currentColor" stroke-width="2"/>`,
-  );
-}
-
 export function backIcon(): string {
   return icon(
     18,
