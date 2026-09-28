@@ -252,6 +252,20 @@ test("each cash posture paints its own step and not the all-in record", () => {
     if (item.posture !== "ALL_IN") {
       assert.equal(open.includes("On Sep 18"), false, item.posture);
       assert.equal(open.includes("our strongest buy signal"), false, item.posture);
+      assert.equal(html.includes("4 of 4"), false, item.posture);
+      assert.equal(html.includes("Wilson"), false, item.posture);
+    }
+    if (item.posture === "SLOW_IN") {
+      assert.equal(open.includes("more than 55% above"), false, item.posture);
+    }
+    if (item.posture === "BUILD") {
+      assert.equal(open.includes("average holder paid"), false, item.posture);
+    }
+    if (item.posture === "STAND_DOWN") {
+      assert.equal(open.includes("caution signal turned on"), false, item.posture);
+    }
+    if (item.posture === "STAY") {
+      assert.equal(open.includes("within its normal range"), false, item.posture);
     }
   }
 });
@@ -372,22 +386,91 @@ test("every fixture state paints one plain heading", () => {
     assert.equal(open.includes("our strongest buy signal"), false, name);
     assert.equal(open.includes("all 4 times"), false, name);
     if (name === "stand-down.json") {
-      assert.equal(open.includes("On Mar 6"), true, name);
+      assert.equal(open.includes("On Mar 6"), false, name);
+      assert.equal(open.includes("caution signal turned on"), false, name);
       assert.equal(open.includes("7 of 8"), true, name);
+      assert.equal(open.includes("Quiet") || html.includes("Quiet"), true, name);
     }
     if (name === "stale.json") {
       assert.equal(open.includes("hasn't updated since"), true, name);
       assert.equal(open.includes("41%"), false, name);
+      assert.equal(html.includes("4 of 4"), false, name);
+      assert.equal(html.includes("Wilson"), false, name);
     }
     if (name === "build.json") {
-      assert.equal(open.includes("average holder paid"), true, name);
+      assert.equal(open.includes("average holder paid"), false, name);
       assert.equal(open.includes("41%"), false, name);
+    }
+    if (name === "slow-in.json") {
+      assert.equal(open.includes("more than 55% above"), false, name);
+    }
+    if (name === "stay.json") {
+      assert.equal(open.includes("within its normal range"), false, name);
     }
     if (name === "no-call.json") {
       assert.equal(open.includes("didn't arrive"), true, name);
       assert.equal(open.includes("41%"), false, name);
     }
   }
+});
+
+test("other postures keep their own record rows out of the open page", () => {
+  const lump: DashboardVM = {
+    ...sampleVm,
+    cash: {
+      ...sampleVm.cash,
+      posture: "LUMP_IN",
+      recordRows: [
+        { key: "RECORD", text: "6 of 6 finished regimes. Floor 69%." },
+        { key: "STATUS", text: "One regime open since November 2025." },
+      ],
+    },
+  };
+  const lumpHtml = paintDashboard(lump);
+  assert.equal(parse(lumpHtml).querySelector(".record")?.textContent?.includes("Floor 69%"), true);
+  assert.equal(openText(lumpHtml).includes("Floor 69%"), false);
+  assert.equal(lumpHtml.includes("4 of 4"), false);
+
+  const slow: DashboardVM = {
+    ...sampleVm,
+    cash: {
+      ...sampleVm.cash,
+      posture: "SLOW_IN",
+      recordRows: [
+        { key: "RECORD", text: "2 of 3 regimes. Floor 25%." },
+        { key: "STATUS", text: "Weakest record on the page." },
+      ],
+    },
+  };
+  const slowHtml = paintDashboard(slow);
+  assert.equal(parse(slowHtml).querySelector(".record")?.textContent?.includes("Floor 25%"), true);
+  assert.equal(openText(slowHtml).includes("Floor 25%"), false);
+  assert.equal(openText(slowHtml).includes("more than 55% above"), false);
+
+  const late = paintDashboard({ ...sampleVm, outOfDate: true });
+  assert.equal(late.includes("4 of 4"), false);
+  assert.equal(late.includes("Wilson"), false);
+  assert.equal(openText(late).includes("all 4 times"), false);
+});
+
+test("caution signals is not split into a glossary link", () => {
+  const steady: DashboardVM = {
+    ...sampleVm,
+    now: { ...sampleVm.now, gapPct: -0.08, isOfficialClose: true },
+    caveats: sampleVm.caveats.filter((caveat) => caveat.kind !== "fit"),
+    context: sampleVm.context.map((reading) =>
+      reading.key === "buyCross" ? { ...reading, flag: "QUIET", value: "Not on." } : reading,
+    ),
+    cash: {
+      ...sampleVm.cash,
+      posture: "STAY",
+      recordRows: [{ key: "RECORD", text: "No event record." }],
+    },
+  };
+  const html = paintDashboard(steady);
+  assert.equal(html.includes("within its normal range"), true);
+  assert.equal(html.includes("caution signals"), true);
+  assert.equal(html.includes("signal</a>s"), false);
 });
 
 test("settings is a blank sheet with the reference fields", () => {

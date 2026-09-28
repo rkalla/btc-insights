@@ -377,7 +377,7 @@ function markerText(fire: Fire): string {
   return `${name}, ${when}. Finished year ${pct}.`;
 }
 
-function plainSignal(label: string): string {
+export function plainSignal(label: string): string {
   if (/sell roll/i.test(label)) return "Caution signal";
   if (/buy cross/i.test(label)) return "Buy strongly signal";
   return label;

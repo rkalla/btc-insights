@@ -104,7 +104,7 @@ const GLOSSARY: readonly { id: string; term: string; meaning: string; pattern: R
     id: "sell-roll",
     term: "Sell roll (caution signal)",
     meaning: "Turns on when Bitcoin has run more than 55% above its trend and then falls 10% from its peak. It pauses new money; it doesn't sell coins.",
-    pattern: /sell roll|caution signal/i,
+    pattern: /sell roll|\bcaution signal\b/i,
   },
   {
     id: "realized-price",
@@ -237,7 +237,7 @@ function signalSection(vm: DashboardVM, kind: EvidenceKind): string {
   const list = lines.length === 0
     ? ""
     : `<ol class="timeline">${lines.map((line) => `<li>${esc(line)}</li>`).join("")}</ol>`;
-  const note = lines.length > 0 ? "" : `<p>${esc(on ? signalFallback(kind) : quietSignal(kind))}</p>`;
+  const note = lines.length > 0 ? "" : `<p>${esc(on ? signalFallback(kind) : quietSignal(vm, kind))}</p>`;
   return `<section class="panel signal" aria-labelledby="signal-h">
   <h2 id="signal-h">${esc(heading)}</h2>
   ${list}
@@ -378,11 +378,11 @@ function shortBullets(vm: DashboardVM, kind: EvidenceKind): string[] {
   const bullets: string[] = [];
   const turned = turnedOn(vm, kind);
   if (turned != null) bullets.push(turned);
-  if (kind === "GO_SLOW") {
+  if (kind === "GO_SLOW" && gapAbove55(vm)) {
     bullets.push(
       "At times like this, spreading new money out did better than investing it at once in 2 of 3 cases.",
     );
-  } else {
+  } else if (kind !== "GO_SLOW") {
     const place = pricePlace(vm, kind);
     if (place != null) bullets.push(place);
   }
@@ -402,12 +402,17 @@ function turnedOn(vm: DashboardVM, kind: EvidenceKind): string | null {
     case "ADD_AT_ONCE":
       return "This step puts new money in at once.";
     case "ADD_WEEKLY":
-      return "Bitcoin is trading below what the average holder paid for it.";
+      return costIsBelow(vm) === true
+        ? "Bitcoin is trading below what the average holder paid for it."
+        : "This step adds a little each week.";
     case "STEADY":
       return null;
     case "GO_SLOW":
-      return "Bitcoin is more than 55% above its long-run trend.";
+      return gapAbove55(vm)
+        ? "Bitcoin is more than 55% above its long-run trend."
+        : "This step spreads new money out.";
     case "PAUSE": {
+      if (cautionQuiet(vm)) return "This step pauses new buying.";
       const day = vm.standDownFireDate == null ? null : monthDay(vm.standDownFireDate);
       const lead = day == null ? "Our caution signal turned on" : `On ${day}, our caution signal turned on`;
       return `${lead}: after a big run-up above its long-run trend, Bitcoin fell 10% from its peak.`;
@@ -429,12 +434,13 @@ function pricePlace(vm: DashboardVM, kind: EvidenceKind): string | null {
   if (kind !== "BUY_STRONGLY" && kind !== "ADD_AT_ONCE" && kind !== "STEADY") return null;
   const words = fridayGapWords(vm);
   if (words == null) {
-    return kind === "STEADY" ? "None of our buy or caution signals is on." : null;
+    return kind === "STEADY" && signalsAreQuiet(vm) ? "None of our buy or caution signals is on." : null;
   }
   if (kind === "BUY_STRONGLY") return `Friday's price sits ${words} the long-run trend.`;
   if (kind === "ADD_AT_ONCE") {
     return words.includes("below") ? `Bitcoin is ${words} its long-run trend.` : null;
   }
+  if (!gapInsideBand(vm) || !signalsAreQuiet(vm)) return null;
   return `Bitcoin is ${words} its long-run trend, which is within its normal range. None of our buy or caution signals is on.`;
 }
 
@@ -443,7 +449,13 @@ function nowSentence(vm: DashboardVM, kind: EvidenceKind): string {
     return "This chart is from an update that is late. Don't use it as this week's advice.";
   }
   if (vm.now.stale) return "These levels may be out of date.";
-  if (kind === "ADD_WEEKLY" || kind === "PAUSE" || kind === "SELL" || kind === "NO_UPDATE") {
+  if (
+    kind === "ADD_WEEKLY" ||
+    kind === "PAUSE" ||
+    kind === "SELL" ||
+    kind === "NO_UPDATE" ||
+    (kind === "GO_SLOW" && !gapAbove55(vm))
+  ) {
     return "The chart shows Bitcoin's weekly price against its long-run trend.";
   }
   const words = gapWords(vm.now.gapPct);
@@ -454,29 +466,34 @@ function nowSentence(vm: DashboardVM, kind: EvidenceKind): string {
 
 function explainsSignal(vm: DashboardVM, kind: EvidenceKind): boolean {
   if (vm.outOfDate) return false;
-  return kind === "BUY_STRONGLY" || kind === "PAUSE";
+  if (kind === "BUY_STRONGLY") return true;
+  return kind === "PAUSE" && !cautionQuiet(vm);
 }
 
 function signalFallback(kind: EvidenceKind): string {
   return kind === "PAUSE" ? "Our caution signal turned on." : "Our strongest buy signal turned on.";
 }
 
-function quietSignal(kind: EvidenceKind): string {
+function quietSignal(vm: DashboardVM, kind: EvidenceKind): string {
   switch (kind) {
     case "NO_UPDATE":
       return "There is no signal to explain until the price data arrives.";
     case "SELL":
       return "This follows your decision, not a market signal.";
     case "STEADY":
-      return "None of our buy or caution signals is on.";
+      return gapInsideBand(vm) && signalsAreQuiet(vm)
+        ? "None of our buy or caution signals is on."
+        : "This step keeps the regular plan.";
     case "ADD_AT_ONCE":
       return "No single signal turned on. This step adds new money at once.";
     case "ADD_WEEKLY":
-      return "No single signal turned on. This step adds a little while the price is under what the average holder paid.";
+      return costIsBelow(vm) === true
+        ? "No single signal turned on. This step adds a little while the price is under what the average holder paid."
+        : "No single signal turned on. This step adds a little each week.";
     case "GO_SLOW":
       return "No single signal turned on. This step spreads new money out.";
     case "PAUSE":
-      return "Our caution signal turned on.";
+      return "This step pauses new buying.";
     case "BUY_STRONGLY":
       return "This page is late, so it does not explain a signal from this update.";
   }
@@ -647,15 +664,72 @@ function checkNumberLines(vm: DashboardVM): string[] {
 }
 
 function recordNumbers(vm: DashboardVM, kind: EvidenceKind): string {
-  if (kind !== "BUY_STRONGLY" || vm.outOfDate || vm.cash.recordRows.length === 0) return "";
-  const rows = vm.cash.recordRows
+  const source = vm.cash.recordRows;
+  if (source.length === 0) return "";
+  const allIn = source.some((row) => /\b4 of 4\b|wilson|\b4 episodes\b/i.test(row.text));
+  if (allIn && (vm.outOfDate || kind !== "BUY_STRONGLY")) return "";
+  const rows = source
     .map((row) => {
       const className = row.key === "RECORD" ? "lead" : row.key === "STATUS" ? "status" : "";
       const classAttr = className === "" ? "" : ` class="${className}"`;
       return `<dt>${esc(row.key)}</dt><dd${classAttr}>${esc(row.text)}</dd>`;
     })
     .join("");
-  return `<details class="numbers"><summary>Show the numbers<span class="for"> for the past results</span></summary><dl class="record">${rows}</dl><p>Technically, the lower end of a 90% Wilson interval.</p></details>`;
+  const wilson = allIn ? `<p>Technically, the lower end of a 90% Wilson interval.</p>` : "";
+  return `<details class="numbers"><summary>Show the numbers<span class="for"> for the past results</span></summary><dl class="record">${rows}</dl>${wilson}</details>`;
+}
+
+function cautionQuiet(vm: DashboardVM): boolean {
+  const sell = vm.context.find((reading) => reading.key === "sellRoll");
+  if (sell == null) return false;
+  return /quiet/i.test(sell.flag) || /quiet/i.test(sell.value);
+}
+
+function buySignalOn(vm: DashboardVM): boolean {
+  const buy = vm.context.find((reading) => reading.key === "buyCross");
+  if (buy == null) return false;
+  return /fired/i.test(buy.flag) || /fired/i.test(buy.value);
+}
+
+function signalsAreQuiet(vm: DashboardVM): boolean {
+  const sell = vm.context.find((reading) => reading.key === "sellRoll");
+  const cautionOn = sell != null && !cautionQuiet(vm);
+  return !buySignalOn(vm) && !cautionOn;
+}
+
+function costIsBelow(vm: DashboardVM): boolean | null {
+  const row = vm.context.find((reading) => reading.key === "realizedPrice");
+  if (row == null) return null;
+  const blob = `${row.flag} ${row.value}`;
+  if (/below/i.test(blob)) return true;
+  if (/above/i.test(blob)) return false;
+  if (/^\s*\+/.test(row.flag)) return false;
+  if (/[−-]/.test(row.flag)) return true;
+  return null;
+}
+
+function gapPoints(vm: DashboardVM): number | null {
+  const fit = vm.caveats.find((caveat) => caveat.kind === "fit");
+  if (fit != null) {
+    const match = /gap about\s+([+\u2212-]?\d+)%/i.exec(fit.body);
+    const raw = match?.[1];
+    if (raw != null) {
+      const points = Number(raw.replace("\u2212", "-").replace("+", ""));
+      if (Number.isFinite(points)) return points;
+    }
+  }
+  if (!Number.isFinite(vm.now.gapPct)) return null;
+  return Math.round(vm.now.gapPct * 100);
+}
+
+function gapAbove55(vm: DashboardVM): boolean {
+  const points = gapPoints(vm);
+  return points != null && points > 55;
+}
+
+function gapInsideBand(vm: DashboardVM): boolean {
+  const points = gapPoints(vm);
+  return points != null && points >= -20 && points <= 55;
 }
 
 function numbers(what: string, lines: readonly string[]): string {

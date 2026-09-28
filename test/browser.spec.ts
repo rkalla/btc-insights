@@ -140,8 +140,10 @@ test("a desktop marker opens one popover and escape returns focus", async ({ pag
   const marker = page.locator('.marker[data-date="2023-03-17"]');
   const pop = page.locator(".fire-popover");
   await marker.click();
-  await expect(pop).toContainText("Buy cross · 17 Mar 2023");
+  await expect(pop).toContainText("Buy strongly signal · 17 Mar 2023");
   await expect(pop).toContainText("Finished year: +138%");
+  await expect(pop).not.toContainText("Buy cross");
+  await expect(pop).not.toContainText("Sell roll");
   await expect(page.locator(".fire-popover")).toHaveCount(1);
   await page.keyboard.press("Escape");
   await expect(pop).toBeHidden();
@@ -160,10 +162,15 @@ test("show fires lists newest first under 768", async ({ page }) => {
   await page.goto("/evidence/");
   await expect(page.getByRole("heading", { level: 1, name: "Why this week says Buy strongly" })).toBeVisible();
   await page.getByRole("button", { name: "Show past signals" }).click();
-  const dialog = page.getByRole("dialog", { name: "Fires" });
+  const dialog = page.getByRole("dialog", { name: "Past signals" });
   await expect(dialog).toBeVisible();
+  await expect(dialog.locator(".fire-row").first()).toContainText("Buy strongly signal");
   await expect(dialog.locator(".fire-row").first()).toContainText("Open. Not in the completed count.");
+  await expect(dialog.locator(".fire-row").last()).toContainText("Caution signal");
   await expect(dialog.locator(".fire-row").last()).toContainText("Jun 2013");
+  await expect(dialog).not.toContainText("Buy cross");
+  await expect(dialog).not.toContainText("Sell roll");
+  await expect(dialog).not.toContainText("Fires");
   await page.getByRole("button", { name: "Close" }).click();
   await expect(dialog).toBeHidden();
   await expect(page.getByRole("button", { name: "Show past signals" })).toBeFocused();
