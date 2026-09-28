@@ -30,6 +30,20 @@ for (const name of fonts) {
   }
 }
 
+const icons = ["favicon.ico", "favicon-32.png", "apple-touch-icon.png"];
+for (const name of icons) {
+  try {
+    copyFileSync(join(root, "public", name), join(dist, name));
+  } catch {
+    console.error(`missing icon ${name}`);
+    process.exit(1);
+  }
+}
+
+const iconLinks = `<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" type="image/png" href="/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">`;
+
 const css = readFileSync(join(root, "src", "painter", "dashboard.css"), "utf8").replaceAll(
   "../../public/fonts/",
   "../fonts/",
@@ -54,6 +68,7 @@ writeFileSync(
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bitcoin dashboard</title>
+${iconLinks}
 <link rel="stylesheet" href="assets/dashboard.css">
 </head>
 <body>
@@ -74,6 +89,7 @@ writeFileSync(
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bitcoin dashboard · Settings</title>
+${iconLinks}
 <link rel="stylesheet" href="assets/dashboard.css">
 </head>
 <body>
