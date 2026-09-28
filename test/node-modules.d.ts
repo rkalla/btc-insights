@@ -12,7 +12,7 @@ declare module "node:assert/strict" {
 declare module "node:fs" {
   export function readFileSync(path: URL | string, encoding: "utf8"): string;
   export function readdirSync(path: URL | string): string[];
-  export function statSync(path: string | URL): {
+  export function statSync(path: URL | string): {
     mode: number;
     mtimeMs: number;
     size: number;

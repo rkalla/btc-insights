@@ -368,33 +368,43 @@ test("settings is a blank 760px sheet with the reference fields", () => {
     assert.equal(field?.getAttribute("value"), null, id);
   }
   assert.equal(html.includes("max-width:760px"), true);
-  assert.equal(html.includes("Shape, if you have not chosen: about $5,000."), true);
+  assert.equal(html.includes("Not set"), true);
+  assert.equal(html.includes("about $5,000"), false);
+  assert.equal(html.includes("about $100,000"), false);
+  assert.equal(html.includes("Shape, if you have not chosen"), false);
+  assert.deepEqual(texts(document, "h2"), [
+    "Regular buy",
+    "Extra for cheap stretches",
+    "Money set aside for Bitcoin",
+    "Take profits",
+    "I've decided Bitcoin's long-term case is broken",
+    "Account",
+  ]);
+  assert.deepEqual(texts(document, ".help"), [
+    "The amount you put into Bitcoin on a schedule, whatever the market does.",
+    "Money you'd add a little at a time, each week, while Bitcoin trades below what the average holder paid.",
+    "Money you'd put in when This week says Buy strongly or Add, or spread out when it says Go slow.",
+    "Tell us what you hold, and This week will say when Bitcoin has grown too big a part of your investments. Leave any field blank to turn this off.",
+    "Turn this on only if you've decided to get out of Bitcoin for good. This week will then tell you to sell and stop buying. You can turn it off at any time.",
+    "BTC Friday doesn't calculate taxes. This only decides whether tax reminders appear.",
+  ]);
+  assert.equal(document.querySelector("label[for='acct-taxable']")?.textContent, "A regular (taxable) account");
+  assert.equal(document.querySelector("label[for='acct-ira']")?.textContent, "A retirement account (IRA)");
+  assert.equal(document.querySelector("label[for='acct-fund']")?.textContent, "A fund");
+  assert.equal(document.getElementById("ceiling-rule")?.textContent, "Must be above your target.");
   assert.equal(
-    html.includes("Shape, if you have not chosen: about $100,000, sliced on cheap Fridays."),
-    true,
-  );
-  assert.equal(
-    html.includes("Used by All in, Lump in, and Slow in. This amount is not refilled in order to wait for the next cross."),
-    true,
-  );
-  assert.equal(html.includes("Shape, if you have not chosen: up to $100,000 on an All-in fire."), true);
-  assert.equal(html.includes("Any blank means Trim stays off."), true);
-  assert.equal(html.includes("Must be above the target share."), true);
-  assert.equal(
-    html.includes("Not declared means Exit stays off. This is a holder record, not a signal override."),
-    true,
-  );
-  assert.equal(
-    html.includes("Blank means the page does not compute tax. After-tax dollars are not a score until this is set."),
-    true,
+    document.querySelector(".intro")?.textContent,
+    "These amounts personalise This week. They stay on this device and are never sent anywhere. BTC Friday never places orders.",
   );
   assert.equal(html.includes("Save settings"), true);
   assert.equal(html.includes("Cancel"), true);
-  assert.equal(html.includes("The dashboard reads these amounts. It does not place an order."), true);
   assert.equal(/tax rate/i.test(html), false);
   assert.equal(document.getElementById("tax-rate"), null);
   assert.equal(document.querySelector("[role='switch']")?.getAttribute("aria-checked"), "false");
+  assert.equal(document.querySelector("[role='switch']")?.getAttribute("aria-labelledby"), "h-thesis");
   assert.equal(document.getElementById("thesis-date")?.getAttribute("disabled"), "");
   assert.equal(document.querySelector("svg")?.getAttribute("aria-hidden"), "true");
   assert.equal(document.querySelector("a.back")?.getAttribute("href"), "index.html");
+  assert.equal(document.querySelector("a.back")?.textContent?.includes("Back to dashboard"), true);
+  assert.equal(html.includes("Back to This week"), false);
 });
