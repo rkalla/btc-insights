@@ -38,7 +38,7 @@ function assetPath(htmlPath, ref) {
 
 function isWeekBundle(path) {
   const rel = relative(dist, path).split(sep).join("/");
-  return rel === "index.html" || rel === "this-week/index.html" || rel === "assets/this-week.css" || rel === "assets/this-week.js";
+  return rel === "index.html" || rel === "this-week/index.html" || rel === "assets/site.css" || rel === "assets/this-week.css" || rel === "assets/this-week.js";
 }
 
 const files = [];

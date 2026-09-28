@@ -84,7 +84,7 @@ export function chartSvg(
   const grid = ticks
     .map((value) => {
       const y = fmt(yAt(value));
-      return `<line class="c-grid" stroke="var(--grid)" stroke-width="0.8" x1="${fmt(margin.left)}" y1="${y}" x2="${fmt(plotRight)}" y2="${y}"/>`;
+      return `<line class="c-grid" stroke="var(--line)" stroke-width="1" x1="${fmt(margin.left)}" y1="${y}" x2="${fmt(plotRight)}" y2="${y}"/>`;
     })
     .join("");
 
@@ -110,7 +110,7 @@ export function chartSvg(
   const spotLabel = endLabels.find((label) => label.kind === "spot");
   const leader =
     spotLabel !== undefined && Math.abs(spotLabel.y - spotLabel.natural) > 4
-      ? `<line class="c-leader" pointer-events="none" x1="${fmt(xAt(spot.date))}" y1="${fmt(spotLabel.natural)}" x2="${fmt(labelX)}" y2="${fmt(spotLabel.y)}" stroke="var(--text-1)" stroke-width="0.7"/>`
+      ? `<line class="c-leader" pointer-events="none" x1="${fmt(xAt(spot.date))}" y1="${fmt(spotLabel.natural)}" x2="${fmt(labelX)}" y2="${fmt(spotLabel.y)}" stroke="var(--ink)" stroke-width="1"/>`
       : "";
   const endLabelText = endLabels
     .map((label) => {
@@ -159,16 +159,16 @@ export function chartSvg(
     `A table of the fires follows the chart.`;
 
   const svg = [
-    `<svg class="chart-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${fmt(width)} ${fmt(height)}" width="${fmt(width)}" height="${fmt(height)}" role="img" aria-labelledby="chart-alt" overflow="visible" font-family="'Geist Mono', ui-monospace, monospace" style="font-size:${fontSize}px">`,
+    `<svg class="chart-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${fmt(width)} ${fmt(height)}" width="${fmt(width)}" height="${fmt(height)}" role="img" aria-labelledby="chart-alt" overflow="hidden" style="font-size:${fontSize}px;font-variant-numeric:tabular-nums">`,
     `<title id="chart-alt">${esc(title)}</title>`,
     `<g data-layer="grid" class="grid">${grid}</g>`,
-    `<path data-layer="band" class="c-band" fill="var(--band)" d="${bandPath(bands, xAt, yAt)}"/>`,
-    `<path data-layer="lower" class="c-lo" fill="none" stroke="var(--buy)" stroke-width="1.1" stroke-dasharray="1.5 2.5" d="${linePath(chart.lower, xAt, yAt)}"/>`,
-    `<path data-layer="upper" class="c-hi" fill="none" stroke="var(--sell)" stroke-width="1.1" stroke-dasharray="1.5 2.5" d="${linePath(chart.upper, xAt, yAt)}"/>`,
-    `<path data-layer="trend" class="c-trend" fill="none" stroke="var(--text-3)" stroke-width="1.2" d="${linePath(chart.trend, xAt, yAt)}"/>`,
-    `<path data-layer="sma200" class="c-w200" fill="none" stroke="var(--w200)" stroke-width="1" stroke-dasharray="5 3" d="${linePath(chart.sma200w, xAt, yAt)}"/>`,
-    `<path data-layer="price" class="c-price" fill="none" stroke="var(--text-1)" stroke-width="1.4" stroke-linejoin="round" d="${linePath(price, xAt, yAt)}"/>`,
-    `<line data-layer="baseline" class="c-axis" stroke="var(--axis)" stroke-width="1" x1="${fmt(margin.left)}" y1="${fmt(plotBottom)}" x2="${fmt(plotRight)}" y2="${fmt(plotBottom)}"/>`,
+    `<path data-layer="band" class="c-band" fill="var(--neutral-tint)" d="${bandPath(bands, xAt, yAt)}"/>`,
+    `<path data-layer="lower" class="c-lo" fill="none" stroke="var(--buy)" stroke-width="1" stroke-dasharray="4 3" d="${linePath(chart.lower, xAt, yAt)}"/>`,
+    `<path data-layer="upper" class="c-hi" fill="none" stroke="var(--caution)" stroke-width="1" stroke-dasharray="4 3" d="${linePath(chart.upper, xAt, yAt)}"/>`,
+    `<path data-layer="trend" class="c-trend" fill="none" stroke="var(--ink-2)" stroke-width="1.5" d="${linePath(chart.trend, xAt, yAt)}"/>`,
+    `<path data-layer="sma200" class="c-w200" fill="none" stroke="var(--ink-3)" stroke-width="1" stroke-dasharray="1 4" stroke-linecap="round" d="${linePath(chart.sma200w, xAt, yAt)}"/>`,
+    `<path data-layer="price" class="c-price" fill="none" stroke="var(--ink)" stroke-width="1.5" stroke-linejoin="round" d="${linePath(price, xAt, yAt)}"/>`,
+    `<line data-layer="baseline" class="c-axis" stroke="var(--line-strong)" stroke-width="1" x1="${fmt(margin.left)}" y1="${fmt(plotBottom)}" x2="${fmt(plotRight)}" y2="${fmt(plotBottom)}"/>`,
     `<g data-layer="sell" class="markers-sell">${sellMarks}</g>`,
     `<g data-layer="buy" class="markers-buy">${buyMarks}</g>`,
     `<g data-layer="open" class="open-ring">${rings}</g>`,
@@ -353,11 +353,11 @@ function lastPositive(points: readonly Dated[]): Dated | null {
 
 function sellShape(cx: number, cy: number, half: number, date: string): string {
   const d = `M${fmt(cx)} ${fmt(cy - half)}L${fmt(cx + half)} ${fmt(cy)}L${fmt(cx)} ${fmt(cy + half)}L${fmt(cx - half)} ${fmt(cy)}Z`;
-  return `<path class="m-sell" data-date="${date}" pointer-events="none" fill="var(--sell)" stroke="var(--surface-1)" stroke-width="1.2" d="${d}"/>`;
+  return `<path class="m-sell" data-date="${date}" pointer-events="none" fill="var(--caution)" stroke="var(--card)" stroke-width="1.2" d="${d}"/>`;
 }
 
 function buyShape(cx: number, cy: number, radius: number, date: string): string {
-  return `<circle class="m-buy" data-date="${date}" pointer-events="none" fill="var(--buy)" stroke="var(--surface-1)" stroke-width="1.2" cx="${fmt(cx)}" cy="${fmt(cy)}" r="${radius}"/>`;
+  return `<circle class="m-buy" data-date="${date}" pointer-events="none" fill="var(--buy)" stroke="var(--card)" stroke-width="1.2" cx="${fmt(cx)}" cy="${fmt(cy)}" r="${radius}"/>`;
 }
 
 function markerText(fire: Fire): string {
@@ -492,7 +492,7 @@ function fireTable(fires: readonly Fire[]): string {
     })
     .join("");
   return (
-    `<div class="sr-only" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0">` +
+    `<div class="sr-only">` +
     `<table><caption>Signal fires shown on the chart</caption>` +
     `<thead><tr><th>Signal</th><th>Date</th><th>Finished year</th></tr></thead>` +
     `<tbody>${rows}</tbody></table></div>`

@@ -1,6 +1,7 @@
 import type { HolderSettings } from "../contract/types.ts";
 import { paintSettings } from "../painter/settings.ts";
 import { blankSettings, loadSettings, saveSettings } from "../settings/store.ts";
+import { installLayoutProbe } from "./layout-probe.ts";
 import { validateSettings } from "../settings/validate.ts";
 
 const FIELD_IDS: Partial<Record<keyof HolderSettings, string>> = {
@@ -16,6 +17,7 @@ const FIELD_IDS: Partial<Record<keyof HolderSettings, string>> = {
 
 function bootSettings(): void {
   if (typeof document === "undefined") return;
+  installLayoutProbe();
   if (document.querySelector("main.page") == null) {
     document.body.insertAdjacentHTML("afterbegin", paintSettings());
   }

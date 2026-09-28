@@ -190,6 +190,11 @@ test("fixture chart marks fires, the open ring, and no floor band", () => {
     assert.equal(svg.includes(fire.resultLabel), true, fire.date);
   }
   assert.equal(svg.includes('class="sr-only"'), true);
+  assert.equal(svg.includes("position:absolute"), false);
+  assert.equal(svg.includes("Geist Mono"), false);
+  assert.equal(svg.includes("monospace"), false);
+  assert.equal(svg.includes('stroke="var(--ink)"'), true);
+  assert.equal(svg.includes('stroke="var(--caution)"'), true);
 });
 
 test("Trend label is omitted under 768 and kept at 768", () => {

@@ -1,13 +1,16 @@
-export type SitePage = "week" | "evidence";
+export type SitePage = "week" | "evidence" | "settings";
 
 const WEEK_HREF = "/";
 const EVIDENCE_HREF = "/evidence/";
 const SETTINGS_HREF = "/settings.html";
 const REPO_HREF = "https://github.com/rkalla/btc-insights";
+const DISCLAIMER =
+  "BTC Friday is research, not personal financial advice. It looks at Bitcoin's price history, and history can be wrong about the future. It doesn't know your full situation, doesn't trade for you and doesn't calculate taxes. Before investing money you can't afford to lose, talk to a fee-only financial adviser.";
 
 export function siteHeader(current: SitePage): string {
   const weekCurrent = current === "week" ? ` aria-current="page"` : "";
   const evidenceCurrent = current === "evidence" ? ` aria-current="page"` : "";
+  const settingsCurrent = current === "settings" ? ` aria-current="page"` : "";
   return `<header class="site">
   <div class="site-inner">
     <a class="brand" href="${WEEK_HREF}"><span class="brand-mark" aria-hidden="true"></span>BTC Friday</a>
@@ -17,12 +20,16 @@ export function siteHeader(current: SitePage): string {
         <li><a href="${EVIDENCE_HREF}"${evidenceCurrent}>Evidence</a></li>
       </ul>
     </nav>
-    <a class="gear" href="${SETTINGS_HREF}" aria-label="Settings">
+    <a class="gear" href="${SETTINGS_HREF}" aria-label="Settings"${settingsCurrent}>
       ${gearIcon()}
       <span class="gear-label">Settings</span>
     </a>
   </div>
 </header>`;
+}
+
+export function siteFooter(): string {
+  return `<footer class="foot" id="about"><div class="foot-inner"><p>${DISCLAIMER}</p>${footerLinks()}</div></footer>`;
 }
 
 export function footerLinks(): string {

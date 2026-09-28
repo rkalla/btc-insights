@@ -17,9 +17,6 @@ const fonts = [
   "geist-latin-500-normal.woff2",
   "geist-latin-600-normal.woff2",
   "geist-latin-700-normal.woff2",
-  "geist-mono-latin-400-normal.woff2",
-  "geist-mono-latin-500-normal.woff2",
-  "geist-mono-latin-600-normal.woff2",
 ];
 
 for (const name of fonts) {
@@ -46,18 +43,38 @@ const iconLinks = `<link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" type="image/png" href="/favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">`;
 
+function forbidShell(css, name) {
+  const lower = css.toLowerCase();
+  const flat = lower.replace(/\s+/g, "");
+  if (
+    lower.includes("#0c0f14") ||
+    lower.includes("geist mono") ||
+    lower.includes("monospace") ||
+    flat.includes("text-transform:uppercase")
+  ) {
+    console.error(`${name} uses a forbidden shell token`);
+    process.exit(1);
+  }
+}
+
 function writeCss(name) {
   const css = readFileSync(join(root, "src", "painter", name), "utf8").replaceAll(
     "../../public/fonts/",
     "../fonts/",
   );
-  if (
-    css.includes("public/fonts") ||
-    css.includes("fonts.googleapis.com") ||
-    css.includes("fonts.gstatic.com") ||
-    !css.includes('url("../fonts/geist-latin-400-normal.woff2")')
-  ) {
-    console.error(`font css was not rewritten for ${name}`);
+  forbidShell(css, name);
+  if (name === "site.css") {
+    if (
+      css.includes("public/fonts") ||
+      css.includes("fonts.googleapis.com") ||
+      css.includes("fonts.gstatic.com") ||
+      !css.includes('url("../fonts/geist-latin-400-normal.woff2")')
+    ) {
+      console.error(`font css was not rewritten for ${name}`);
+      process.exit(1);
+    }
+  } else if (css.includes("@font-face") || css.includes("fonts.googleapis.com") || css.includes("../fonts/")) {
+    console.error(`${name} should not carry font faces`);
     process.exit(1);
   }
   if (name === "this-week.css") {
@@ -73,8 +90,25 @@ function writeCss(name) {
   writeFileSync(join(dist, "assets", name), css);
 }
 
-writeCss("dashboard.css");
+writeCss("site.css");
 writeCss("this-week.css");
+writeCss("evidence.css");
+writeCss("settings.css");
+
+function assertPages() {
+  const pages = ["index.html", "this-week/index.html", "evidence/index.html", "settings.html"];
+  for (const rel of pages) {
+    const html = readFileSync(join(dist, rel), "utf8");
+    if (html.includes("dashboard.css")) {
+      console.error(`${rel} links dashboard.css`);
+      process.exit(1);
+    }
+    if (!html.includes("site.css")) {
+      console.error(`${rel} is missing site.css`);
+      process.exit(1);
+    }
+  }
+}
 
 const loading = readFileSync(join(root, "src", "painter", "loading.html"), "utf8");
 writeFileSync(join(dist, "index.html"), thisWeekShell(iconLinks));
@@ -92,11 +126,12 @@ writeFileSync(
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Evidence · BTC Friday</title>
 ${iconLinks}
-<link rel="stylesheet" href="/assets/dashboard.css">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/evidence.css">
 </head>
 <body>
-<div class="page">
 ${siteHeader("evidence")}
+<div class="page">
 ${loading}
 </div>
 <script type="module" src="/assets/dashboard.js"></script>
@@ -112,9 +147,10 @@ writeFileSync(
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bitcoin dashboard · Settings</title>
+<title>Settings · BTC Friday</title>
 ${iconLinks}
-<link rel="stylesheet" href="assets/dashboard.css">
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/settings.css">
 </head>
 <body>
 <script type="module" src="assets/settings.js"></script>
@@ -148,4 +184,5 @@ await esbuild.build({
   packages: "external",
 });
 
+assertPages();
 console.log("build: ok");

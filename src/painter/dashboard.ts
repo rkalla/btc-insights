@@ -2,15 +2,12 @@ import { money, sentenceDate, signedPercent } from "../contract/format.ts";
 import type { CashPosture, DashboardVM } from "../contract/types.ts";
 import { chartSvg } from "./chart.ts";
 import { caveatIcon, legendSwatch } from "./icons.ts";
-import { footerLinks, siteHeader } from "./site-header.ts";
+import { siteFooter, siteHeader } from "./site-header.ts";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
 
 const CHART_WIDE = 1000;
 const CHART_NARROW = 360;
-
-const FOOTER =
-  "BTC Friday is research, not personal financial advice. It looks at Bitcoin's price history, and history can be wrong about the future. It doesn't know your full situation, doesn't trade for you and doesn't calculate taxes. Before investing money you can't afford to lose, talk to a fee-only financial adviser.";
 
 const EVIDENCE_TITLE = "The evidence behind this week's advice";
 const EVIDENCE_INTRO =
@@ -143,7 +140,7 @@ ${caveats(vm)}
 ${row2(vm)}
 ${longView(vm)}
 ${cycles(vm)}
-${footer()}`;
+${siteFooter()}`;
   return `<div class="page">
 ${linkTerms(body)}
 ${glossary()}
@@ -259,7 +256,7 @@ function coinsPanel(vm: DashboardVM): string {
 
 function nowPanel(vm: DashboardVM): string {
   const stale = vm.now.stale;
-  const chipStyle = stale ? "height:24px;font-size:12px;color:var(--sell)" : "height:24px;font-size:12px";
+  const chipClass = stale ? "chip chip--late" : "chip";
   const chip = stale
     ? "Stale print"
     : vm.now.isOfficialClose
@@ -271,7 +268,7 @@ function nowPanel(vm: DashboardVM): string {
       ? vm.now.staleNote
       : `A later print can move these levels. It does not change the call. ${developing}`;
   return `<article class="panel now" aria-label="Now, latest print">
-      <div class="panel-head" style="align-items:center"><span class="label">Now · ${esc(vm.now.printLabel)}</span><span class="chip" style="${chipStyle}">${esc(chip)}</span></div>
+      <div class="panel-head" style="align-items:center"><span class="label">Now · ${esc(vm.now.printLabel)}</span><span class="${chipClass}">${esc(chip)}</span></div>
       <div class="spot">${esc(money(vm.now.spotUsd))}</div>
       <div class="stats">
         <div class="stat well"><span class="k">Now, against Friday's trend</span><span class="v">${esc(signedPercent(vm.now.gapPct))}</span></div>
@@ -403,7 +400,7 @@ function cycles(vm: DashboardVM): string {
   </div>
   <ul class="key" aria-hidden="true"><li><span class="sw sw--cross"></span>Buy cross</li><li><span class="sw sw--build"></span>Build</li><li><span class="sw sw--lump"></span>Lump in</li></ul>
   <div class="cycle-grid">${cards}</div>
-  <p class="note" style="color:var(--text-3);font-size:12px">${esc(vm.cycles.footnote)}</p>
+  <p class="note cycle-foot">${esc(vm.cycles.footnote)}</p>
 </section>`;
 }
 
@@ -419,10 +416,6 @@ function cycleCard(card: DashboardVM["cycles"]["cards"][number]): string {
     })
     .join("");
   return `<article class="cycle${now}"><div><h3>${esc(card.title)}</h3><span class="range">${esc(card.range)}</span></div>${lead}${rows}${note}</article>`;
-}
-
-function footer(): string {
-  return `<footer class="foot" id="about"><div class="foot-inner"><p>${esc(FOOTER)}</p>${footerLinks()}</div></footer>`;
 }
 
 function glossary(): string {

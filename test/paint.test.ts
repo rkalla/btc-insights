@@ -373,7 +373,7 @@ test("a true high-confidence flag does not add a separate High confidence elemen
   assert.equal(document.querySelector(".record dd.status")?.textContent, "This fire is open. Not high confidence.");
 });
 
-test("settings is a blank 760px sheet with the reference fields", () => {
+test("settings is a blank sheet with the reference fields", () => {
   const html = paintSettings();
   const document = parse(html);
   const ids = [
@@ -399,7 +399,7 @@ test("settings is a blank 760px sheet with the reference fields", () => {
     assert.equal(field?.getAttribute("placeholder"), "Not set", id);
     assert.equal(field?.getAttribute("value"), null, id);
   }
-  assert.equal(html.includes("max-width:760px"), true);
+  assert.equal(html.includes("max-width:760px"), false);
   assert.equal(html.includes("Not set"), true);
   assert.equal(html.includes("about $5,000"), false);
   assert.equal(html.includes("about $100,000"), false);
@@ -436,9 +436,13 @@ test("settings is a blank 760px sheet with the reference fields", () => {
   assert.equal(document.querySelector("[role='switch']")?.getAttribute("aria-labelledby"), "h-thesis");
   assert.equal(document.getElementById("thesis-date")?.getAttribute("disabled"), "");
   assert.equal(document.querySelector("svg")?.getAttribute("aria-hidden"), "true");
-  assert.equal(document.querySelector("a.back")?.getAttribute("href"), "index.html");
-  assert.equal(document.querySelector("a.back")?.textContent?.includes("Back to This week"), true);
+  assert.equal(document.querySelector("a.back"), null);
+  assert.equal(html.includes("Back to This week"), false);
   assert.equal(html.includes("Back to dashboard"), false);
+  assert.equal(document.querySelector("a.gear")?.getAttribute("aria-current"), "page");
+  assert.equal(document.querySelector("a.gear")?.getAttribute("href"), "/settings.html");
+  assert.equal(document.querySelector("footer.foot a.repo")?.getAttribute("href"), "https://github.com/rkalla/btc-insights");
+  assert.equal(document.querySelector("footer.foot a.repo span")?.textContent, "GitHub");
   assert.equal(document.querySelector("a.btn")?.getAttribute("href"), "index.html");
   assert.equal(document.querySelector("a.btn")?.textContent, "Cancel");
 });

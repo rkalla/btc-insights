@@ -157,6 +157,20 @@ test("this week bundle has no font host or market host", () => {
   expect(evidence).toContain('rel="icon" href="/favicon.ico" sizes="48x48"');
   expect(evidence).toContain('rel="apple-touch-icon" href="/apple-touch-icon.png"');
   expect(evidence).not.toContain("spectrum");
+  expect(index).toContain("/assets/site.css");
+  expect(index).toContain("/assets/this-week.css");
+  expect(index).not.toContain("evidence.css");
+  expect(index).not.toContain("dashboard.css");
+  expect(evidence).toContain("/assets/site.css");
+  expect(evidence).toContain("/assets/evidence.css");
+  expect(evidence).not.toContain("this-week.css");
+  expect(evidence).not.toContain("dashboard.css");
+  const settings = readFileSync("dist/settings.html", "utf8");
+  expect(settings).toContain("<title>Settings · BTC Friday</title>");
+  expect(settings).toContain("/assets/site.css");
+  expect(settings).toContain("/assets/settings.css");
+  expect(settings).not.toContain("dashboard.css");
+  expect(settings).not.toContain("this-week.css");
 });
 
 for (const width of [320, 390, 1440]) {
@@ -282,6 +296,120 @@ test("a later evidence poll failure keeps the loaded dashboard", async ({ page }
   await failed;
   await expect(page.getByRole("heading", { name: "Buy strongly" })).toBeVisible();
   await expect(page.getByText("The dashboard could not load its data.")).toHaveCount(0);
+});
+
+async function shellMetrics(page: Page) {
+  return page.evaluate(() => {
+    const box = (selector: string) => {
+      const el = document.querySelector(selector);
+      if (!(el instanceof HTMLElement)) return null;
+      const style = getComputedStyle(el);
+      const pad = Number.parseFloat(style.paddingLeft) + Number.parseFloat(style.paddingRight);
+      return { width: el.getBoundingClientRect().width, pad };
+    };
+    const card = document.querySelector(".card, .panel");
+    const header = document.querySelector("header.site");
+    return {
+      bg: getComputedStyle(document.body).backgroundColor,
+      font: getComputedStyle(document.body).fontFamily,
+      headerH: header == null ? 0 : Math.round(header.getBoundingClientRect().height),
+      radius: card == null ? "" : getComputedStyle(card).borderRadius,
+      page: box(".page"),
+      header: box(".site-inner"),
+      footer: box(".foot-inner"),
+    };
+  });
+}
+
+for (const width of [390, 1440]) {
+  test(`shared light shell at ${width}`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 1000 });
+    const paths = ["/", "/evidence/", "/settings.html"] as const;
+    const shots = [];
+    for (const path of paths) {
+      await page.goto(path);
+      if (path === "/") {
+        await expect(page.getByRole("heading", { level: 1, name: "A strong week to buy Bitcoin." })).toBeVisible();
+        await expect(page).toHaveTitle("This week · BTC Friday");
+      } else if (path === "/evidence/") {
+        await expect(page.getByRole("heading", { name: "Buy strongly" })).toBeVisible();
+        await expect(page).toHaveTitle("Evidence · BTC Friday");
+      } else {
+        await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
+        await expect(page).toHaveTitle("Settings · BTC Friday");
+        await expect(page.locator("a.gear")).toHaveAttribute("aria-current", "page");
+      }
+      await expect(page.getByRole("link", { name: "GitHub" })).toHaveAttribute(
+        "href",
+        "https://github.com/rkalla/btc-insights",
+      );
+      shots.push(await shellMetrics(page));
+    }
+    const paper = "rgb(247, 246, 242)";
+    for (const shot of shots) {
+      expect(shot.bg).toBe(paper);
+      expect(shot.font.toLowerCase()).toContain("geist");
+      expect(shot.headerH).toBe(shots[0]?.headerH);
+      expect(shot.radius).toBe(shots[0]?.radius);
+      expect(shot.radius).toBe("16px");
+      for (const part of [shot.page, shot.header, shot.footer]) {
+        expect(part).not.toBeNull();
+        expect(part!.width).toBeLessThanOrEqual(680 + part!.pad + 1);
+      }
+    }
+  });
+}
+
+for (const width of [320, 390, 412]) {
+  for (const scale of [1, 1.3]) {
+    test(`no sideways scroll at ${width} with ${Math.round(scale * 100)}% text`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      for (const path of ["/", "/evidence/", "/settings.html"]) {
+        await page.goto(path);
+        if (path === "/") {
+          await expect(page.getByRole("heading", { level: 1, name: "A strong week to buy Bitcoin." })).toBeVisible();
+        } else if (path === "/evidence/") {
+          await expect(page.getByRole("heading", { name: "Buy strongly" })).toBeVisible();
+        } else {
+          await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
+        }
+        if (scale !== 1) {
+          await page.evaluate((factor) => {
+            const elements = [document.documentElement, ...document.querySelectorAll("body *")];
+            const sizes = elements.map((el) => Number.parseFloat(getComputedStyle(el).fontSize));
+            elements.forEach((el, index) => {
+              if (!(el instanceof HTMLElement) && !(el instanceof SVGElement)) return;
+              const size = sizes[index];
+              if (size == null || !Number.isFinite(size) || size <= 0) return;
+              el.style.fontSize = `${size * factor}px`;
+            });
+          }, scale);
+        }
+        const box = await page.evaluate(() => ({
+          scrollWidth: document.documentElement.scrollWidth,
+          clientWidth: document.documentElement.clientWidth,
+        }));
+        expect(box.scrollWidth).toBe(box.clientWidth);
+      }
+    });
+  }
+}
+
+test("layout probe is absent unless debug=layout", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1, name: "A strong week to buy Bitcoin." })).toBeVisible();
+  await expect(page.locator(".layout-probe")).toHaveCount(0);
+  await page.goto("/?debug=layout");
+  await expect(page.getByRole("heading", { level: 1, name: "A strong week to buy Bitcoin." })).toBeVisible();
+  const probe = page.locator(".layout-probe");
+  await expect(probe).toHaveCount(1);
+  await expect(probe).toContainText("innerWidth");
+  await expect(probe).toContainText("clientWidth");
+  await expect(probe).toContainText("scrollWidth");
+  await expect(probe).toContainText("visualViewport.width");
+  await expect(probe).toContainText("visualViewport.scale");
+  await expect(probe).toContainText("devicePixelRatio");
+  await expect(probe).toContainText("fontSize");
 });
 
 test("settings validate on blur and save, and cancel does not write", async ({ page }) => {

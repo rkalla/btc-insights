@@ -1,11 +1,8 @@
-import { backIcon } from "./icons.ts";
+import { siteFooter, siteHeader } from "./site-header.ts";
 
 export function paintSettings(): string {
-  return `<main class="page" style="max-width:760px">
-  <div class="topbar">
-    <a class="back" href="index.html">${backIcon()}Back to This week</a>
-    <span class="label">Settings</span>
-  </div>
+  return `${siteHeader("settings")}
+<main class="page">
   <h1>Settings</h1>
   <p class="intro">These amounts personalise This week. They stay on this device and are never sent anywhere. BTC Friday never places orders.</p>
 
@@ -70,5 +67,6 @@ export function paintSettings(): string {
     <a class="btn btn--ghost" href="index.html" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none">Cancel</a>
     <button type="button" class="btn btn--primary">Save settings</button>
   </div>
-</main>`;
+</main>
+${siteFooter()}`;
 }
