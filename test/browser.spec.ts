@@ -51,6 +51,55 @@ for (const width of [1440, 390]) {
     await page.goto("/settings.html");
     await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
     await expect(page.getByLabel("Amount").first()).toBeVisible();
+    await expect(page.getByRole("radiogroup", { name: "How often" })).toBeVisible();
+    await expect(page.getByLabel("Bitcoin you own")).toBeVisible();
+    await expect(page.getByLabel("All your investments, including Bitcoin")).toBeVisible();
+    await expect(page.getByLabel("Target share of your investments")).toBeVisible();
+    await expect(page.getByLabel("Upper limit")).toBeVisible();
+    await expect(page.locator("#thesis-state")).toHaveText("Off");
+    await expect(page.getByLabel("The date you decided")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Where you hold it" })).toBeVisible();
+    for (const old of ["Coins held", "Investable net worth", "Ceiling share", "Not declared"]) {
+      await expect(page.locator("body")).not.toContainText(old);
+    }
+    const field = page.locator("#coins-held");
+    const shell = field.locator("xpath=ancestor::*[contains(@class,'input')][1]");
+    await expect(field).toHaveCSS("font-size", "17px");
+    await expect(field).toHaveCSS("font-variant-numeric", "tabular-nums");
+    expect((await field.evaluate((el) => getComputedStyle(el).fontFamily)).toLowerCase()).toContain("geist");
+    await expect(shell).toHaveCSS("height", "44px");
+    await expect(shell).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    await expect(shell).toHaveCSS("border-top-width", "1px");
+    await expect(shell).toHaveCSS("border-top-color", "rgb(214, 211, 203)");
+    await expect(shell).toHaveCSS("border-radius", "12px");
+    await expect(page.locator("#coins-held + .affix")).toHaveCSS("color", "rgb(95, 101, 112)");
+    await field.focus();
+    expect(await shell.evaluate((el) => getComputedStyle(el).boxShadow)).toBe("rgb(31, 94, 214) 0px 0px 0px 2px");
+    await page.locator("#every-week").check({ force: true });
+    const week = page.locator("label[for='every-week']");
+    await expect(week).toHaveCSS("height", "44px");
+    await expect(week).toHaveCSS("color", "rgb(21, 23, 28)");
+    await expect(week).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    await expect(week).toHaveCSS("border-top-color", "rgb(21, 23, 28)");
+    const toggle = page.getByRole("switch");
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-checked", "true");
+    await expect(toggle).toHaveCSS("background-color", "rgb(31, 94, 214)");
+    await expect(page.locator("#thesis-state")).toHaveText("On");
+    const save = page.getByRole("button", { name: "Save settings" });
+    const cancel = page.getByRole("link", { name: "Cancel" });
+    await expect(save).toHaveCSS("background-color", "rgb(31, 94, 214)");
+    if (width < 600) {
+      const saveBox = await save.boundingBox();
+      const actionsBox = await page.locator(".actions").boundingBox();
+      expect(saveBox).not.toBeNull();
+      expect(actionsBox).not.toBeNull();
+      expect(Math.abs((saveBox?.width ?? 0) - (actionsBox?.width ?? 0))).toBeLessThan(2);
+      await expect(cancel).toHaveCSS("text-decoration-line", "underline");
+      await expect(cancel).toHaveCSS("border-top-width", "0px");
+    } else {
+      await expect(cancel).toHaveCSS("text-decoration-line", "none");
+    }
     expect(await overflows(page)).toBe(false);
   });
 }

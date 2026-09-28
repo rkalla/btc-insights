@@ -62,6 +62,20 @@ test("stylesheets stay on the light shell", () => {
   assert.equal(build.includes("text-transform:uppercase"), true);
 });
 
+test("settings controls keep the plain field sizes", () => {
+  const css = sheet("settings.css");
+  assert.equal(css.includes("height:44px;max-width:100%;background:var(--card);border:1px solid var(--line-strong);border-radius:var(--r-well)"), true);
+  assert.equal(css.includes(".input:focus-within{border-color:var(--buy);box-shadow:0 0 0 2px var(--buy)}"), true);
+  assert.equal(css.includes("font:400 17px/1.4 var(--font);font-variant-numeric:tabular-nums"), true);
+  assert.equal(css.includes(".input .affix{font-size:15px;color:var(--ink-3)"), true);
+  assert.equal(css.includes(".seg label{min-width:0;height:44px;"), true);
+  assert.equal(css.includes("background:var(--card);color:var(--ink);font-weight:600;border:1.5px solid var(--ink)"), true);
+  assert.equal(css.includes('.switch[aria-checked="true"]{background:var(--buy);border-color:var(--buy)}'), true);
+  assert.equal(css.includes("main.page .actions .btn--primary{width:100%}"), true);
+  assert.equal(css.includes("main.page .actions a.btn--ghost{width:auto;height:auto;"), true);
+  assert.equal(css.includes("color:var(--buy-ink);text-decoration:underline"), true);
+});
+
 test("loading.html has the shell and no posture words or font host", () => {
   assert.equal(loading.includes("fonts.googleapis.com"), false);
   assert.equal(loading.includes("fonts.gstatic.com"), false);
