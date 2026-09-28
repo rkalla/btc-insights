@@ -150,6 +150,9 @@ test("the current all-in week paints one headline and the scale step", () => {
   assert.equal(document.querySelector(".personal a")?.getAttribute("href"), "/settings.html");
   assert.equal(document.querySelector("a.evidence")?.getAttribute("href"), "/evidence/");
   assert.equal(document.querySelector("footer a[href='/evidence/']")?.textContent, "Evidence");
+  assert.equal(document.querySelector("footer a.repo")?.getAttribute("href"), "https://github.com/rkalla/btc-insights");
+  assert.equal(document.querySelector("footer a.repo span")?.textContent, "GitHub");
+  assert.equal(document.querySelector("footer a.repo svg")?.getAttribute("aria-hidden"), "true");
   assert.equal(document.querySelector(".flag")?.textContent?.includes("Part of this move was gold rising"), true);
   assert.equal(document.querySelector(".tile--open")?.textContent?.includes("In progress"), true);
   assert.equal(document.querySelector(".tile .val")?.textContent, "+127%");

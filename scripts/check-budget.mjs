@@ -6,6 +6,8 @@ import { gzipSync } from "node:zlib";
 const dist = join(fileURLToPath(new URL("..", import.meta.url)), "dist");
 const FONT_HOSTS = ["fonts.googleapis.com", "fonts.gstatic.com"];
 const MARKET_HOSTS = ["coingecko", "coinmetrics", "coinmarketcap", "binance.com", "kraken.com", "coinbase.com"];
+// The footer links to this repository. Any other remote URL stays out of This week.
+const REPO_HREF = "https://github.com/rkalla/btc-insights";
 const LIMIT = 51200;
 
 function walk(dir, files) {
@@ -63,7 +65,8 @@ for (const path of files) {
       process.exit(1);
     }
   }
-  if (lower.includes("https://") || lower.includes("http://")) {
+  const pageText = lower.split(REPO_HREF).join("");
+  if (pageText.includes("https://") || pageText.includes("http://")) {
     console.error(`${path} contains a remote url`);
     process.exit(1);
   }

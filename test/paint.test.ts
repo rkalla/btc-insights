@@ -101,6 +101,9 @@ test("sample settings paint All in, the record, and the footer", () => {
   );
   assert.equal(document.querySelector("footer.foot")?.textContent?.includes("fee-only financial adviser."), true);
   assert.equal(document.querySelector("footer.foot a[href='/settings.html']")?.textContent, "Settings");
+  assert.equal(document.querySelector("footer.foot a.repo")?.getAttribute("href"), "https://github.com/rkalla/btc-insights");
+  assert.equal(document.querySelector("footer.foot a.repo span")?.textContent, "GitHub");
+  assert.equal(document.querySelector("footer.foot a.repo svg")?.getAttribute("aria-hidden"), "true");
   assert.equal(document.querySelector("#glossary-title")?.textContent, "What the terms mean");
   assert.equal(document.querySelectorAll("#glossary dt").length, 17);
   assert.equal(document.querySelector("#glossary a.term"), null);

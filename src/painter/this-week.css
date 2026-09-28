@@ -146,6 +146,9 @@ html.no-js .notice{display:block}
 .foot{border-top:1px solid var(--line);margin-top:8px}
 .foot-inner{max-width:680px;margin:0 auto;padding:22px var(--page-x) 40px;font-size:14px;line-height:1.55;color:var(--ink-3)}
 .foot-inner p{margin:0 0 10px}
-.foot-links{display:flex;flex-wrap:wrap;gap:18px}
+.foot-links{display:flex;flex-wrap:wrap;align-items:center;gap:18px}
+.foot-links .repo{display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+.foot-links .repo span{text-decoration:underline;text-underline-offset:3px}
+.foot-links .repo svg{display:block;flex:none}
 .stale svg{color:var(--caution)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
