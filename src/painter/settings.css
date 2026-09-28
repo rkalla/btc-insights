@@ -3,10 +3,10 @@ main.page > h1{margin:0;font-size:clamp(28px,8vw,36px);font-weight:700;letter-sp
 main.page form.panel{display:flex;flex-direction:column;gap:16px}
 .help{margin:0;font-size:15px;line-height:1.5;color:var(--ink-2)}
 .field{display:flex;flex-direction:column;gap:6px;min-width:0}
-.field > label,.field .legend{font-size:15px;font-weight:500}
+.field > label,.field .legend{font-size:15px;font-weight:500;overflow-wrap:anywhere}
 .fields-2{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
 .input{display:flex;align-items:center;height:44px;max-width:100%;background:var(--card);border:1px solid var(--line-strong);border-radius:var(--r-well);padding:0 12px;gap:8px;min-width:0}
-.input:focus-within{border-color:var(--buy);box-shadow:0 0 0 1px var(--buy)}
+.input:focus-within{border-color:var(--buy);box-shadow:0 0 0 2px var(--buy)}
 .input .affix{font-size:15px;color:var(--ink-3);flex:none}
 .input input{flex:1;min-width:0;height:100%;background:transparent;border:0;color:var(--ink);font:400 17px/1.4 var(--font);font-variant-numeric:tabular-nums;outline:none}
 .input input::placeholder{color:var(--ink-3)}
@@ -14,8 +14,8 @@ main.page form.panel{display:flex;flex-direction:column;gap:16px}
 .error{font-size:14px;color:var(--caution-ink)}
 .seg{position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;padding:4px;background:var(--neutral-tint);border-radius:var(--r-well);width:100%;max-width:280px}
 .seg input{position:absolute;opacity:0;pointer-events:none}
-.seg label{min-width:0;min-height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;font-size:15px;color:var(--ink-2);cursor:pointer;overflow-wrap:anywhere}
-.seg input:checked + label{background:var(--ink);color:var(--card);font-weight:600}
+.seg label{min-width:0;height:44px;min-height:44px;display:flex;align-items:center;justify-content:center;border:1.5px solid transparent;border-radius:8px;font-size:15px;color:var(--ink-2);cursor:pointer;overflow-wrap:anywhere}
+.seg input:checked + label{background:var(--card);color:var(--ink);font-weight:600;border:1.5px solid var(--ink)}
 .seg input:focus-visible + label{outline:2px solid var(--buy);outline-offset:2px}
 .radios{display:flex;gap:8px;flex-wrap:wrap;border:0;padding:0;margin:0;min-width:0}
 .radio{position:relative;max-width:100%}
@@ -32,14 +32,16 @@ main.page form.panel{display:flex;flex-direction:column;gap:16px}
 .switch[aria-checked="true"]::after{transform:translateX(22px);background:#fff}
 .state{font-size:15px;color:var(--ink-2)}
 .actions{display:flex;justify-content:flex-end;gap:10px;padding-top:4px;min-width:0}
+main.page .actions a.btn{display:inline-flex;align-items:center;justify-content:center}
 main.page .btn{height:44px;padding:0 20px;border-radius:var(--r-well);font:600 16px var(--font);cursor:pointer;max-width:100%}
 main.page .btn--primary{background:var(--buy);color:#fff;border:1px solid var(--buy)}
 main.page .btn--primary:hover{background:var(--buy-ink)}
-main.page .btn--ghost{background:transparent;color:var(--ink);border:1px solid var(--line-strong)}
+main.page .btn--ghost{background:transparent;color:var(--ink);border:1px solid var(--line-strong);text-decoration:none}
 @media (min-width:600px){
   .fields-2{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media (max-width:599px){
-  .actions{flex-direction:column-reverse}
-  main.page .actions .btn{width:100%}
+  .actions{flex-direction:column-reverse;align-items:center}
+  main.page .actions .btn--primary{width:100%}
+  main.page .actions a.btn--ghost{width:auto;height:auto;padding:8px 4px;border:0;background:transparent;color:var(--buy-ink);text-decoration:underline;text-underline-offset:3px}
 }

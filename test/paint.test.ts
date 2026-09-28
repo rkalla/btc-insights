@@ -410,8 +410,22 @@ test("settings is a blank sheet with the reference fields", () => {
     "Money set aside for Bitcoin",
     "Take profits",
     "I've decided Bitcoin's long-term case is broken",
-    "Account",
+    "Where you hold it",
   ]);
+  assert.equal(document.getElementById("every-label")?.textContent, "How often");
+  assert.equal(document.querySelector("label[for='coins-held']")?.textContent, "Bitcoin you own");
+  assert.equal(document.querySelector("label[for='net-worth']")?.textContent, "All your investments, including Bitcoin");
+  assert.equal(document.querySelector("label[for='target-share']")?.textContent, "Target share of your investments");
+  assert.equal(document.querySelector("label[for='ceiling-share']")?.textContent, "Upper limit");
+  assert.equal(document.getElementById("thesis-state")?.textContent, "Off");
+  assert.equal(document.querySelector("label[for='thesis-date']")?.textContent, "The date you decided");
+  assert.equal(html.includes("Not declared"), false);
+  assert.equal(html.includes("Coins held"), false);
+  assert.equal(html.includes("Investable net worth"), false);
+  assert.equal(html.includes("Ceiling share"), false);
+  assert.equal(html.includes(">Every<"), false);
+  assert.equal(html.includes(">Date<"), false);
+  assert.equal(html.includes(">Account<"), false);
   assert.deepEqual(texts(document, ".help"), [
     "The amount you put into Bitcoin on a schedule, whatever the market does.",
     "Money you'd add a little at a time, each week, while Bitcoin trades below what the average holder paid.",

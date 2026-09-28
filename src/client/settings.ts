@@ -54,7 +54,7 @@ function wire(page: HTMLElement): void {
   toggle?.addEventListener("click", () => {
     const on = toggle.getAttribute("aria-checked") !== "true";
     toggle.setAttribute("aria-checked", on ? "true" : "false");
-    if (state) state.textContent = on ? "Declared" : "Not declared";
+    if (state) state.textContent = on ? "On" : "Off";
     if (date instanceof HTMLInputElement) date.disabled = !on;
     const message = validateSettings(readSettings(page)).find((error) => error.field === "thesisDate")?.message ?? null;
     setFieldError(page, "thesisDate", message);
@@ -105,7 +105,7 @@ function fill(page: ParentNode, settings: HolderSettings): void {
   const toggle = page.querySelector("button.switch");
   if (toggle) toggle.setAttribute("aria-checked", settings.thesisBroken ? "true" : "false");
   const state = page.querySelector("#thesis-state");
-  if (state) state.textContent = settings.thesisBroken ? "Declared" : "Not declared";
+  if (state) state.textContent = settings.thesisBroken ? "On" : "Off";
   const date = page.querySelector("#thesis-date");
   if (date instanceof HTMLInputElement) {
     date.disabled = !settings.thesisBroken;
