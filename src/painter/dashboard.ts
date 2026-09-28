@@ -685,16 +685,12 @@ function cautionQuiet(vm: DashboardVM): boolean {
   return /quiet/i.test(sell.flag) || /quiet/i.test(sell.value);
 }
 
-function buySignalOn(vm: DashboardVM): boolean {
-  const buy = vm.context.find((reading) => reading.key === "buyCross");
-  if (buy == null) return false;
-  return /fired/i.test(buy.flag) || /fired/i.test(buy.value);
-}
-
 function signalsAreQuiet(vm: DashboardVM): boolean {
   const sell = vm.context.find((reading) => reading.key === "sellRoll");
   const cautionOn = sell != null && !cautionQuiet(vm);
-  return !buySignalOn(vm) && !cautionOn;
+  const buy = vm.context.find((reading) => reading.key === "buyCross");
+  const buyOn = buy != null && (/fired/i.test(buy.flag) || /fired/i.test(buy.value));
+  return !buyOn && !cautionOn;
 }
 
 function costIsBelow(vm: DashboardVM): boolean | null {
