@@ -1,5 +1,6 @@
 import type { PlainView } from "../compose/plain.ts";
 import type { WeekCopy } from "../copy/thisWeek.ts";
+import { siteHeader } from "./site-header.ts";
 
 export const WEEK_LOADING = "Loading this week's advice.";
 export const WEEK_NEEDS_JS = "This week needs JavaScript to show the advice.";
@@ -7,9 +8,7 @@ export const WEEK_LOAD_ERROR = "The advice could not load. Nothing here is a cal
 export const WEEK_TRY_AGAIN = "Try again";
 export const WEEK_SCALE_LABEL = "Advice scale, from most cautious to most eager";
 
-const WEEK_HREF = "/this-week/";
-// The evidence page is still the dashboard until This week becomes the home page.
-const EVIDENCE_HREF = "/";
+const EVIDENCE_HREF = "/evidence/";
 const SETTINGS_HREF = "/settings.html";
 
 const STEPS = [
@@ -32,7 +31,7 @@ ${iconLinks}
 <link rel="stylesheet" href="/assets/this-week.css">
 </head>
 <body>
-${thisWeekHeader()}
+${siteHeader("week")}
 <p class="notice">${WEEK_NEEDS_JS}</p>
 <div id="sheet">
 <main id="week" class="page" aria-busy="true">
@@ -57,24 +56,6 @@ ${priceBlock(view.copy)}
 ${evidenceLink(view.copy)}
 </main>
 ${footer(view.copy)}`;
-}
-
-function thisWeekHeader(): string {
-  return `<header class="site">
-  <div class="site-inner">
-    <a class="brand" href="${WEEK_HREF}"><span class="brand-mark" aria-hidden="true"></span>BTC Friday</a>
-    <nav aria-label="Main">
-      <ul class="tabs">
-        <li><a href="${WEEK_HREF}" aria-current="page">This week</a></li>
-        <li><a href="${EVIDENCE_HREF}">Evidence</a></li>
-      </ul>
-    </nav>
-    <a class="gear" href="${SETTINGS_HREF}" aria-label="Settings">
-      ${gearIcon()}
-      <span class="gear-label">Settings</span>
-    </a>
-  </div>
-</header>`;
 }
 
 function metaLine(copy: WeekCopy): string {
@@ -241,10 +222,6 @@ function esc(text: string): string {
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
-}
-
-function gearIcon(): string {
-  return `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`;
 }
 
 function warnIcon(): string {

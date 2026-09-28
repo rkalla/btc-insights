@@ -63,11 +63,28 @@ test("sample settings paint All in, the record, and the footer", () => {
   const html = paintDashboard(sampleVm);
   const document = parse(html);
 
-  assert.equal(document.querySelector("h1.brand-name")?.textContent, "Bitcoin dashboard");
-  assert.equal(document.querySelector(".brand-sub")?.textContent, "Read-only · one holder");
-  assert.equal(document.querySelector("h1.brand-name")?.parentElement?.getAttribute("class"), "brand");
-  assert.equal(document.querySelector("h2.posture")?.textContent, "All in");
-  assert.equal(document.querySelector("h2.posture-sm")?.textContent, "Hold");
+  assert.equal(document.querySelectorAll("h1").length, 1);
+  assert.equal(document.querySelector("h1")?.textContent, "The evidence behind this week's advice");
+  assert.equal(
+    document.querySelector(".lede p")?.textContent,
+    "This page shows the rules and history behind This week. It uses some technical terms, and each one is explained at the bottom.",
+  );
+  assert.equal(document.querySelector("a.brand")?.textContent, "BTC Friday");
+  assert.equal(document.querySelector("header.site a[aria-current='page']")?.textContent, "Evidence");
+  assert.equal(document.querySelector("header.site a[aria-current='page']")?.getAttribute("href"), "/evidence/");
+  assert.equal(document.querySelector("h2.posture")?.textContent, "Buy strongly");
+  assert.equal(document.querySelector(".cash .rule")?.textContent, "Rule: All in, from the buy cross");
+  assert.equal(document.querySelector("h2.posture-sm")?.textContent, "Keep");
+  assert.equal(document.querySelector(".coins .rule")?.textContent, "Rule: Hold");
+  assert.equal(document.querySelector(".cash .label")?.textContent, "New money");
+  assert.equal(document.querySelector(".coins .label")?.textContent, "Bitcoin you own");
+  assert.equal(document.querySelector("#caveats-label")?.textContent, "Things to know");
+  assert.equal(document.querySelector("#chart-title")?.textContent, "Price");
+  assert.equal(document.querySelector("#context-label")?.textContent, "The readings behind the call");
+  assert.equal(document.querySelector("#lv-label")?.textContent, "The long view");
+  assert.equal(document.querySelector(".cycles .label")?.textContent, "How early each signal was");
+  assert.equal(html.includes("01 ·"), false);
+  assert.equal(document.querySelector(".spectrum"), null);
   assert.equal(
     document.querySelector(".action")?.textContent,
     "Buy now, or by the Friday 2 Oct 2026 close. Up to $100,000.",
@@ -77,36 +94,33 @@ test("sample settings paint All in, the record, and the footer", () => {
     document.querySelector(".record dd.lead")?.textContent,
     "4 of 4. Floor about 60% (Wilson 90%). 4 episodes.",
   );
-  assert.equal(html.includes("Position on the spectrum only. Not a confidence scale."), true);
+  assert.equal(html.includes("Position on the spectrum only. Not a confidence scale."), false);
   assert.equal(
-    document.querySelector("footer.footer")?.textContent?.includes("This page does not trade and does not compute tax."),
+    document.querySelector("footer.foot")?.textContent?.includes("BTC Friday is research, not personal financial advice."),
     true,
   );
+  assert.equal(document.querySelector("footer.foot")?.textContent?.includes("fee-only financial adviser."), true);
+  assert.equal(document.querySelector("footer.foot a[href='/settings.html']")?.textContent, "Settings");
+  assert.equal(document.querySelector("#glossary-title")?.textContent, "What the terms mean");
+  assert.equal(document.querySelectorAll("#glossary dt").length, 17);
+  assert.equal(document.querySelector("#glossary a.term"), null);
+  assert.equal(document.querySelectorAll("a.term[href='#buy-cross']").length, 1);
+  assert.equal(document.querySelector("a.term[href='#long-run-trend']")?.textContent, "Long-run trend");
+  assert.equal(document.querySelector("a.term[href='#average-200w']")?.textContent, "200-week average");
+  assert.deepEqual(texts(document, "ul.legend li"), [
+    "Bitcoin price (Friday closes)",
+    "Long-run trend",
+    "20% below trend",
+    "55% above trend",
+    "200-week average",
+    "Buy signal",
+    "Caution signal",
+  ]);
   assert.equal(document.querySelector(".disagreement"), null);
   assert.equal(html.includes("Sell roll is also in its pause"), false);
   assert.equal(exactTextCount(document, "High confidence"), 0);
   assert.equal(html.includes("Not high confidence"), true);
-  assert.deepEqual(texts(document, ".rail--coins > li"), ["Exit", "Trim", "Hold"]);
-  assert.deepEqual(texts(document, ".rail--cash > li"), [
-    "Stand down",
-    "Stay the course",
-    "Slow in",
-    "Build",
-    "Lump in",
-    "All in",
-  ]);
-  assert.equal(document.querySelectorAll(".rail--coins [aria-current='step']").length, 1);
-  assert.equal(document.querySelectorAll(".rail--cash [aria-current='step']").length, 1);
-  assert.equal(document.querySelector(".rail--coins [aria-current='step']")?.textContent, "Hold");
-  assert.equal(
-    document.querySelector(".rail--coins [aria-current='step']")?.getAttribute("class"),
-    "is-active tone-neutral",
-  );
-  assert.equal(document.querySelector(".rail--cash [aria-current='step']")?.textContent, "All in");
-  assert.equal(
-    document.querySelector(".rail--cash [aria-current='step']")?.getAttribute("class"),
-    "is-active tone-buy",
-  );
+  assert.equal(document.querySelector(".rail"), null);
   assert.equal(html.includes("Fri 18 Sep"), true);
   assert.equal(html.includes("last grace"), true);
   assert.equal(html.includes("6 days left"), true);
@@ -116,7 +130,6 @@ test("sample settings paint All in, the record, and the footer", () => {
   );
   assert.equal(html.includes("Next close Fri 2 Oct"), true);
   assert.equal(html.includes("Next close Fri 2 Oct 2026"), false);
-  assert.equal(texts(document, ".clock .v")[1], "Fri 2 Oct 2026");
   assert.equal(
     document.querySelector("#cyc-title")?.textContent,
     "Share of that cycle's percentage gain, buying the signal and holding to the cycle high",
@@ -132,7 +145,7 @@ test("sample settings paint All in, the record, and the footer", () => {
     true,
   );
   assert.equal(document.querySelectorAll("#chart-alt").length, 1);
-  assert.equal(document.querySelector("a[aria-label='Settings']")?.getAttribute("href"), "settings.html");
+  assert.equal(document.querySelector("a[aria-label='Settings']")?.getAttribute("href"), "/settings.html");
 
   const icons = document.querySelectorAll("svg");
   for (let i = 0; i < icons.length; i += 1) {
@@ -169,12 +182,14 @@ test("blank settings name the cash pile and do not invent $100,000", () => {
   );
   assert.equal(html.includes("Use your cash available to invest."), true);
   assert.equal(html.includes("$100,000"), false);
-  assert.equal(document.querySelector("h2.posture")?.textContent, "All in");
+  assert.equal(document.querySelector("h2.posture")?.textContent, "Buy strongly");
 });
 
 test("each cash posture paints its word and record sentence", () => {
   const cases: {
     word: string;
+    shown: string;
+    rule: string;
     posture: CashPosture;
     tone: Tone;
     record: string;
@@ -182,6 +197,8 @@ test("each cash posture paints its word and record sentence", () => {
   }[] = [
     {
       word: "All in",
+      shown: "Buy strongly",
+      rule: "Rule: All in, from the buy cross",
       posture: "ALL_IN",
       tone: "buy",
       record: "4 of 4. Floor about 60% (Wilson 90%). 4 episodes.",
@@ -189,6 +206,8 @@ test("each cash posture paints its word and record sentence", () => {
     },
     {
       word: "Build",
+      shown: "Add",
+      rule: "Rule: Build",
       posture: "BUILD",
       tone: "buy",
       record: "79% of 91 weeks. 4 spells.",
@@ -199,6 +218,8 @@ test("each cash posture paints its word and record sentence", () => {
     },
     {
       word: "Stand down",
+      shown: "Pause",
+      rule: "Rule: Stand down",
       posture: "STAND_DOWN",
       tone: "sell",
       record: "7 of 8. Floor about 59%. About six episodes.",
@@ -209,6 +230,8 @@ test("each cash posture paints its word and record sentence", () => {
     },
     {
       word: "Lump in",
+      shown: "Add",
+      rule: "Rule: Lump in",
       posture: "LUMP_IN",
       tone: "buy",
       record: "6 of 6 finished regimes. Floor 69%.",
@@ -219,6 +242,8 @@ test("each cash posture paints its word and record sentence", () => {
     },
     {
       word: "Slow in",
+      shown: "Go slow",
+      rule: "Rule: Slow in",
       posture: "SLOW_IN",
       tone: "buy",
       record: "2 of 3 regimes. Floor 25%.",
@@ -226,6 +251,8 @@ test("each cash posture paints its word and record sentence", () => {
     },
     {
       word: "Stay the course",
+      shown: "Steady",
+      rule: "Rule: Stay the course",
       posture: "STAY",
       tone: "neutral",
       record: "No event record.",
@@ -252,16 +279,15 @@ test("each cash posture paints its word and record sentence", () => {
           };
     const html = paintDashboard(vm);
     const document = parse(html);
-    assert.equal(document.querySelector("h2.posture")?.textContent, item.word, item.word);
+    assert.equal(document.querySelector("h2.posture")?.textContent, item.shown, item.word);
+    assert.equal(document.querySelector(".cash .rule")?.textContent, item.rule, item.word);
     assert.equal(document.querySelector(".record dd")?.textContent, item.record, item.word);
-    assert.equal(document.querySelectorAll(".rail--cash [aria-current='step']").length, 1, item.word);
-    assert.equal(document.querySelector(".rail--cash [aria-current='step']")?.textContent, item.word);
+    assert.equal(document.querySelector(".spectrum"), null, item.word);
     assert.equal(
       document.querySelector("h2.posture")?.getAttribute("class"),
       `posture posture--${item.tone}`,
       item.word,
     );
-    assert.equal(html.includes(item.record), true, item.word);
   }
 });
 
@@ -290,10 +316,12 @@ test("exit and a missing close leave the cash rail with no active segment", () =
     },
   };
   const exitDoc = parse(paintDashboard(exitVm));
-  assert.equal(exitDoc.querySelectorAll(".rail--cash [aria-current='step']").length, 0);
-  assert.equal(exitDoc.querySelector(".rail--coins [aria-current='step']")?.textContent, "Exit");
-  assert.equal(exitDoc.querySelector("h2.posture")?.textContent, "No new buy");
+  assert.equal(exitDoc.querySelector(".spectrum"), null);
+  assert.equal(exitDoc.querySelector("h2.posture")?.textContent, "Pause");
+  assert.equal(exitDoc.querySelector(".cash .rule"), null);
   assert.equal(exitDoc.querySelector("h2.posture-sm")?.textContent, "Exit");
+  assert.equal(exitDoc.querySelector(".coins .rule"), null);
+  assert.equal(exitDoc.querySelector(".coins")?.textContent?.includes("Sell all."), true);
 
   const noCall: DashboardVM = {
     ...sampleVm,
@@ -309,9 +337,10 @@ test("exit and a missing close leave the cash rail with no active segment", () =
     },
   };
   const noCallDoc = parse(paintDashboard(noCall));
-  assert.equal(noCallDoc.querySelectorAll(".rail--cash [aria-current='step']").length, 0);
-  assert.equal(noCallDoc.querySelector(".rail--coins [aria-current='step']")?.textContent, "Hold");
-  assert.equal(noCallDoc.querySelector("h2.posture")?.textContent, "No call");
+  assert.equal(noCallDoc.querySelector(".spectrum"), null);
+  assert.equal(noCallDoc.querySelector("h2.posture")?.textContent, "No update");
+  assert.equal(noCallDoc.querySelector(".cash .rule")?.textContent, "Rule: No call");
+  assert.equal(noCallDoc.querySelector("h2.posture-sm")?.textContent, "Keep");
   assert.equal(noCallDoc.querySelector(".record"), null);
 });
 
@@ -405,6 +434,8 @@ test("settings is a blank 760px sheet with the reference fields", () => {
   assert.equal(document.getElementById("thesis-date")?.getAttribute("disabled"), "");
   assert.equal(document.querySelector("svg")?.getAttribute("aria-hidden"), "true");
   assert.equal(document.querySelector("a.back")?.getAttribute("href"), "index.html");
-  assert.equal(document.querySelector("a.back")?.textContent?.includes("Back to dashboard"), true);
-  assert.equal(html.includes("Back to This week"), false);
+  assert.equal(document.querySelector("a.back")?.textContent?.includes("Back to This week"), true);
+  assert.equal(html.includes("Back to dashboard"), false);
+  assert.equal(document.querySelector("a.btn")?.getAttribute("href"), "index.html");
+  assert.equal(document.querySelector("a.btn")?.textContent, "Cancel");
 });

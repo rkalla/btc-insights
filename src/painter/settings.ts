@@ -3,7 +3,7 @@ import { backIcon } from "./icons.ts";
 export function paintSettings(): string {
   return `<main class="page" style="max-width:760px">
   <div class="topbar">
-    <a class="back" href="index.html">${backIcon()}Back to dashboard</a>
+    <a class="back" href="index.html">${backIcon()}Back to This week</a>
     <span class="label">Settings</span>
   </div>
   <h1>Settings</h1>

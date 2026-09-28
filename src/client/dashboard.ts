@@ -3,6 +3,7 @@ import type { FridayDocument, LiveSlice } from "../contract/types.ts";
 import { compose } from "../compose/view-model.ts";
 import { chartSvg } from "../painter/chart.ts";
 import { paintDashboard } from "../painter/dashboard.ts";
+import { siteHeader } from "../painter/site-header.ts";
 import { blankSettings, loadSettings } from "../settings/store.ts";
 import type { HolderSettings } from "../contract/types.ts";
 import { connectPoll, type PollHandle } from "./poll.ts";
@@ -93,7 +94,7 @@ function render(): void {
   const restoreDate = active instanceof Element ? active.closest(".marker")?.getAttribute("data-date") ?? null : null;
   const restoreId = active instanceof HTMLElement && active.id !== "" && active.closest(".page") != null ? active.id : null;
   const restoreShowFires = active instanceof Element && active.closest(".page .show-fires") != null;
-  const restoreSettings = active instanceof Element && active.closest(".page a.icon-btn") != null;
+  const restoreSettings = active instanceof Element && active.closest("a.gear") != null;
   const vm = compose(friday, live, readHolder(), new Date().toISOString());
   rendering = true;
   try {
@@ -110,7 +111,7 @@ function render(): void {
       const button = document.querySelector(".show-fires");
       if (button instanceof HTMLElement) button.focus({ preventScroll: true });
     } else if (restoreSettings) {
-      const link = document.querySelector("a.icon-btn");
+      const link = document.querySelector("a.gear");
       if (link instanceof HTMLElement) link.focus({ preventScroll: true });
     }
   } finally {
@@ -512,7 +513,7 @@ function showError(): void {
   openMarkerDate = null;
   const page = document.querySelector(".page");
   if (!(page instanceof HTMLElement)) return;
-  page.innerHTML = `<main class="load-error-host"><section class="panel load-error"><p>${LOAD_ERROR}</p><button type="button" class="btn btn--primary">Try again</button></section></main>`;
+  page.innerHTML = `${siteHeader("evidence")}<main class="load-error-host"><section class="panel load-error"><p>${LOAD_ERROR}</p><button type="button" class="btn btn--primary">Try again</button></section></main>`;
   page.querySelector("button")?.addEventListener("click", () => {
     location.reload();
   });

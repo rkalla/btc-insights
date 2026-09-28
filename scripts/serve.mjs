@@ -37,6 +37,11 @@ const server = createServer((req, res) => {
     res.end();
     return;
   }
+  if (pathname === "/evidence") {
+    res.writeHead(308, { location: "/evidence/" });
+    res.end();
+    return;
+  }
   const fixture = fixtures.get(pathname);
   const filePath = fixture ?? distFile(pathname);
   if (filePath == null) {

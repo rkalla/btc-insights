@@ -34,8 +34,9 @@ test("loading.html has the shell and no posture words or font host", () => {
   assert.equal(loading.includes("fonts.googleapis.com"), false);
   assert.equal(loading.includes("fonts.gstatic.com"), false);
   assert.equal(loading.includes('aria-busy="true"'), true);
-  assert.equal(loading.includes("Bitcoin dashboard"), true);
-  assert.equal(loading.includes("Read-only · one holder"), true);
+  assert.equal(loading.includes("Bitcoin dashboard"), false);
+  assert.equal(loading.includes("Read-only · one holder"), false);
+  assert.equal(loading.includes("spectrum"), false);
   for (const pattern of postureWords) {
     assert.equal(pattern.test(loading), false, pattern.source);
   }

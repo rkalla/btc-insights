@@ -2,6 +2,7 @@ import * as esbuild from "esbuild";
 import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { siteHeader } from "../src/painter/site-header.ts";
 import { thisWeekShell } from "../src/painter/this-week.ts";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
@@ -76,29 +77,33 @@ writeCss("dashboard.css");
 writeCss("this-week.css");
 
 const loading = readFileSync(join(root, "src", "painter", "loading.html"), "utf8");
+writeFileSync(join(dist, "index.html"), thisWeekShell(iconLinks));
+
+mkdirSync(join(dist, "this-week"), { recursive: true });
+writeFileSync(join(dist, "this-week", "index.html"), thisWeekShell(iconLinks));
+
+mkdirSync(join(dist, "evidence"), { recursive: true });
 writeFileSync(
-  join(dist, "index.html"),
+  join(dist, "evidence", "index.html"),
   `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bitcoin dashboard</title>
+<title>Evidence · BTC Friday</title>
 ${iconLinks}
-<link rel="stylesheet" href="assets/dashboard.css">
+<link rel="stylesheet" href="/assets/dashboard.css">
 </head>
 <body>
 <div class="page">
+${siteHeader("evidence")}
 ${loading}
 </div>
-<script type="module" src="assets/dashboard.js"></script>
+<script type="module" src="/assets/dashboard.js"></script>
 </body>
 </html>
 `,
 );
-
-mkdirSync(join(dist, "this-week"), { recursive: true });
-writeFileSync(join(dist, "this-week", "index.html"), thisWeekShell(iconLinks));
 
 writeFileSync(
   join(dist, "settings.html"),

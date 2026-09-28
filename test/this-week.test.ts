@@ -109,6 +109,15 @@ test("COPY_WRITTEN_FOR matches the Friday presentation", () => {
   assert.equal(friday.standDownFireDate, undefined);
 });
 
+test("a published Friday without presentation still uses the copy facts", () => {
+  const { presentation: _ignored, ...rest } = friday;
+  const published = rest as FridayDocument;
+  const view = composePlain(published, live(), settings(), OPENED, ZONE);
+  assert.equal(view.copy.headline, "A strong week to buy Bitcoin.");
+  assert.equal(view.copy.track?.includes("beat spreading it over a year, all 4 times"), true);
+  assert.equal(view.copy.tiles[0], "2015 +127%");
+});
+
 test("state fixtures only change the fields a state needs", () => {
   const names = readdirSync(new URL("../fixtures/states/", import.meta.url))
     .filter((name) => name.endsWith(".json"))

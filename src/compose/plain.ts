@@ -7,6 +7,7 @@ import type {
   PresentationFacts,
 } from "../contract/types.ts";
 import {
+  COPY_WRITTEN_FOR,
   regularNote,
   renderWeek,
   type RenderInput,
@@ -176,6 +177,8 @@ export function composePlain(
     ? calendarDaysLeft(openedMs, deadlineMs, timeZone)
     : null;
   const gap = gapFacts(live.gapPct);
+  // The file published before this field still carries this week's call. The copy was written for these facts.
+  const facts: PresentationFacts = friday.presentation ?? COPY_WRITTEN_FOR;
   const showPersonalise =
     ((state === "BUY_STRONGLY" || state === "ADD_AT_ONCE") && settings.cashAvailable == null) ||
     (state === "ADD_WEEKLY" && settings.buildAmount == null);
@@ -203,7 +206,7 @@ export function composePlain(
       : displayDollars(settings.buildAmount / 26),
     gap: gap.gap,
     gapWords: gap.gapWords,
-    fireDate: fireDateLabel(friday.presentation),
+    fireDate: fireDateLabel(facts),
     pauseDate: pauseStart == null ? null : formatMonthDay(pauseStart),
     pauseEnds: pauseEnds == null ? null : formatMonthDayYear(pauseEnds),
     declaredDate: sell && settings.thesisDate != null ? formatMonthDay(settings.thesisDate) : null,
@@ -213,7 +216,7 @@ export function composePlain(
     ceiling: takeProfit && measured != null ? String(Math.round(settings.ceilingShare ?? 0)) : null,
     share: takeProfit && measured != null ? String(measured.sharePct) : null,
     priceLabel: priceLabel(live.spotUsd, live.spotAsOf, timeZone),
-    tiles: tileLines(friday.presentation),
+    tiles: tileLines(facts),
   };
   return {
     schema: 1,

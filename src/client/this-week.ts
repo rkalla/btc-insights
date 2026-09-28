@@ -159,7 +159,6 @@ function asFriday(value: unknown): FridayDocument {
     official == null ||
     typeof official.closeDate !== "string" ||
     typeof official.nextCloseDate !== "string" ||
-    record.presentation == null ||
     typeof record.cash?.posture !== "string"
   ) {
     throw new Error("friday");

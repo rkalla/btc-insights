@@ -83,7 +83,11 @@ test("the shell is the header, a loading sentence, and a no-javascript sentence"
   assert.equal(shell.includes("$"), false);
   assert.equal(document.querySelector("h1"), null);
   assert.equal(document.querySelector('[aria-current="page"]')?.textContent, "This week");
+  assert.equal(document.querySelector('[aria-current="page"]')?.getAttribute("href"), "/");
+  assert.equal(document.querySelector(".brand")?.getAttribute("href"), "/");
+  assert.equal(document.querySelector(".tabs a:not([aria-current])")?.getAttribute("href"), "/evidence/");
   assert.equal(document.querySelector(".gear")?.getAttribute("aria-label"), "Settings");
+  assert.equal(document.querySelector(".gear")?.getAttribute("href"), "/settings.html");
   assert.equal(document.querySelector(".boot")?.textContent, WEEK_LOADING);
   assert.equal(document.querySelector(".notice")?.textContent, WEEK_NEEDS_JS);
 });
@@ -144,6 +148,8 @@ test("the current all-in week paints one headline and the scale step", () => {
     true,
   );
   assert.equal(document.querySelector(".personal a")?.getAttribute("href"), "/settings.html");
+  assert.equal(document.querySelector("a.evidence")?.getAttribute("href"), "/evidence/");
+  assert.equal(document.querySelector("footer a[href='/evidence/']")?.textContent, "Evidence");
   assert.equal(document.querySelector(".flag")?.textContent?.includes("Part of this move was gold rising"), true);
   assert.equal(document.querySelector(".tile--open")?.textContent?.includes("In progress"), true);
   assert.equal(document.querySelector(".tile .val")?.textContent, "+127%");
