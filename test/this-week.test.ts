@@ -12,6 +12,7 @@ import {
   type FridayStateOverlay,
   type PlainView,
 } from "../src/compose/plain.ts";
+import { compose } from "../src/compose/view-model.ts";
 import type { CashPosture, FridayDocument, HolderSettings, LiveSlice } from "../src/contract/types.ts";
 import {
   BANNED_THIS_WEEK,
@@ -189,7 +190,7 @@ test("buy strongly uses the deck, the gold line, and five days in Phoenix", () =
   assert.equal(view.copy.personalise, "Want this in dollars? Add your amount in Settings. It stays on this device.");
   assert.equal(
     view.copy.why[0],
-    "On Sep 18, our strongest buy signal turned on. Before this, it had turned on only 4 times: in 2015, 2019, 2020 and 2023. Those 4 times, putting the money in at once beat spreading it over the next year. A cautious reading is about 6 times in 10 or better.",
+    "On Sep 18, our strongest buy signal turned on. Before this, it had turned on only 4 times: in 2015, 2019, 2020 and 2023. Those 4 times, putting the money in at once beat spreading it over the next year.",
   );
   assert.equal(
     view.copy.why[1],
@@ -265,6 +266,74 @@ test("the four zones and the Phoenix day count", () => {
     stale.copy.banner,
     "This page hasn't updated since Friday, Sep 25, 5:00 pm. Don't act on it until it does.",
   );
+});
+
+test("an official Friday close is labeled and aged from the next UTC midnight", () => {
+  const official = readJson("fixtures/live-2026-09-25.json") as LiveSlice;
+  assert.equal(official.spotAsOf, "2026-09-25T00:00:00Z");
+  assert.equal(official.isOfficialClose, true);
+  assert.equal(official.chartTip.date, "2026-09-25");
+  const zones: [string, string][] = [
+    ["America/Phoenix", "Friday, Sep 25, 5:00 pm"],
+    ["America/New_York", "Friday, Sep 25, 8:00 pm"],
+    ["Europe/London", "Saturday, Sep 26, 1:00 am"],
+    ["UTC", "Friday, Sep 25 at midnight"],
+  ];
+  for (const [timeZone, when] of zones) {
+    const view = composePlain(friday, official, settings(), "2026-09-26T02:00:00Z", timeZone);
+    guard(view.copy);
+    assert.equal(view.copy.price, `Bitcoin today $84,413, ${when}.`, timeZone);
+    assert.equal(view.latestPriceUtc, "2026-09-25T00:00:00Z", timeZone);
+  }
+
+  const quote = { ...official, isOfficialClose: false };
+  const unshifted = composePlain(friday, quote, settings(), "2026-09-26T02:00:00Z", "America/Phoenix");
+  assert.equal(unshifted.copy.price, "Bitcoin today $84,413, Thursday, Sep 24, 5:00 pm.");
+  assert.equal(unshifted.latestPriceUtc, "2026-09-25T00:00:00Z");
+  const midday = composePlain(
+    friday,
+    { ...official, spotAsOf: "2026-09-25T18:00:00Z" },
+    settings(),
+    OPENED,
+    "America/Phoenix",
+  );
+  assert.equal(midday.copy.price, "Bitcoin today $84,413, Friday, Sep 25, 11:00 am.");
+  assert.equal(midday.latestPriceUtc, "2026-09-25T18:00:00Z");
+
+  const holder = settings();
+  const early = compose(friday, official, holder, "2026-09-26T02:00:00Z");
+  assert.equal(early.now.stale, false);
+  assert.equal(early.now.staleNote, null);
+  assert.equal(early.chart.spot.date, "2026-09-25");
+  assert.equal(official.chartTip.date, "2026-09-25");
+  assert.equal(official.spotAsOf, "2026-09-25T00:00:00Z");
+
+  const onTheLine = compose(friday, official, holder, "2026-09-27T02:00:00Z");
+  assert.equal(onTheLine.now.stale, true);
+  assert.equal(onTheLine.now.staleNote, "The latest print is from 26 Sep 2026. Levels may be out of date.");
+  assert.equal(onTheLine.chart.spot.date, "2026-09-25");
+
+  const duringFriday = compose(friday, official, holder, "2026-09-26T03:00:00Z");
+  assert.equal(duringFriday.now.stale, false);
+  const quoteAged = compose(friday, quote, holder, "2026-09-26T03:00:00Z");
+  assert.equal(quoteAged.now.stale, true);
+  assert.equal(quoteAged.now.staleNote, "The latest print is from 25 Sep 2026. Levels may be out of date.");
+  assert.equal(quoteAged.chart.spot.date, "2026-09-25");
+  const quoteOnTheLine = compose(friday, quote, holder, "2026-09-26T02:00:00Z");
+  assert.equal(quoteOnTheLine.now.stale, false);
+
+  const flagged = { ...official, stale: true };
+  const publishedEarly = compose(friday, flagged, holder, "2026-09-26T03:00:00Z");
+  assert.equal(publishedEarly.now.stale, false);
+  assert.equal(publishedEarly.now.staleNote, null);
+  assert.equal(publishedEarly.chart.spot.date, "2026-09-25");
+  assert.equal(flagged.spotAsOf, "2026-09-25T00:00:00Z");
+  const publishedLate = compose(friday, flagged, holder, "2026-09-27T02:00:00Z");
+  assert.equal(publishedLate.now.stale, true);
+  assert.equal(publishedLate.now.staleNote, "The latest print is from 26 Sep 2026. Levels may be out of date.");
+  assert.equal(publishedLate.chart.spot.date, "2026-09-25");
+  assert.equal(compose(friday, flagged, holder, "not-a-time").now.stale, true);
+  assert.equal(compose(friday, { ...flagged, spotAsOf: "bogusT00:00:00Z" }, holder, "2026-09-26T03:00:00Z").now.stale, true);
 });
 
 test("add at once, add each week, and steady", () => {

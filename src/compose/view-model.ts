@@ -51,13 +51,18 @@ export function compose(
   }
 
   let stale = live.stale;
-  if (!stale) {
-    const ageMs = Date.parse(openedAt) - Date.parse(live.spotAsOf);
+  const onClose = live.isOfficialClose && live.spotAsOf.endsWith("T00:00:00Z");
+  const spotMs = quoteInstant(live.spotAsOf, live.isOfficialClose);
+  const openedMs = Date.parse(openedAt);
+  if (onClose && Number.isFinite(spotMs) && Number.isFinite(openedMs)) {
+    // The file flag is measured from the stored Friday midnight, a day before the bar finishes.
+    stale = openedMs - spotMs >= STALE_AFTER_MS;
+  } else if (!stale) {
+    const ageMs = openedMs - spotMs;
     stale = Number.isFinite(ageMs) && ageMs > STALE_AFTER_MS;
   }
   let staleNote: string | null = null;
   if (stale) {
-    const spotMs = Date.parse(live.spotAsOf);
     const isoDate = Number.isFinite(spotMs)
       ? new Date(spotMs).toISOString().slice(0, 10)
       : live.spotAsOf;
@@ -126,6 +131,13 @@ export function compose(
     footer: [friday.footer[0], friday.footer[1]],
     countdown,
   };
+}
+
+// The Friday bar is stored at 00:00Z and finishes at the next UTC midnight.
+function quoteInstant(asOf: string, isOfficialClose: boolean): number {
+  const ms = Date.parse(asOf);
+  if (isOfficialClose && asOf.endsWith("T00:00:00Z") && Number.isFinite(ms)) return ms + DAY_MS;
+  return ms;
 }
 
 function cloneReading(reading: ContextReading): ContextReading {
