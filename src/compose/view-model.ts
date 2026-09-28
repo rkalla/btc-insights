@@ -51,13 +51,15 @@ export function compose(
   }
 
   let stale = live.stale;
+  const onClose = live.isOfficialClose && live.spotAsOf.endsWith("T00:00:00Z");
+  const spotMs = quoteInstant(live.spotAsOf, live.isOfficialClose);
   if (!stale) {
-    const ageMs = Date.parse(openedAt) - Date.parse(live.spotAsOf);
-    stale = Number.isFinite(ageMs) && ageMs > STALE_AFTER_MS;
+    const ageMs = Date.parse(openedAt) - spotMs;
+    // Exactly 26 hours after the true close counts. A live quote must be older than that.
+    stale = Number.isFinite(ageMs) && (onClose ? ageMs >= STALE_AFTER_MS : ageMs > STALE_AFTER_MS);
   }
   let staleNote: string | null = null;
   if (stale) {
-    const spotMs = Date.parse(live.spotAsOf);
     const isoDate = Number.isFinite(spotMs)
       ? new Date(spotMs).toISOString().slice(0, 10)
       : live.spotAsOf;
@@ -126,6 +128,13 @@ export function compose(
     footer: [friday.footer[0], friday.footer[1]],
     countdown,
   };
+}
+
+// The Friday bar is stored at 00:00Z and finishes at the next UTC midnight.
+function quoteInstant(asOf: string, isOfficialClose: boolean): number {
+  const ms = Date.parse(asOf);
+  if (isOfficialClose && asOf.endsWith("T00:00:00Z") && Number.isFinite(ms)) return ms + DAY_MS;
+  return ms;
 }
 
 function cloneReading(reading: ContextReading): ContextReading {

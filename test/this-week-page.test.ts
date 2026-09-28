@@ -138,7 +138,15 @@ test("the current all-in week paints one headline and the scale step", () => {
   assert.equal(body.includes("19 times in 20"), false);
   assert.equal(body.includes("{"), false);
   assert.equal(document.querySelector(".price")?.textContent?.includes("$84,413"), true);
-  assert.equal(document.querySelector(".price")?.textContent?.includes("Thursday, Sep 24, 5:00 pm"), true);
+  assert.equal(document.querySelector(".price-time")?.textContent, "Friday, Sep 25, 5:00 pm");
+  assert.equal(document.querySelector(".price")?.textContent?.includes("Thursday, Sep 24"), false);
+  assert.equal(document.querySelector(".why")?.textContent?.includes("A cautious reading is about 6 times in 10 or better."), false);
+  assert.equal(
+    document.querySelector(".record")?.textContent?.includes(
+      "A cautious reading is about 6 times in 10 or better. Treat it as a strong hint, not a promise.",
+    ),
+    true,
+  );
   assert.equal(document.querySelector(".price")?.textContent?.includes("%"), false);
   assert.equal(document.querySelector(".price")?.textContent?.toLowerCase().includes("gap"), false);
   assert.equal(document.querySelector(".chip")?.textContent, "5 days left");

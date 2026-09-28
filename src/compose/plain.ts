@@ -215,7 +215,7 @@ export function composePlain(
     target: takeProfit && measured != null ? String(Math.round(settings.targetShare ?? 0)) : null,
     ceiling: takeProfit && measured != null ? String(Math.round(settings.ceilingShare ?? 0)) : null,
     share: takeProfit && measured != null ? String(measured.sharePct) : null,
-    priceLabel: priceLabel(live.spotUsd, live.spotAsOf, timeZone),
+    priceLabel: priceLabel(live.spotUsd, live.spotAsOf, timeZone, live.isOfficialClose),
     tiles: tileLines(facts),
   };
   return {
@@ -309,10 +309,17 @@ function btcText(coins: number): string {
   return (Math.round(coins * 100) / 100).toFixed(2);
 }
 
-function priceLabel(usd: number, asOf: string, timeZone: string): string {
-  const ms = Date.parse(asOf);
+function priceLabel(usd: number, asOf: string, timeZone: string, isOfficialClose: boolean): string {
+  const ms = quoteInstant(asOf, isOfficialClose);
   const when = Number.isFinite(ms) ? formatWhen(ms, timeZone) : asOf;
   return `${money(usd)}, ${when}`;
+}
+
+// The Friday bar is stored at 00:00Z and finishes at the next UTC midnight.
+function quoteInstant(asOf: string, isOfficialClose: boolean): number {
+  const ms = Date.parse(asOf);
+  if (isOfficialClose && asOf.endsWith("T00:00:00Z") && Number.isFinite(ms)) return ms + DAY_MS;
+  return ms;
 }
 
 // live.gapPct is a fraction. The below sentence only takes a gap that is actually below.

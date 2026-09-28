@@ -310,7 +310,7 @@ function bodyFor(
           ...trimAction(input),
         ],
         why: [
-          `On ${input.fireDate}, our strongest buy signal turned on. Before this, it had turned on only 4 times: in 2015, 2019, 2020 and 2023. Those 4 times, putting the money in at once beat spreading it over the next year. A cautious reading is about 6 times in 10 or better.`,
+          `On ${input.fireDate}, our strongest buy signal turned on. Before this, it had turned on only 4 times: in 2015, 2019, 2020 and 2023. Those 4 times, putting the money in at once beat spreading it over the next year.`,
         ],
         worked: "Yes, all 4 times, against spreading the same money over a year. That's too few to be sure. A cautious reading is about 6 times in 10 or better. Treat it as a strong hint, not a promise.",
         risks: [
