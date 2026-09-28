@@ -1,6 +1,6 @@
 import type { PlainView } from "../compose/plain.ts";
 import type { WeekCopy } from "../copy/thisWeek.ts";
-import { siteHeader } from "./site-header.ts";
+import { footerLinks, siteHeader } from "./site-header.ts";
 
 export const WEEK_LOADING = "Loading this week's advice.";
 export const WEEK_NEEDS_JS = "This week needs JavaScript to show the advice.";
@@ -180,7 +180,7 @@ function evidenceLink(copy: WeekCopy): string {
 }
 
 function footer(copy: WeekCopy): string {
-  return `<footer class="foot" id="about"><div class="foot-inner"><p>${esc(copy.footer)}</p><div class="foot-links"><a href="${EVIDENCE_HREF}">Evidence</a><a href="${SETTINGS_HREF}">Settings</a></div></div></footer>`;
+  return `<footer class="foot" id="about"><div class="foot-inner"><p>${esc(copy.footer)}</p>${footerLinks()}</div></footer>`;
 }
 
 function linkSettings(text: string): string {

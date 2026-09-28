@@ -25,6 +25,10 @@ for (const width of [1440, 1100, 390]) {
     await expect(page.getByRole("heading", { name: "Buy strongly" })).toBeVisible();
     await expect(page.locator("body")).toContainText("Rule: All in, from the buy cross");
     await expect(page.locator("header.site a[aria-current='page']")).toHaveText("Evidence");
+    await expect(page.getByRole("link", { name: "GitHub" })).toHaveAttribute(
+      "href",
+      "https://github.com/rkalla/btc-insights",
+    );
     await expect(page.locator(".spectrum")).toHaveCount(0);
     await expect(page.locator(".disagreement")).toHaveCount(0);
     await expect(page.locator("body")).toContainText("Use your cash available to invest.");
@@ -134,7 +138,10 @@ test("this week bundle has no font host or market host", () => {
   for (const word of ["fonts.googleapis.com", "fonts.gstatic.com", "coingecko", "coinmetrics", "api_key", "wss://", "websocket"]) {
     expect(blob.includes(word), word).toBe(false);
   }
-  expect(blob.includes("https://") || blob.includes("http://"), "remote url").toBe(false);
+  const repo = "https://github.com/rkalla/btc-insights";
+  expect(blob.includes(repo), "repo link").toBe(true);
+  const rest = blob.split(repo).join("");
+  expect(rest.includes("https://") || rest.includes("http://"), "remote url").toBe(false);
   expect(html).toContain('rel="icon" href="/favicon.ico" sizes="48x48"');
   expect(html).toContain('rel="icon" type="image/png" href="/favicon-32.png" sizes="32x32"');
   expect(html).toContain('rel="apple-touch-icon" href="/apple-touch-icon.png"');
@@ -184,6 +191,10 @@ for (const width of [320, 390, 1440]) {
     await expect(today).toContainText("Bitcoin today");
     await expect(today).not.toContainText("%");
     await expect(page.getByRole("link", { name: /See the evidence behind this/ })).toHaveAttribute("href", "/evidence/");
+    await expect(page.getByRole("link", { name: "GitHub" })).toHaveAttribute(
+      "href",
+      "https://github.com/rkalla/btc-insights",
+    );
     await expect(page.locator("body")).toContainText("beat spreading it over a year, all 4 times");
     await expect(page.locator("body")).not.toContainText("19 times in 20");
     await expect(page.getByText("Loading this week's advice.", { exact: true })).toHaveCount(0);

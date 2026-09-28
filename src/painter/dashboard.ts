@@ -2,15 +2,13 @@ import { money, sentenceDate, signedPercent } from "../contract/format.ts";
 import type { CashPosture, DashboardVM } from "../contract/types.ts";
 import { chartSvg } from "./chart.ts";
 import { caveatIcon, legendSwatch } from "./icons.ts";
-import { siteHeader } from "./site-header.ts";
+import { footerLinks, siteHeader } from "./site-header.ts";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
 
 const CHART_WIDE = 1000;
 const CHART_NARROW = 360;
 
-const EVIDENCE_HREF = "/evidence/";
-const SETTINGS_HREF = "/settings.html";
 const FOOTER =
   "BTC Friday is research, not personal financial advice. It looks at Bitcoin's price history, and history can be wrong about the future. It doesn't know your full situation, doesn't trade for you and doesn't calculate taxes. Before investing money you can't afford to lose, talk to a fee-only financial adviser.";
 
@@ -424,7 +422,7 @@ function cycleCard(card: DashboardVM["cycles"]["cards"][number]): string {
 }
 
 function footer(): string {
-  return `<footer class="foot" id="about"><div class="foot-inner"><p>${esc(FOOTER)}</p><div class="foot-links"><a href="${EVIDENCE_HREF}">Evidence</a><a href="${SETTINGS_HREF}">Settings</a></div></div></footer>`;
+  return `<footer class="foot" id="about"><div class="foot-inner"><p>${esc(FOOTER)}</p>${footerLinks()}</div></footer>`;
 }
 
 function glossary(): string {
