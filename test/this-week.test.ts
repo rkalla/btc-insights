@@ -16,9 +16,7 @@ import type { CashPosture, FridayDocument, HolderSettings, LiveSlice } from "../
 import {
   BANNED_THIS_WEEK,
   COPY_WRITTEN_FOR,
-  sentenceWordCount,
   weekBlob,
-  weekSentences,
   type WeekCopy,
 } from "../src/copy/thisWeek.ts";
 import { blankSettings } from "../src/settings/store.ts";
@@ -61,6 +59,23 @@ function render(
 
 function hits(text: string): string[] {
   return [...text.matchAll(new RegExp(BANNED.source, "gi"))].map((match) => match[0].toLowerCase());
+}
+
+function weekSentences(copy: WeekCopy): string[] {
+  const sentences: string[] = [];
+  for (const chunk of weekBlob(copy).split("\n")) {
+    for (const sentence of chunk.split(/(?<=[.!?])\s+/)) {
+      const trimmed = sentence.trim();
+      if (trimmed !== "") sentences.push(trimmed);
+    }
+  }
+  return sentences;
+}
+
+function sentenceWordCount(sentence: string): number {
+  const bare = sentence.replace(/[.!?]+$/u, "").trim();
+  if (bare === "") return 0;
+  return bare.split(/\s+/).length;
 }
 
 function guard(copy: WeekCopy): void {
@@ -339,6 +354,23 @@ test("add at once, add each week, and steady", () => {
     above.copy.why[0],
     "Bitcoin is about 12% above its long-run trend, which is within its normal range. None of our buy or caution signals is on.",
   );
+  const flat = render(overlay("stay"), settings(), { gapPct: 0 });
+  assert.equal(
+    flat.copy.why[0],
+    "Bitcoin is about 0% below its long-run trend, which is within its normal range. None of our buy or caution signals is on.",
+  );
+  const tinyAbove = render(overlay("stay"), settings(), { gapPct: 0.004 });
+  assert.equal(tinyAbove.copy.why[0]?.includes("about 0% above"), true);
+  const missingGap = render(overlay("stay"), settings(), { gapPct: Number.NaN });
+  assert.equal(missingGap.copy.why[0], "None of our buy or caution signals is on.");
+  assert.equal(missingGap.copy.why[0]?.includes("about 0% from"), false);
+  const aboveLump = render(overlay("lump-in"), settings(), { gapPct: 0.4 });
+  guard(aboveLump.copy);
+  assert.equal(aboveLump.copy.why[0]?.includes("below"), false);
+  assert.equal(
+    aboveLump.copy.why[0],
+    "In stretches like this, putting money in at once beat spreading it over a year in all 6 finished cases. A cautious reading is about 7 times in 10 or better.",
+  );
   const stayClose = render({ ...overlay("stay"), armedWait: true }, settings(), { gapPct: -0.08 });
   assert.equal(stayClose.gettingClose, true);
   guard(stayClose.copy);
@@ -391,6 +423,16 @@ test("go slow and stand down", () => {
   );
   assert.equal(pause.copy.risks[0], "Pausing can mean buying back at a higher price. In 2013, it meant missing a large rise.");
   assert.equal(pause.gold, false);
+
+  const undated = render({ cash: { posture: "STAND_DOWN" }, standDownPause: true, standDownFireDate: null });
+  guard(undated.copy);
+  assert.equal(undated.pauseEnds, null);
+  assert.equal(undated.copy.why[0]?.includes("On ,"), false);
+  assert.equal(
+    undated.copy.why[0],
+    "Our caution signal turned on: after a big run-up above its long-run trend, Bitcoin fell 10% from its peak. Pausing and buying later got more Bitcoin for the same money in 7 of 8 cases, about six stretches.",
+  );
+  assert.equal(undated.copy.actions[2], "This pause ends when the page says Buy strongly or Add each week.");
 });
 
 test("sell follows the viewer and an IRA drops the tax sentence", () => {
@@ -422,6 +464,24 @@ test("sell follows the viewer and an IRA drops the tax sentence", () => {
 
   const undated = render({}, settings({ thesisBroken: true, thesisDate: null }));
   assert.equal(undated.state, "BUY_STRONGLY");
+
+  const holder = settings({ thesisBroken: true, thesisDate: "2026-09-01" });
+  const missing = render({}, holder, { missingClose: true });
+  guard(missing.copy);
+  assert.equal(missing.state, "SELL");
+  assert.equal(missing.outOfDate, true);
+  assert.equal(missing.copy.headline, "Stop buying, and sell your Bitcoin.");
+  assert.equal(missing.copy.banner?.includes("hasn't updated since"), true);
+  assert.equal(missing.copy.actions.some((action) => action.includes("Keep your regular buys")), false);
+  assert.equal(missing.copy.actions[1], "Stop new buys, including your regular ones.");
+  assert.equal(missing.takeProfit, false);
+
+  const noCall = render(overlay("no-call"), holder);
+  guard(noCall.copy);
+  assert.equal(noCall.state, "SELL");
+  assert.equal(noCall.outOfDate, false);
+  assert.equal(noCall.copy.headline, "Stop buying, and sell your Bitcoin.");
+  assert.equal(noCall.copy.actions.some((action) => action.includes("Keep your regular buys")), false);
 });
 
 test("no update, a stale Friday, and a stale print stay distinct", () => {

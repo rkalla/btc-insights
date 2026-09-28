@@ -133,7 +133,7 @@ export function applyOverlay(friday: FridayDocument, overlay: FridayStateOverlay
   const posture = overlay.cash?.posture ?? friday.cash.posture;
   const next: FridayDocument = {
     ...friday,
-    cash: cashWithPosture(friday.cash, posture),
+    cash: { ...friday.cash, posture },
     official: overlay.official != null ? { ...friday.official, ...overlay.official } : { ...friday.official },
     caveats: overlay.caveats ?? friday.caveats,
   };
@@ -241,8 +241,9 @@ export function composePlain(
 }
 
 function pageState(posture: CashPosture, missingClose: boolean, sell: boolean): WeekState {
-  if (missingClose || posture === "NO_CALL") return "NO_UPDATE";
+  // A dated thesis replaces the engine state, including a missing close or no call.
   if (sell) return "SELL";
+  if (missingClose || posture === "NO_CALL") return "NO_UPDATE";
   switch (posture) {
     case "ALL_IN":
       return "BUY_STRONGLY";
@@ -272,24 +273,6 @@ function pageOutOfDate(friday: FridayDocument, live: LiveSlice, openedAt: string
 
 function sellOn(settings: HolderSettings): boolean {
   return settings.thesisBroken === true && isDeclarationDate(settings.thesisDate);
-}
-
-function cashWithPosture(cash: FridayDocument["cash"], posture: CashPosture): FridayDocument["cash"] {
-  const next: FridayDocument["cash"] = {
-    posture,
-    word: cash.word,
-    tone: cash.tone,
-    sentences: cash.sentences,
-    recordRows: cash.recordRows,
-    highConfidence: cash.highConfidence,
-  };
-  if (posture === "ALL_IN" && cash.window != null) {
-    next.window = {
-      lastGraceCloseUtc: cash.window.lastGraceCloseUtc,
-      steps: cash.window.steps.map((step) => ({ ...step })),
-    };
-  }
-  return next;
 }
 
 function fridayCloseInstant(isoDate: string): string {
@@ -329,13 +312,17 @@ function priceLabel(usd: number, asOf: string, timeZone: string): string {
   return `${money(usd)}, ${when}`;
 }
 
-// live.gapPct is a fraction, matching the live slice. The Friday file has no numeric gap.
-function gapFacts(gapPct: number): { gap: string; gapWords: string } {
-  const points = Number.isFinite(gapPct) ? Math.round(gapPct * 100) : 0;
+// live.gapPct is a fraction. The below sentence only takes a gap that is actually below.
+function gapFacts(gapPct: number): { gap: string | null; gapWords: string | null } {
+  if (!Number.isFinite(gapPct)) return { gap: null, gapWords: null };
+  const points = Math.round(gapPct * 100);
   const magnitude = Math.abs(points);
-  if (points < 0) return { gap: String(magnitude), gapWords: `about ${magnitude}% below` };
-  if (points > 0) return { gap: String(magnitude), gapWords: `about ${magnitude}% above` };
-  return { gap: "0", gapWords: "about 0% from" };
+  if (points < 0 || Object.is(points, -0)) {
+    return { gap: String(magnitude), gapWords: `about ${magnitude}% below` };
+  }
+  if (points > 0) return { gap: null, gapWords: `about ${magnitude}% above` };
+  if (gapPct > 0) return { gap: null, gapWords: "about 0% above" };
+  return { gap: "0", gapWords: "about 0% below" };
 }
 
 function threeSignificant(amount: number): number {

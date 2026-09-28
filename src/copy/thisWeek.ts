@@ -120,8 +120,8 @@ export interface RenderInput {
   amount: string | null;
   regularNote: string;
   slice: string | null;
-  gap: string;
-  gapWords: string;
+  gap: string | null;
+  gapWords: string | null;
   fireDate: string;
   pauseDate: string | null;
   pauseEnds: string | null;
@@ -251,7 +251,7 @@ export function timingChip(input: RenderInput): string | null {
   return `Holds until ${input.nextUpdateShort}`;
 }
 
-export function weekChunks(copy: WeekCopy): string[] {
+export function weekBlob(copy: WeekCopy): string {
   return [
     copy.banner,
     copy.updateLine,
@@ -278,32 +278,9 @@ export function weekChunks(copy: WeekCopy): string[] {
     copy.evidence,
     copy.evidenceSub,
     copy.footer,
-  ].filter((chunk): chunk is string => chunk != null && chunk.trim() !== "");
-}
-
-export function weekBlob(copy: WeekCopy): string {
-  return weekChunks(copy).join("\n");
-}
-
-export function weekSentences(copy: WeekCopy): string[] {
-  const sentences: string[] = [];
-  for (const chunk of weekChunks(copy)) {
-    for (const sentence of chunk.split(/(?<=[.!?])\s+/)) {
-      const trimmed = sentence.trim();
-      if (trimmed !== "") {
-        sentences.push(trimmed);
-      }
-    }
-  }
-  return sentences;
-}
-
-export function sentenceWordCount(sentence: string): number {
-  const bare = sentence.replace(/[.!?]+$/u, "").trim();
-  if (bare === "") {
-    return 0;
-  }
-  return bare.split(/\s+/).length;
+  ]
+    .filter((chunk): chunk is string => chunk != null && chunk.trim() !== "")
+    .join("\n");
 }
 
 interface StateBody {
@@ -350,7 +327,9 @@ function bodyFor(
           ...trimAction(input),
         ],
         why: [
-          `Bitcoin is about ${input.gap}% below its long-run trend. In stretches like this, putting money in at once beat spreading it over a year in all 6 finished cases. A cautious reading is about 7 times in 10 or better.`,
+          input.gap == null
+            ? "In stretches like this, putting money in at once beat spreading it over a year in all 6 finished cases. A cautious reading is about 7 times in 10 or better."
+            : `Bitcoin is about ${input.gap}% below its long-run trend. In stretches like this, putting money in at once beat spreading it over a year in all 6 finished cases. A cautious reading is about 7 times in 10 or better.`,
         ],
         worked: "Yes, in all 6 finished stretches. That's still a small number. A cautious reading is about 7 times in 10 or better. This stretch began in November 2025 and hasn't finished yet.",
         risks: [`Bitcoin can keep falling after you buy. ${YEAR_DROP}`],
@@ -382,7 +361,9 @@ function bodyFor(
           ...trimAction(input),
         ],
         why: [
-          `Bitcoin is ${input.gapWords} its long-run trend, which is within its normal range. None of our buy or caution signals is on.`,
+          input.gapWords == null
+            ? "None of our buy or caution signals is on."
+            : `Bitcoin is ${input.gapWords} its long-run trend, which is within its normal range. None of our buy or caution signals is on.`,
         ],
         worked: "Nothing to test this week. There's no special signal, so there's no record to show. Regular buying is the default plan.",
         risks: [ANY_YEAR_DROP],
@@ -413,7 +394,9 @@ function bodyFor(
           ...trimAction(input),
         ],
         why: [
-          `On ${input.pauseDate ?? ""}, our caution signal turned on: after a big run-up above its long-run trend, Bitcoin fell 10% from its peak. Pausing and buying later got more Bitcoin for the same money in 7 of 8 cases, about six stretches.`,
+          input.pauseDate == null
+            ? "Our caution signal turned on: after a big run-up above its long-run trend, Bitcoin fell 10% from its peak. Pausing and buying later got more Bitcoin for the same money in 7 of 8 cases, about six stretches."
+            : `On ${input.pauseDate}, our caution signal turned on: after a big run-up above its long-run trend, Bitcoin fell 10% from its peak. Pausing and buying later got more Bitcoin for the same money in 7 of 8 cases, about six stretches.`,
         ],
         worked: "7 of 8 times, about six stretches. In June 2013, pausing missed a large rise. The signal also stayed off before two big drops, in 2019\u201320 and 2025\u201326. A 12-month pause has not been tested on its own.",
         risks: ["Pausing can mean buying back at a higher price. In 2013, it meant missing a large rise."],

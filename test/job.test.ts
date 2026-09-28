@@ -421,7 +421,20 @@ test("buildFriday keeps published fires when a zero-cross date moves", () => {
     .flatMap((card) => card.rows.map((row) => row.sharePct));
   assert.deepEqual(finishedShares, [60, 71, 34, 54, 25, 84, 42, 51, 93, 44]);
   assert.equal(friday.cash.word, "All in");
+  assert.equal(friday.standDownFireDate, null);
   assert.deepEqual(friday.coinsHold.sentences, ["Coins already held stay held."]);
+
+  const stood = buildFriday(history, {
+    ...record,
+    standDownPause: true,
+    cashFlags: { ...record.cashFlags, allIn: false, build: false, standDownPause: true },
+  });
+  assert.equal(stood.cash.posture, "STAND_DOWN");
+  assert.equal(stood.standDownFireDate, "2021-12-03");
+  assert.equal(
+    stood.standDownFireDate,
+    record.sells.map((sell) => sell.date).sort().at(-1),
+  );
 });
 
 test("history checksum matches SHA256SUMS", () => {

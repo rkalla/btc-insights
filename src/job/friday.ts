@@ -124,10 +124,19 @@ export function buildFriday(history: readonly HistoryRow[], record: PublishedRec
   const endTrend = trendAt(fit, through);
   const cash = cashCopy(record.cashFlags);
   const hold = coinHold();
+  let standDownFireDate: string | null = null;
+  if (cash.posture === "STAND_DOWN") {
+    for (const sell of record.sells) {
+      if (sell.date <= through && (standDownFireDate == null || sell.date > standDownFireDate)) {
+        standDownFireDate = sell.date;
+      }
+    }
+  }
   return {
     schema: 1,
     official: record.official,
     standDownPause: record.standDownPause,
+    standDownFireDate,
     armedWait: record.armedWait,
     dollarSlot: record.dollarSlot,
     cash,
