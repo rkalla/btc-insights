@@ -182,7 +182,7 @@ function nowPanel(vm: DashboardVM): string {
       <div class="panel-head" style="align-items:center"><span class="label">Now · ${esc(vm.now.printLabel)}</span><span class="chip" style="${chipStyle}">${esc(chip)}</span></div>
       <div class="spot">${esc(money(vm.now.spotUsd))}</div>
       <div class="stats">
-        <div class="stat well"><span class="k">Gap against the Friday trend</span><span class="v">${esc(signedPercent(vm.now.gapPct))}</span></div>
+        <div class="stat well"><span class="k">Now, against Friday's trend</span><span class="v">${esc(signedPercent(vm.now.gapPct))}</span></div>
         <div class="stat well"><span class="k">Trend</span><span class="v">≈ ${esc(money(vm.now.trendUsd))}</span></div>
       </div>
       <p class="note">${esc(note)}</p>

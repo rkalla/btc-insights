@@ -2,6 +2,8 @@ declare module "node:assert/strict" {
   interface Assert {
     equal(actual: unknown, expected: unknown, message?: string): void;
     deepEqual(actual: unknown, expected: unknown, message?: string): void;
+    match(actual: string, expected: RegExp, message?: string): void;
+    ok(value: unknown, message?: string): void;
   }
   const assert: Assert;
   export default assert;
@@ -10,7 +12,12 @@ declare module "node:assert/strict" {
 declare module "node:fs" {
   export function readFileSync(path: URL | string, encoding: "utf8"): string;
   export function readdirSync(path: URL | string): string[];
-  export function statSync(path: string): { mode: number; mtimeMs: number; isDirectory(): boolean };
+  export function statSync(path: string | URL): {
+    mode: number;
+    mtimeMs: number;
+    size: number;
+    isDirectory(): boolean;
+  };
   export function existsSync(path: string): boolean;
   export function mkdirSync(path: string): void;
   export function mkdtempSync(path: string): string;
@@ -43,7 +50,9 @@ declare module "node:crypto" {
 }
 
 declare module "node:test" {
-  export function test(name: string, fn: () => void | Promise<void>): void;
+  function test(name: string, fn: () => void | Promise<void>): void;
+  export default test;
+  export { test };
 }
 
 declare module "node:path" {
@@ -149,3 +158,7 @@ declare function fetch(
 
 declare function setTimeout(callback: () => void, ms: number): unknown;
 declare function clearTimeout(handle: unknown): void;
+
+declare module "node:zlib" {
+  export function gzipSync(data: string): { readonly length: number };
+}

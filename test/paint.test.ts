@@ -123,6 +123,14 @@ test("sample settings paint All in, the record, and the footer", () => {
   );
   assert.equal(document.querySelector("svg.chart-svg") != null, true);
   assert.equal(html.includes('data-layer="price"'), true);
+  assert.equal(document.querySelector(".now .stat .k")?.textContent, "Now, against Friday's trend");
+  assert.equal(html.includes("Gap against the Friday trend"), false);
+  assert.equal(
+    texts(document, ".caveat .b").some((body) =>
+      body.startsWith("At Friday's close (25 Sep 2026), gap about \u221241%"),
+    ),
+    true,
+  );
   assert.equal(document.querySelectorAll("#chart-alt").length, 1);
   assert.equal(document.querySelector("a[aria-label='Settings']")?.getAttribute("href"), "settings.html");
 

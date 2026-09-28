@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import { test } from "node:test";
+import { gzipSync } from "node:zlib";
 import type { FridayDocument, HolderSettings, LiveSlice } from "../src/contract/types.ts";
 
 const fixtureNames = [
@@ -22,6 +23,12 @@ function utcWeekday(isoDate: string): number {
   const month = Number(isoDate.slice(5, 7));
   const day = Number(isoDate.slice(8, 10));
   return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+}
+
+function daysApart(earlier: string, later: string): number {
+  const start = Date.parse(`${earlier}T00:00:00Z`);
+  const end = Date.parse(`${later}T00:00:00Z`);
+  return Math.round((end - start) / 86_400_000);
 }
 
 test("reads every fixture", () => {
@@ -93,7 +100,7 @@ test("Friday sample matches the 26 September 2026 wireframe", () => {
   assert.equal(friday.caveats[2]?.title, "Fit range");
   assert.equal(
     friday.caveats[2]?.body,
-    "Gap about \u221241% on this fit (trend about $141,000). Other start years: \u221229% to \u221246%. The arm holds. Not a price target.",
+    "At Friday's close (25 Sep 2026), gap about \u221241% on this fit (trend about $141,000). Other start years: \u221229% to \u221246%. The arm holds. Not a price target.",
   );
   assert.equal(friday.context[1]?.flag, "GOLD FLAG");
   assert.equal(friday.context[1]?.flagTone, "sell");
@@ -159,11 +166,45 @@ test("Friday sample matches the 26 September 2026 wireframe", () => {
   );
 
   const weeklyDates = friday.chart.weekly.map((point) => point.date);
-  assert.deepEqual(friday.chart.trend.map((point) => point.date), weeklyDates);
-  assert.deepEqual(friday.chart.lower.map((point) => point.date), weeklyDates);
-  assert.deepEqual(friday.chart.upper.map((point) => point.date), weeklyDates);
-  assert.equal(weeklyDates.includes("2013-01-04"), true);
+  assert.equal(weeklyDates.length >= 700, true);
+  assert.equal(weeklyDates[0], "2013-01-04");
+  assert.equal(weeklyDates[weeklyDates.length - 1], "2026-09-25");
+  assert.equal(utcWeekday(weeklyDates[0] ?? ""), 5);
+  for (let index = 1; index < weeklyDates.length; index += 1) {
+    const previous = weeklyDates[index - 1] ?? "";
+    const date = weeklyDates[index] ?? "";
+    assert.equal(daysApart(previous, date), 7, date);
+    assert.equal(utcWeekday(date), 5, date);
+  }
+  const closes2022 = friday.chart.weekly.filter((point) => point.date.startsWith("2022")).map((point) => point.close);
+  const closes2025 = friday.chart.weekly.filter((point) => point.date.startsWith("2025")).map((point) => point.close);
+  const low2022 = friday.chart.weekly.find((point) => point.date === "2022-11-25")?.close ?? 0;
+  const high2025 = friday.chart.weekly.find((point) => point.date === "2025-10-03")?.close ?? 0;
+  assert.equal(low2022 < 17000, true);
+  assert.equal(low2022, Math.min(...closes2022));
+  assert.equal(high2025 > 120000, true);
+  assert.equal(high2025, Math.max(...closes2025));
   assert.equal(friday.chart.weekly.find((point) => point.date === "2026-09-25")?.close, 84413);
+  const trendDates = friday.chart.trend.map((point) => point.date);
+  assert.deepEqual(
+    friday.chart.lower.map((point) => point.date),
+    trendDates,
+  );
+  assert.deepEqual(
+    friday.chart.upper.map((point) => point.date),
+    trendDates,
+  );
+  assert.equal(trendDates[0], weeklyDates[0]);
+  assert.equal(trendDates[trendDates.length - 1], "2026-09-25");
+  const weeklySet = new Set(weeklyDates);
+  for (let index = 0; index < trendDates.length; index += 1) {
+    const date = trendDates[index] ?? "";
+    assert.equal(weeklySet.has(date), true, date);
+    if (index === 0) continue;
+    const previous = trendDates[index - 1] ?? "";
+    const span = daysApart(previous, date);
+    assert.equal(span > 0 && span <= 28, true, date);
+  }
   for (const fire of friday.chart.fires) {
     assert.equal(utcWeekday(fire.date), 5, fire.date);
     const close = friday.chart.weekly.find((point) => point.date === fire.date)?.close;
@@ -186,7 +227,20 @@ test("Friday sample matches the 26 September 2026 wireframe", () => {
       point.value * 1.55,
     );
   }
-  assert.equal(friday.chart.sma200w.length, 1);
+  assert.equal(friday.chart.sma200w.length > 1, true);
+  assert.equal(friday.chart.sma200w[0]?.date, "2014-05-16");
+  assert.equal(friday.chart.sma200w[0]?.value != null && friday.chart.sma200w[0].value < 1000, true);
+  const smaEnd = friday.chart.sma200w[friday.chart.sma200w.length - 1];
+  assert.equal(smaEnd?.date, "2026-09-25");
+  assert.equal((smaEnd?.value ?? 0) > 50000, true);
+  assert.equal(smaEnd?.value === 64000, false);
+  for (let index = 1; index < friday.chart.sma200w.length; index += 1) {
+    const previous = friday.chart.sma200w[index - 1]?.date ?? "";
+    const date = friday.chart.sma200w[index]?.date ?? "";
+    assert.equal(daysApart(previous, date), 7, date);
+    assert.equal(weeklySet.has(date), true, date);
+  }
+  assert.equal(gzipSync(text).length < 20480, true);
   assert.equal(friday.chart.trendLabel, "Trend $141k");
   assert.equal(
     friday.chart.captions.includes("The 200-week average is a map line. It does not time a buy."),

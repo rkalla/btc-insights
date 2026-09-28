@@ -274,3 +274,20 @@ test("the price path follows weekly closes and a later spot", () => {
   };
   assert.equal(price(first) === price(chartSvg(doubled, spotOf("2024-01-01", 10000), 1280)), false);
 });
+
+test("fixture price and 200-week paths draw every stored point", () => {
+  const chart = fridayChart();
+  const svg = chartSvg(chart, spotOf("2026-09-25", 84413), 1280);
+  const pathOf = (layer: string): string => svg.match(new RegExp(`data-layer="${layer}"[^>]*d="([^"]*)"`))?.[1] ?? "";
+  const commands = (d: string): number => d.match(/[ML]/g)?.length ?? 0;
+  assert.equal(chart.weekly.length >= 700, true);
+  assert.equal(commands(pathOf("price")), chart.weekly.length);
+  assert.equal(chart.sma200w.length > 1, true);
+  assert.equal(commands(pathOf("sma200")), chart.sma200w.length);
+  const low = chart.weekly.find((point) => point.date === "2022-11-25")?.close ?? 0;
+  const high = chart.weekly.find((point) => point.date === "2025-10-03")?.close ?? 0;
+  assert.equal(low < 17000, true);
+  assert.equal(high > 120000, true);
+  assert.equal(pathOf("price").includes("M"), true);
+  assert.equal(pathOf("sma200").includes("L"), true);
+});
