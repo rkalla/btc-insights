@@ -228,15 +228,11 @@ function emphasize(text: string): string {
   html = html.replace(/Finish by ([^.]+)\./, "Finish by <strong>$1</strong>.");
   html = html.replace(/happened by (.+?), that/, "happened by <strong>$1</strong>, that");
   return html.replace(/\$\d[\d,]*(?:\.\d+)?/g, (amount, index: number, source: string) => {
-    if (source[index - 1] === "(" || insideStrong(source, index)) return amount;
+    const open = source.lastIndexOf("<strong", index);
+    const alreadyStrong = open >= 0 && source.lastIndexOf("</strong>", index) < open;
+    if (source[index - 1] === "(" || alreadyStrong) return amount;
     return `<strong>${amount}</strong>`;
   });
-}
-
-function insideStrong(source: string, index: number): boolean {
-  const open = source.lastIndexOf("<strong", index);
-  if (open < 0) return false;
-  return source.lastIndexOf("</strong>", index) < open;
 }
 
 function esc(text: string): string {
