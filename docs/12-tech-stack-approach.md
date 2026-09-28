@@ -90,6 +90,8 @@ Later changes use the same unit. Open an issue when the change alters a locked r
 
 The human-first revision is the exception recorded in advance. It is issue [#18](https://github.com/rkalla/btc-insights/issues/18) and `docs/17-human-first-implementation-plan.md`. Pull requests for that plan do not open a second issue. They contain `Refs #18` until the pull request that makes This week the public home page, which contains `Fixes #18`.
 
+The restyle that follows it is the same kind of exception. It is issue [#28](https://github.com/rkalla/btc-insights/issues/28) and `docs/19-restyle-implementation-plan.md`. Pull requests for that plan do not open a second issue. They contain `Refs #28` until the pull request that rewrites Evidence, which contains `Fixes #28`.
+
 Issues are public. They carry no API keys, no `.env` values, no holdings, and no net worth. No project board and no extra labels are required.
 
 A finished change lands without a separate prompt to commit, push, open a pull request, or merge. Commit it, push the branch, open the pull request into `main`, and merge it. The pull request body contains `Fixes #N` when an issue should close. Tests for that change pass before the merge. `.env` files and other secrets stay uncommitted. An unfinished attempt, a question, or a throwaway experiment does not get a pull request. Do not force-push.
