@@ -35,7 +35,7 @@ main.page form.panel{display:flex;flex-direction:column;gap:16px}
 main.page .actions a.btn{display:inline-flex;align-items:center;justify-content:center}
 main.page .btn{height:44px;padding:0 20px;border-radius:var(--r-well);font:600 16px var(--font);cursor:pointer;max-width:100%}
 main.page .btn--primary{background:var(--buy);color:#fff;border:1px solid var(--buy)}
-main.page .btn--primary:hover{background:var(--buy-ink)}
+main.page .btn--primary:hover{background:var(--buy-hover)}
 main.page .btn--ghost{background:transparent;color:var(--ink);border:1px solid var(--line-strong);text-decoration:none}
 @media (min-width:600px){
   .fields-2{grid-template-columns:repeat(2,minmax(0,1fr))}

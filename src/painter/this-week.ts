@@ -1,5 +1,6 @@
 import type { PlainView } from "../compose/plain.ts";
 import type { WeekCopy } from "../copy/thisWeek.ts";
+import { colorModeBoot } from "./color-mode.ts";
 import { siteFooter, siteHeader } from "./site-header.ts";
 
 export const WEEK_LOADING = "Loading this week's advice.";
@@ -24,6 +25,7 @@ export function thisWeekShell(iconLinks: string): string {
 <html lang="en" class="no-js">
 <head>
 <meta charset="utf-8">
+${colorModeBoot()}
 <script>document.documentElement.classList.remove("no-js")</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>This week · BTC Friday</title>

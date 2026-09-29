@@ -42,10 +42,10 @@ These are rejections of the audit. Do not implement them.
 
 ## Decisions
 
-- One light theme, taken from This week's tokens (`--paper` `#F7F6F2`, `--buy` `#1F5ED6`, `--caution` `#A5520E`). No dark page remains.
+- One light theme, taken from This week's tokens (`--paper` `#F7F6F2`, `--buy` `#1F5ED6`, `--caution` `#A5520E`). No separate dark page remains. Issue #34 adds a System, Light, and Dark choice in the header. Light stays the default. System follows the device.
 - One content width, `--page-max: 680px`, on the header inner, the page, and the footer inner. Side padding, card gap, and card padding match This week: 16/20/20 px under 600 px, and 24/20/28 px from 600 px. The Evidence chart fills that column. It does not break out on desktop.
 - Geist only. Figures use `font-variant-numeric: tabular-nums`. No Geist Mono, no `monospace`, no `text-transform: uppercase`.
-- Chart on paper, each stroke at least 3:1 against white: price `--ink` 1.5 px solid, trend `--ink-2` 1.5 px solid, 20% below `--buy` 1 px dashed, 55% above `--caution` 1 px dashed, the band `--neutral-tint`, the 200-week average `--ink-3` 1 px dotted, buy marks `--buy`, caution marks `--caution`.
+- Chart on paper, each stroke at least 3:1 against white: price `--ink` 1.5 px solid, trend `--ink-2` 1.5 px solid, 20% below `--buy` 1 px dashed, 55% above `--caution` 1 px dashed, the band `--neutral-tint`, the 200-week average `--ink-3` 1 px dotted, buy marks `--buy`, caution marks `--caution`. Dark mode keeps those roles at 3:1 against the dark paper.
 - Settings uses the same header. The gear has `aria-current="page"` there. The back link and the small SETTINGS label go away because the header replaces them. After Save, the browser still returns to This week (`index.html`). No toast.
 - Evidence's open text follows This week's banned-word list. Technical lines live in `<details>` whose summary is `Show the numbers`, or in the glossary. The glossary moves above the footer.
 - The layout probe and the two-reader check are not CI gates.

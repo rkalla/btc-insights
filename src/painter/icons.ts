@@ -1,8 +1,8 @@
-const INK = "#15171C";
-const INK_2 = "#4A505C";
-const MUTED = "#5F6570";
-const BUY = "#1F5ED6";
-const SELL = "#A5520E";
+const INK = "var(--ink)";
+const INK_2 = "var(--ink-2)";
+const MUTED = "var(--ink-3)";
+const BUY = "var(--buy-stroke)";
+const SELL = "var(--caution)";
 
 export function caveatIcon(kind: "gold" | "fireWeek" | "fit" | "sameWeek" | "armedWait"): string {
   switch (kind) {

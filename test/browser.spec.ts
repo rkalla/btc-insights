@@ -270,7 +270,8 @@ for (const width of [320, 390, 1440]) {
     await expect(page.locator("body")).toContainText("beat spreading it over a year, all 4 times");
     await expect(page.locator("body")).not.toContainText("19 times in 20");
     await expect(page.getByText("Loading this week's advice.", { exact: true })).toHaveCount(0);
-    await expect(page.getByRole("button")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Color mode: System" })).toBeVisible();
+    await expect(page.getByRole("button")).toHaveCount(1);
     await expect(page.locator("figure, canvas")).toHaveCount(0);
     expect(await overflows(page)).toBe(false);
     const result = await new AxeBuilder({ page }).analyze();
@@ -484,4 +485,75 @@ test("settings validate on blur and save, and cancel does not write", async ({ p
   await page.getByRole("link", { name: "Cancel" }).click();
   await page.waitForURL(/index\.html$/);
   expect(await page.evaluate(() => localStorage.getItem("btc-insights.settings.v1"))).toBeNull();
+});
+
+test("color mode sits left of Settings and cycles system, light, and dark", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.setViewportSize({ width: 1100, height: 800 });
+  await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1, name: "A strong week to buy Bitcoin." })).toBeVisible();
+  const header = page.locator("header.site");
+  const toggle = header.getByRole("button", { name: "Color mode: System" });
+  const settings = header.getByRole("link", { name: "Settings" });
+  await expect(toggle).toBeVisible();
+  const place = await Promise.all([toggle.boundingBox(), settings.boundingBox()]);
+  expect(place[0]).not.toBeNull();
+  expect(place[1]).not.toBeNull();
+  expect(place[0]!.x + place[0]!.width).toBeLessThanOrEqual(place[1]!.x + 1);
+
+  const background = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  await expect.poll(background).toBe("rgb(247, 246, 242)");
+
+  await toggle.click();
+  await expect(page.getByRole("button", { name: "Color mode: Light" })).toBeVisible();
+  await expect.poll(background).toBe("rgb(247, 246, 242)");
+
+  await page.getByRole("button", { name: "Color mode: Light" }).click();
+  await expect(page.getByRole("button", { name: "Color mode: Dark" })).toBeVisible();
+  await expect.poll(background).toBe("rgb(28, 27, 24)");
+
+  await page.reload();
+  await expect(page.getByRole("heading", { level: 1, name: "A strong week to buy Bitcoin." })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Color mode: Dark" })).toBeVisible();
+  await expect.poll(background).toBe("rgb(28, 27, 24)");
+  const weekDark = await new AxeBuilder({ page }).analyze();
+  expect(weekDark.violations, JSON.stringify(weekDark.violations, null, 2)).toEqual([]);
+
+  for (const path of ["/evidence/", "/settings.html"]) {
+    await page.goto(path);
+    await expect(page.getByRole("button", { name: "Color mode: Dark" })).toBeVisible();
+    await expect.poll(background).toBe("rgb(28, 27, 24)");
+    if (path === "/evidence/") {
+      await expect(page.getByRole("heading", { level: 1, name: "Why this week says Buy strongly" })).toBeVisible();
+    } else {
+      await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
+    }
+    const darkPage = await new AxeBuilder({ page }).analyze();
+    expect(darkPage.violations, `${path}\n${JSON.stringify(darkPage.violations, null, 2)}`).toEqual([]);
+  }
+
+  await page.getByRole("button", { name: "Color mode: Dark" }).click();
+  await expect(page.getByRole("button", { name: "Color mode: System" })).toBeVisible();
+  await page.emulateMedia({ colorScheme: "dark" });
+  await expect.poll(background).toBe("rgb(28, 27, 24)");
+  await page.emulateMedia({ colorScheme: "light" });
+  await expect.poll(background).toBe("rgb(247, 246, 242)");
+
+  await page.getByRole("button", { name: "Color mode: System" }).click();
+  await page.emulateMedia({ colorScheme: "dark" });
+  await expect(page.getByRole("button", { name: "Color mode: Light" })).toBeVisible();
+  await expect.poll(background).toBe("rgb(247, 246, 242)");
+
+  await page.setViewportSize({ width: 390, height: 800 });
+  const narrow = await Promise.all([
+    page.locator("header.site").getByRole("button", { name: "Color mode: Light" }).boundingBox(),
+    page.locator("header.site").getByRole("link", { name: "Settings" }).boundingBox(),
+  ]);
+  expect(narrow[0]).not.toBeNull();
+  expect(narrow[1]).not.toBeNull();
+  expect(narrow[0]!.x + narrow[0]!.width).toBeLessThanOrEqual(narrow[1]!.x + 1);
+  expect(await overflows(page)).toBe(false);
+
+  const result = await new AxeBuilder({ page }).analyze();
+  expect(result.violations, JSON.stringify(result.violations, null, 2)).toEqual([]);
 });
