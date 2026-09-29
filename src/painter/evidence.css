@@ -65,14 +65,14 @@ ul.legend li{display:flex;align-items:center;gap:6px;min-width:0}
 .c-axis{stroke:var(--line-strong);stroke-width:1}
 .c-tick{fill:var(--ink-3)}
 .c-band{fill:var(--neutral-tint);stroke:none}
-.c-lo{fill:none;stroke:var(--buy);stroke-width:1;stroke-dasharray:4 3}
+.c-lo{fill:none;stroke:var(--buy-stroke);stroke-width:1;stroke-dasharray:4 3}
 .c-hi{fill:none;stroke:var(--caution);stroke-width:1;stroke-dasharray:4 3}
 .c-trend{fill:none;stroke:var(--ink-2);stroke-width:1.5}
 .c-w200{fill:none;stroke:var(--ink-3);stroke-width:1;stroke-dasharray:1 4;stroke-linecap:round}
 .c-price{fill:none;stroke:var(--ink);stroke-width:1.5;stroke-linejoin:round}
-.m-buy{fill:var(--buy);stroke:var(--card);stroke-width:1.2}
+.m-buy{fill:var(--buy-stroke);stroke:var(--card);stroke-width:1.2}
 .m-sell{fill:var(--caution);stroke:var(--card);stroke-width:1.2}
-.m-ring{fill:none;stroke:var(--buy);stroke-width:1.4}
+.m-ring{fill:none;stroke:var(--buy-stroke);stroke-width:1.4}
 .m-sel{fill:none;stroke:var(--ink);stroke-width:1.5}
 .marker{cursor:pointer}
 .marker:focus-visible .m-hit{stroke:var(--buy);stroke-width:2}
@@ -112,7 +112,7 @@ ul.legend li{display:flex;align-items:center;gap:6px;min-width:0}
 .sw{width:10px;height:10px;border-radius:2px;display:inline-block;flex:none}
 .sw--cross,.bar-fill--cross{background:var(--buy)}
 .sw--build,.bar-fill--build{background:var(--buy-line)}
-.sw--lump,.bar-fill--lump{background:var(--buy-ink)}
+.sw--lump,.bar-fill--lump{background:var(--buy-hover)}
 .cycle-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
 .cycle{background:var(--paper);border:1px solid var(--line);border-radius:var(--r-well);padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
 .cycle--now{border-color:var(--buy-line)}

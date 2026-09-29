@@ -40,6 +40,10 @@ test("stylesheets stay on the light shell", () => {
   const evidence = sheet("evidence.css");
   assert.equal(site.includes("font-display:swap"), true);
   assert.equal(site.includes("--paper:#F7F6F2"), true);
+  assert.equal(site.includes("--paper:#1C1B18"), true);
+  assert.equal(site.includes('data-theme="dark"'), true);
+  assert.equal(site.includes("prefers-color-scheme:dark"), true);
+  assert.equal(site.includes(".theme{"), true);
   assert.equal(site.includes("--page-max:680px"), true);
   assert.equal(site.includes("text-size-adjust:100%"), true);
   assert.equal(site.includes("-webkit-text-size-adjust:100%"), true);

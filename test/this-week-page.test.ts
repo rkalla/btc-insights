@@ -91,6 +91,11 @@ test("the shell is the header, a loading sentence, and a no-javascript sentence"
   assert.equal(document.querySelector(".tabs a:not([aria-current])")?.getAttribute("href"), "/evidence/");
   assert.equal(document.querySelector(".gear")?.getAttribute("aria-label"), "Settings");
   assert.equal(document.querySelector(".gear")?.getAttribute("href"), "/settings.html");
+  const header = shell.slice(shell.indexOf("<header"), shell.indexOf("</header>"));
+  assert.equal(header.includes('class="theme"'), true);
+  assert.equal(header.indexOf('class="theme"') < header.indexOf('class="gear"'), true);
+  assert.equal(shell.includes("btc-friday.color-mode"), true);
+  assert.equal(shell.indexOf("btc-friday.color-mode") < shell.indexOf('href="/assets/site.css"'), true);
   assert.equal(document.querySelector(".boot")?.textContent, WEEK_LOADING);
   assert.equal(document.querySelector(".notice")?.textContent, WEEK_NEEDS_JS);
 });
