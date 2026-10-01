@@ -7,7 +7,7 @@ const REPO_HREF = "https://github.com/rkalla/btc-insights";
 const DISCLAIMER =
   "BTC Friday is research, not personal financial advice. It looks at Bitcoin's price history, and history can be wrong about the future. It doesn't know your full situation, doesn't trade for you and doesn't calculate taxes. Before investing money you can't afford to lose, talk to a fee-only financial adviser.";
 
-export function siteHeader(current: SitePage): string {
+export function siteHeader(current: SitePage | null): string {
   const weekCurrent = current === "week" ? ` aria-current="page"` : "";
   const evidenceCurrent = current === "evidence" ? ` aria-current="page"` : "";
   const settingsCurrent = current === "settings" ? ` aria-current="page"` : "";

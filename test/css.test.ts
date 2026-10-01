@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 const painter = new URL("../src/painter/", import.meta.url);
-const sheets = ["site.css", "this-week.css", "evidence.css", "settings.css"];
+const sheets = ["site.css", "this-week.css", "evidence.css", "settings.css", "visitors.css"];
 const loading = readFileSync(new URL("loading.html", painter), "utf8");
 
 function sheet(name: string): string {

@@ -11,6 +11,7 @@ const host = "127.0.0.1";
 const fixtures = new Map([
   ["/data/friday.json", join(root, "fixtures", "friday-2026-09-25.json")],
   ["/data/live.json", join(root, "fixtures", "live-2026-09-25.json")],
+  ["/data/visitors.json", join(root, "fixtures", "visitors.json")],
 ]);
 
 const types = new Map([
@@ -39,6 +40,11 @@ const server = createServer((req, res) => {
   }
   if (pathname === "/evidence") {
     res.writeHead(308, { location: "/evidence/" });
+    res.end();
+    return;
+  }
+  if (pathname === "/visitors") {
+    res.writeHead(308, { location: "/visitors/" });
     res.end();
     return;
   }

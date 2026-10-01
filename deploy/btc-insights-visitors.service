@@ -1,0 +1,11 @@
+[Unit]
+Description=Publish visitor counts from the nginx log
+
+[Service]
+Type=oneshot
+User=exedev
+WorkingDirectory=/home/exedev/btc-insights
+UMask=0027
+ExecStart=/usr/bin/node /home/exedev/btc-insights/job/visitors.mjs
+Restart=on-failure
+RestartSec=30s

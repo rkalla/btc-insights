@@ -35,7 +35,7 @@ The painter starts from the two reference HTML files. It fills sentences from th
 
 ## Holder settings stay on the device
 
-Coins held, investable net worth, the target share, the ceiling share, the thesis declaration and its date, the account type, and the dollar amounts for the three piles are stored in the browser. They are not in the public cache, and there is no login to host. The public repo stays free of secrets. `.gitignore` already ignores `.env` files. API keys live in the host's secret store.
+Coins held, investable net worth, the target share, the ceiling share, the thesis declaration and its date, the account type, and the dollar amounts for the three piles are stored in the browser. They are not in the public cache, and holder settings have no login. The public repo stays free of secrets. `.gitignore` already ignores `.env` files. API keys live in the host's secret store. The visitors password is the same kind of host secret: a hash on the VM, never a line in git.
 
 The Friday document names piles and omits personal dollars. When an amount is saved on the device, the painter inserts that dollar clause. A blank amount removes the dollar clause. "Up to $100,000." becomes "Use your cash available to invest." The page invents no dollar figure.
 
@@ -77,6 +77,8 @@ The site is hosted on the exe.dev VM `btcfriday.exe.xyz`. nginx serves `/var/www
 Python stays in the repository and runs in CI. It does not run in production. CI checks the production Friday function against the published record: the completed buy-cross fires and their next-year results, the open 18 September 2026 fire, the gold-share results already measured (completed arms at 0%, the 21 November 2025 arm at 24.5% against the 15% cut), and the cycle-capture shares in `docs/1-signal-quality.md`. A second fixture sends a new spot through the live slice and checks that the gap, the chart tip, and the progress rows move, and that the cash word, the rails, and the record do not.
 
 The public cache holds market data and the official call. It does not hold holdings, net worth, settings, API keys, or the live working set of the job.
+
+`/visitors/` is the one passworded path. A minute timer on the VM reads the nginx access log and writes `/var/www/html/data/visitors.json`: daily counts of people, unique addresses, bots, and scanners. The file holds no addresses and no user-agent strings. `/`, `/evidence/`, `/settings.html`, `/data/friday.json`, and `/data/live.json` stay public. Holder settings still have no login and still stay on the device. The visitors job calls no market API.
 
 ## Work log
 

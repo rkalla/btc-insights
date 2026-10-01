@@ -1,0 +1,11 @@
+{
+  "asOf": "2026-10-01T22:00:00.000Z",
+  "days": [
+    { "date": "2026-09-26", "people": 26, "uniques": null, "bots": 4, "scanners": 7 },
+    { "date": "2026-09-27", "people": 100, "uniques": null, "bots": 12, "scanners": 40 },
+    { "date": "2026-09-28", "people": 176, "uniques": null, "bots": 18, "scanners": 22 },
+    { "date": "2026-09-29", "people": 151, "uniques": null, "bots": 9, "scanners": 15 },
+    { "date": "2026-09-30", "people": 174, "uniques": null, "bots": 11, "scanners": 19 },
+    { "date": "2026-10-01", "people": 114, "uniques": null, "bots": 8, "scanners": 21 }
+  ]
+}

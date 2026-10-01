@@ -12,8 +12,12 @@ const liveService = read("../deploy/btc-insights-live.service");
 const liveTimer = read("../deploy/btc-insights-live.timer");
 const fridayService = read("../deploy/btc-insights-friday.service");
 const fridayTimer = read("../deploy/btc-insights-friday.timer");
+const visitorsService = read("../deploy/btc-insights-visitors.service");
+const visitorsTimer = read("../deploy/btc-insights-visitors.timer");
+const visitorsNginx = read("../deploy/nginx/visitors.conf");
+const logFormat = read("../deploy/nginx/log-format.conf");
 const scripts = [site, job];
-const units = [liveService, liveTimer, fridayService, fridayTimer];
+const units = [liveService, liveTimer, fridayService, fridayTimer, visitorsService, visitorsTimer];
 
 test("deploy scripts keep the locked web root", () => {
   for (const source of scripts) {
@@ -35,6 +39,7 @@ test("deploy scripts keep the locked web root", () => {
   assert.equal(job.includes("job/run.mjs"), true);
   assert.equal(job.includes("btcfriday.exe.xyz:/home/exedev/btc-insights/job/"), true);
   assert.equal(job.includes("--exclude .env"), true);
+  assert.equal(job.includes("job/visitors.mjs"), true);
 });
 
 test("the deploy test does not run ssh", () => {
@@ -67,6 +72,13 @@ test("host units run as exedev on the locked schedules", () => {
   assert.equal(liveTimer.includes("Persistent=true"), false);
   assert.equal(fridayTimer.includes("OnCalendar=Sat *-*-* 00:05:00 UTC"), true);
   assert.equal(fridayTimer.includes("Persistent=true"), true);
+  assert.equal(
+    /^ExecStart=\/usr\/bin\/node \/home\/exedev\/btc-insights\/job\/visitors\.mjs$/m.test(visitorsService),
+    true,
+  );
+  assert.equal(visitorsService.includes("EnvironmentFile="), false);
+  assert.equal(visitorsTimer.includes("OnUnitActiveSec=1min"), true);
+  assert.equal(visitorsTimer.includes("OnActiveSec=30s"), true);
 });
 
 test("deploy.md keeps the site command and points at the units", () => {
@@ -80,4 +92,21 @@ test("deploy.md keeps the site command and points at the units", () => {
   assert.equal(doc.includes("deploy/btc-insights-friday.timer"), true);
   assert.equal(doc.includes("The job umask is 027."), true);
   assert.equal(doc.includes("Docker stays stopped."), true);
+  assert.equal(doc.includes("deploy/btc-insights-visitors.service"), true);
+  assert.equal(doc.includes("deploy/btc-insights-visitors.timer"), true);
+  assert.equal(doc.includes("/etc/nginx/btc-insights-visitors.htpasswd"), true);
+  assert.equal(doc.includes("location /visitors/"), true);
+  assert.equal(doc.includes("location = /data/visitors.json"), true);
+});
+
+test("the visitors gate covers only the operator page and records the forwarded address", () => {
+  assert.equal(visitorsNginx.includes('auth_basic "Visitors"'), true);
+  assert.equal(visitorsNginx.includes("auth_basic_user_file /etc/nginx/btc-insights-visitors.htpasswd"), true);
+  assert.equal(visitorsNginx.includes("location /visitors/"), true);
+  assert.equal(visitorsNginx.includes("location = /data/visitors.json"), true);
+  assert.equal(visitorsNginx.includes("friday.json"), false);
+  assert.equal(visitorsNginx.includes("live.json"), false);
+  assert.equal(logFormat.includes("$http_x_forwarded_for"), true);
+  assert.equal(logFormat.includes("$host"), true);
+  assert.equal(/\$apr1\$|[A-Za-z0-9+/]{16,}==/.test(visitorsNginx + logFormat), false);
 });
