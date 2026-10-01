@@ -10,7 +10,7 @@ async function overflows(page: Page): Promise<boolean> {
 }
 
 test("bundles do not name a market client", () => {
-  const js = ["dist/assets/dashboard.js", "dist/assets/settings.js", "dist/assets/this-week.js"]
+  const js = ["dist/assets/dashboard.js", "dist/assets/settings.js", "dist/assets/this-week.js", "dist/assets/projection.js"]
     .map((path) => readFileSync(path, "utf8"))
     .join("\n");
   for (const word of ["coingecko", "coinmetrics", "api_key", "GOLD_QUOTE", "wss://", "WebSocket"]) {
@@ -116,6 +116,9 @@ test("no horizontal scroll at 320", async ({ page }) => {
   expect(await overflows(page)).toBe(false);
   await page.goto("/settings.html");
   await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
+  expect(await overflows(page)).toBe(false);
+  await page.goto("/projection/");
+  await expect(page.getByRole("heading", { level: 1, name: "Projection" })).toBeVisible();
   expect(await overflows(page)).toBe(false);
 });
 
@@ -423,12 +426,14 @@ for (const width of [320, 390, 412]) {
   for (const scale of [1, 1.3]) {
     test(`no sideways scroll at ${width} with ${Math.round(scale * 100)}% text`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
-      for (const path of ["/", "/evidence/", "/settings.html"]) {
+      for (const path of ["/", "/evidence/", "/settings.html", "/projection/"]) {
         await page.goto(path);
         if (path === "/") {
           await expect(page.getByRole("heading", { level: 1, name: "A strong week to buy Bitcoin." })).toBeVisible();
         } else if (path === "/evidence/") {
           await expect(page.getByRole("heading", { level: 1, name: "Why this week says Buy strongly" })).toBeVisible();
+        } else if (path === "/projection/") {
+          await expect(page.getByRole("heading", { level: 1, name: "Projection" })).toBeVisible();
         } else {
           await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
         }
@@ -556,4 +561,83 @@ test("color mode sits left of Settings and cycles system, light, and dark", asyn
 
   const result = await new AxeBuilder({ page }).analyze();
   expect(result.violations, JSON.stringify(result.violations, null, 2)).toEqual([]);
+});
+
+const FILLED_SETTINGS = JSON.stringify({
+  standingAmount: 100,
+  standingEvery: "month",
+  buildAmount: null,
+  cashAvailable: null,
+  coinsHeld: 1,
+  netWorth: null,
+  targetShare: null,
+  ceilingShare: null,
+  thesisBroken: false,
+  thesisDate: null,
+  account: null,
+});
+
+for (const width of [1440, 1100, 390]) {
+  test(`projection at ${width}`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.addInitScript((saved) => {
+      localStorage.setItem("btc-insights.settings.v1", saved);
+    }, FILLED_SETTINGS);
+    await page.goto("/projection/");
+    await expect(page.getByRole("heading", { level: 1, name: "Projection" })).toBeVisible();
+    await expect(page.locator("header.site .tabs a")).toHaveText(["This week", "Evidence", "Projection"]);
+    await expect(page.locator("header.site a[aria-current='page']")).toHaveText("Projection");
+    await expect(page.getByText("If the last five finished cycles repeated, this is about what your Bitcoin would be worth.")).toBeVisible();
+    await expect(page.getByText("Starts from 1 Bitcoin and adds $100 every month.")).toBeVisible();
+    await expect(page.getByText("In 2029, at the high, about $1.4M.")).toBeVisible();
+    await expect(page.getByText("In 2026, at the low, about $84.4k.")).toBeVisible();
+    await expect(page.locator("body")).not.toContainText("power law");
+    await expect(page.locator(".projection-svg")).toBeVisible();
+    await expect(page.locator("details.numbers")).not.toHaveAttribute("open", "");
+    await page.getByText("Show the numbers").click();
+    await expect(page.getByText("Today's price is $84,413.")).toBeVisible();
+    expect(await overflows(page)).toBe(false);
+    const result = await new AxeBuilder({ page }).analyze();
+    expect(result.violations, JSON.stringify(result.violations, null, 2)).toEqual([]);
+  });
+}
+
+test("projection with no saved bitcoin shows the settings sentence and no dollars", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto("/projection/");
+  const link = page.getByRole("link", { name: "Add the Bitcoin you own in Settings to draw this." });
+  await expect(link).toBeVisible();
+  await expect(link).toHaveAttribute("href", "/settings.html");
+  await expect(page.locator("#projection")).not.toContainText("$");
+  await expect(page.locator(".projection-svg")).toHaveCount(0);
+  expect(await overflows(page)).toBe(false);
+  const result = await new AxeBuilder({ page }).analyze();
+  expect(result.violations, JSON.stringify(result.violations, null, 2)).toEqual([]);
+});
+
+test("a late price still draws the projection", async ({ page }) => {
+  await page.addInitScript((saved) => {
+    localStorage.setItem("btc-insights.settings.v1", saved);
+  }, FILLED_SETTINGS);
+  await page.route("**/data/live.json", async (route) => {
+    const response = await route.fetch();
+    const body = (await response.json()) as { stale?: boolean };
+    body.stale = true;
+    await route.fulfill({ json: body });
+  });
+  await page.goto("/projection/");
+  await expect(page.getByText("This price is late, so the projection is using an older price.")).toBeVisible();
+  await expect(page.getByText("In 2029, at the high, about $1.4M.")).toBeVisible();
+});
+
+test("a missing replay says so and a missing price does not invent dollars", async ({ page }) => {
+  await page.route("**/data/projection.json", (route) => route.abort());
+  await page.goto("/projection/");
+  await expect(page.getByText("The replay is not available right now.")).toBeVisible();
+  await expect(page.locator("#projection")).not.toContainText("$");
+  await page.unroute("**/data/projection.json");
+  await page.route("**/data/live.json", (route) => route.abort());
+  await page.goto("/projection/");
+  await expect(page.getByText("Today's price is not available, so this cannot start.")).toBeVisible();
+  await expect(page.locator("#projection")).not.toContainText("$");
 });

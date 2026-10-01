@@ -43,6 +43,11 @@ const server = createServer((req, res) => {
     res.end();
     return;
   }
+  if (pathname === "/projection") {
+    res.writeHead(308, { location: "/projection/" });
+    res.end();
+    return;
+  }
   if (pathname === "/visitors") {
     res.writeHead(308, { location: "/visitors/" });
     res.end();

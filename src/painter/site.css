@@ -55,7 +55,7 @@ h1,h2,h3{overflow-wrap:anywhere}
 :root[data-color-mode="light"] .theme-icon--light,:root[data-color-mode="dark"] .theme-icon--dark,:root[data-color-mode="system"] .theme-icon--system,:root:not([data-color-mode]) .theme-icon--system{display:block}
 :root[data-color-mode="light"] .theme-name--light,:root[data-color-mode="dark"] .theme-name--dark,:root[data-color-mode="system"] .theme-name--system,:root:not([data-color-mode]) .theme-name--system{display:inline}
 @media (min-width:600px){
-  .site-inner{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"brand tabs gear";height:64px}
+  .site-inner{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"brand tabs gear";height:auto;min-height:64px}
   .tabs{margin:0 0 0 20px;align-self:stretch;align-items:stretch}
   .tabs a{height:auto;border-radius:0}
   .tabs a:hover{background:transparent}

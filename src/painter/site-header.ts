@@ -1,7 +1,8 @@
-export type SitePage = "week" | "evidence" | "settings";
+export type SitePage = "week" | "evidence" | "projection" | "settings";
 
 const WEEK_HREF = "/";
 const EVIDENCE_HREF = "/evidence/";
+const PROJECTION_HREF = "/projection/";
 const SETTINGS_HREF = "/settings.html";
 const REPO_HREF = "https://github.com/rkalla/btc-insights";
 const DISCLAIMER =
@@ -10,6 +11,7 @@ const DISCLAIMER =
 export function siteHeader(current: SitePage | null): string {
   const weekCurrent = current === "week" ? ` aria-current="page"` : "";
   const evidenceCurrent = current === "evidence" ? ` aria-current="page"` : "";
+  const projectionCurrent = current === "projection" ? ` aria-current="page"` : "";
   const settingsCurrent = current === "settings" ? ` aria-current="page"` : "";
   return `<header class="site">
   <div class="site-inner">
@@ -18,6 +20,7 @@ export function siteHeader(current: SitePage | null): string {
       <ul class="tabs">
         <li><a href="${WEEK_HREF}"${weekCurrent}>This week</a></li>
         <li><a href="${EVIDENCE_HREF}"${evidenceCurrent}>Evidence</a></li>
+        <li><a href="${PROJECTION_HREF}"${projectionCurrent}>Projection</a></li>
       </ul>
     </nav>
     <div class="site-tools">
@@ -44,7 +47,7 @@ export function siteFooter(): string {
 }
 
 export function footerLinks(): string {
-  return `<div class="foot-links"><a href="${EVIDENCE_HREF}">Evidence</a><a href="${SETTINGS_HREF}">Settings</a><a class="repo" href="${REPO_HREF}">${githubIcon()}<span>GitHub</span></a></div>`;
+  return `<div class="foot-links"><a href="${EVIDENCE_HREF}">Evidence</a><a href="${PROJECTION_HREF}">Projection</a><a href="${SETTINGS_HREF}">Settings</a><a class="repo" href="${REPO_HREF}">${githubIcon()}<span>GitHub</span></a></div>`;
 }
 
 function githubIcon(): string {

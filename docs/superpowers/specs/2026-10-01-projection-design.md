@@ -111,7 +111,7 @@ A site deploy does not upload `data/`. The public page can draw a chart only aft
 ## When something is missing
 
 - No saved Bitcoin amount: `Add the Bitcoin you own in Settings to draw this.` The sentence links to Settings. No dollar figure is invented.
-- The live print is stale: the chart still draws, with `This price is late, so the projection is using an old print.`
+- The live print is stale: the chart still draws, with `This price is late, so the projection is using an older price.` The word `print` is on This week's banned list, so the page says `older price`.
 - The live print is missing, or the spot is not a positive number: `Today's price is not available, so this cannot start.`
 - The projection file is missing, or its schema, fit, or template is unusable: `The replay is not available right now.`
 
