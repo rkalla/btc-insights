@@ -8,7 +8,7 @@ test("the dashboard and settings heads point at the favicon", () => {
   assert.match(build, /rel="icon" type="image\/png" href="\/favicon-32.png" sizes="32x32"/);
   assert.match(build, /rel="apple-touch-icon" href="\/apple-touch-icon.png"/);
   const uses = build.split("${iconLinks}").length - 1;
-  assert.equal(uses, 2);
+  assert.equal(uses, 1);
   const ico = statSync(new URL("../public/favicon.ico", import.meta.url));
   const png = statSync(new URL("../public/favicon-32.png", import.meta.url));
   const touch = statSync(new URL("../public/apple-touch-icon.png", import.meta.url));

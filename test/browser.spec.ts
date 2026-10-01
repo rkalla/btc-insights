@@ -52,6 +52,8 @@ for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 1000 });
     await page.goto("/settings.html");
     await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
+    await expect(page.locator("header.site .tabs a")).toHaveText(["This week", "Evidence", "Projection"]);
+    await expect(page.locator("header.site a[aria-current='page']")).toHaveText("Settings");
     await expect(page.getByLabel("Amount").first()).toBeVisible();
     await expect(page.getByRole("radiogroup", { name: "How often" })).toBeVisible();
     await expect(page.getByLabel("Bitcoin you own")).toBeVisible();
@@ -228,8 +230,10 @@ test("this week bundle has no font host or market host", () => {
   expect(evidence).not.toContain("dashboard.css");
   const settings = readFileSync("dist/settings.html", "utf8");
   expect(settings).toContain("<title>Settings · BTC Friday</title>");
+  expect(settings).toContain('href="/projection/">Projection</a>');
   expect(settings).toContain("/assets/site.css");
   expect(settings).toContain("/assets/settings.css");
+  expect(settings).toContain('src="/assets/settings.js"');
   expect(settings).not.toContain("dashboard.css");
   expect(settings).not.toContain("this-week.css");
 });

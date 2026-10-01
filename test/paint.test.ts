@@ -7,7 +7,7 @@ import { compose } from "../src/compose/view-model.ts";
 import type { CashPosture, DashboardVM, FridayDocument, LiveSlice, Tone } from "../src/contract/types.ts";
 import { BANNED_THIS_WEEK } from "../src/copy/thisWeek.ts";
 import { paintDashboard } from "../src/painter/dashboard.ts";
-import { paintSettings } from "../src/painter/settings.ts";
+import { paintSettings, settingsShell } from "../src/painter/settings.ts";
 import { parseSettings } from "../src/settings/store.ts";
 
 const OPENED = "2026-09-26T15:00:00.000Z";
@@ -559,4 +559,23 @@ test("settings is a blank sheet with the reference fields", () => {
   assert.equal(document.querySelector("footer.foot a.repo span")?.textContent, "GitHub");
   assert.equal(document.querySelector("a.btn")?.getAttribute("href"), "index.html");
   assert.equal(document.querySelector("a.btn")?.textContent, "Cancel");
+  const tabs = document.querySelectorAll(".tabs a");
+  assert.equal(tabs.length, 3);
+  assert.equal(tabs[2]?.textContent, "Projection");
+  assert.equal(tabs[2]?.getAttribute("href"), "/projection/");
+});
+
+test("the settings document includes the Projection tab before the script runs", () => {
+  const html = settingsShell(`<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" type="image/png" href="/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">`);
+  const document = parse(html);
+  assert.equal(document.querySelectorAll("header.site").length, 1);
+  assert.equal(document.querySelectorAll(".tabs a")[2]?.textContent, "Projection");
+  assert.equal(document.querySelector(".gear")?.getAttribute("aria-current"), "page");
+  assert.equal(html.includes('src="/assets/settings.js"'), true);
+  assert.equal(html.includes('href="/assets/site.css"'), true);
+  assert.equal(html.includes('href="/assets/settings.css"'), true);
+  assert.equal(html.includes("dashboard.css"), false);
+  assert.equal(html.includes('rel="icon" href="/favicon.ico" sizes="48x48"'), true);
 });

@@ -1,4 +1,25 @@
+import { colorModeBoot } from "./color-mode.ts";
 import { siteFooter, siteHeader } from "./site-header.ts";
+
+export function settingsShell(iconLinks: string): string {
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+${colorModeBoot()}
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Settings · BTC Friday</title>
+${iconLinks}
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/settings.css">
+</head>
+<body>
+${paintSettings()}
+<script type="module" src="/assets/settings.js"></script>
+</body>
+</html>
+`;
+}
 
 export function paintSettings(): string {
   return `${siteHeader("settings")}
