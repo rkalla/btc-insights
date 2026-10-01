@@ -146,6 +146,7 @@ test("the visitors shell is a private page with the shared header and no Visitor
   assert.equal(html.includes('aria-current="page"'), false);
   assert.equal(html.includes(">This week</a>"), true);
   assert.equal(html.includes(">Evidence</a>"), true);
+  assert.equal(html.includes('href="/projection/">Projection</a>'), true);
 });
 
 test("the chart and table show the three daily counts and an unrecorded unique", () => {

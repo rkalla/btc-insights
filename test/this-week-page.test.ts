@@ -89,6 +89,10 @@ test("the shell is the header, a loading sentence, and a no-javascript sentence"
   assert.equal(document.querySelector('[aria-current="page"]')?.getAttribute("href"), "/");
   assert.equal(document.querySelector(".brand")?.getAttribute("href"), "/");
   assert.equal(document.querySelector(".tabs a:not([aria-current])")?.getAttribute("href"), "/evidence/");
+  const tabs = document.querySelectorAll(".tabs a");
+  assert.equal(tabs.length, 3);
+  assert.equal(tabs[2]?.textContent, "Projection");
+  assert.equal(tabs[2]?.getAttribute("href"), "/projection/");
   assert.equal(document.querySelector(".gear")?.getAttribute("aria-label"), "Settings");
   assert.equal(document.querySelector(".gear")?.getAttribute("href"), "/settings.html");
   const header = shell.slice(shell.indexOf("<header"), shell.indexOf("</header>"));

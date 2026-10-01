@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { colorModeBoot } from "../src/painter/color-mode.ts";
 import { projectionShell } from "../src/painter/projection.ts";
+import { settingsShell } from "../src/painter/settings.ts";
 import { siteHeader } from "../src/painter/site-header.ts";
 import { thisWeekShell } from "../src/painter/this-week.ts";
 import { buildProjectionDocument } from "../src/job/projection.ts";
@@ -163,25 +164,7 @@ writeFileSync(
   `${JSON.stringify(buildProjectionDocument(projectionPoints, "2026-09-25"))}\n`,
 );
 
-writeFileSync(
-  join(dist, "settings.html"),
-  `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-${colorModeBoot()}
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Settings · BTC Friday</title>
-${iconLinks}
-<link rel="stylesheet" href="/assets/site.css">
-<link rel="stylesheet" href="/assets/settings.css">
-</head>
-<body>
-<script type="module" src="assets/settings.js"></script>
-</body>
-</html>
-`,
-);
+writeFileSync(join(dist, "settings.html"), settingsShell(iconLinks));
 
 await esbuild.build({
   entryPoints: {
