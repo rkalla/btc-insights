@@ -1,14 +1,14 @@
 import { chartMoney, money, sentenceDate } from "../contract/format.ts";
-import { trendAt, type PowerLawFit } from "../job/powerlaw.ts";
-import type { ProjectionDocument } from "../job/projection.ts";
+import { daysSinceGenesis, trendAt, type PowerLawFit } from "../job/powerlaw.ts";
+import type { PeakDecay, ProjectionDocument } from "../job/projection.ts";
 
 const DAY_MS = 86_400_000;
-const LEAD_ONE = "If the last five finished cycles repeated, this is about what your Bitcoin would be worth. It replays those cycles. It is not a promise.";
-const LEAD_TWO = "The shape is taken from five cycles, 2010 through 2022. Five is a small number.";
+const LEAD_ONE = "If the peaks keep falling toward the long-run trend, this is about what your Bitcoin would be worth. It is not a promise.";
+const LEAD_TWO = "The height above the trend follows the highs since 2011, including the latest one. Five finished cycles is a small number.";
 const BLANK = "Add the Bitcoin you own in Settings to draw this.";
 const STALE = "This price is late, so the projection is using an older price.";
 const NO_PRICE = "Today's price is not available, so this cannot start.";
-const NO_REPLAY = "The replay is not available right now.";
+const NO_REPLAY = "The projection is not available right now.";
 const NO_COINS_NO_BUY = "This starts from no Bitcoin and adds none.";
 
 export const PROJECTION_COPY = {
@@ -26,6 +26,7 @@ export interface ProjectionPoint {
   price: number;
   coins: number;
   value: number;
+  trendValue: number;
   phase: number | null;
   mark: "high" | "low" | null;
 }
@@ -77,7 +78,7 @@ export function projectionFromDocuments(
   }
   const phase = matchPhase(document.template, document.highIndex, spot / trendAt(document.fit, spotDate));
   const points = walk(document, spot, spotDate, coinsHeld, buy, phase);
-  const readings = readingLines(points, document.highIndex, document.lowIndex);
+  const readings = readingLines(points);
   return {
     status: "ready",
     leads: [LEAD_ONE, LEAD_TWO],
@@ -107,8 +108,8 @@ export function matchPhase(template: readonly number[], highIndex: number, ratio
 export function isProjectionDocument(value: unknown): value is ProjectionDocument {
   if (typeof value !== "object" || value === null) return false;
   const record = value as Partial<ProjectionDocument>;
-  if (record.schema !== 1 || record.genesis !== "2009-01-03" || record.samples !== 204) return false;
-  if (!isFit(record.fit)) return false;
+  if (record.schema !== 2 || record.genesis !== "2009-01-03" || record.samples !== 204) return false;
+  if (!isFit(record.fit) || !isDecay(record.decay)) return false;
   if (!Array.isArray(record.template) || record.template.length !== 204) return false;
   if (!record.template.every((ratio) => typeof ratio === "number" && Number.isFinite(ratio) && ratio > 0)) return false;
   if (!Number.isInteger(record.highIndex) || record.highIndex! < 0 || record.highIndex! > 203) return false;
@@ -120,7 +121,24 @@ export function isProjectionDocument(value: unknown): value is ProjectionDocumen
     if (typeof row.low !== "string" || typeof row.high !== "string" || typeof row.end !== "string") return false;
     if (typeof row.highRatio !== "number" || !Number.isFinite(row.highRatio)) return false;
   }
+  if (record.open != null) {
+    if (typeof record.open !== "object") return false;
+    if (typeof record.open.highRatio !== "number" || !(record.open.highRatio > 0)) return false;
+  }
   return true;
+}
+
+export function peakMultiple(decay: PeakDecay, date: string): number {
+  const raw = Math.exp(decay.intercept + decay.slope * daysSinceGenesis(date));
+  return raw < 1 ? 1 : raw;
+}
+
+export function cycleRatio(templateValue: number, templatePeak: number, multiple: number): number {
+  if (!(templateValue > 0)) return templateValue;
+  if (!(templatePeak > 1) || templateValue <= 1) return templateValue;
+  if (multiple <= 1) return 1;
+  const scale = Math.log(multiple) / Math.log(templatePeak);
+  return Math.exp(Math.log(templateValue) * scale);
 }
 
 function walk(
@@ -131,32 +149,60 @@ function walk(
   buy: { amount: number; every: "week" | "month" } | null,
   phase: number,
 ): ProjectionPoint[] {
+  const spotTrend = trendAt(document.fit, spotDate);
   const points: ProjectionPoint[] = [
-    { date: spotDate, price: spot, coins: coinsHeld, value: coinsHeld * spot, phase: null, mark: null },
+    {
+      date: spotDate,
+      price: spot,
+      coins: coinsHeld,
+      value: coinsHeld * spot,
+      trendValue: coinsHeld * spotTrend,
+      phase: null,
+      mark: null,
+    },
   ];
   const end = lastFridayOnOrBefore(addYears(spotDate, 20));
+  const templatePeak = document.template[document.highIndex] ?? 1;
   let coins = coinsHeld;
   let step = (phase + 1) % document.samples;
   for (let date = nextFridayAfter(spotDate); date <= end; date = addDays(date, 7)) {
-    const price = trendAt(document.fit, date) * (document.template[step] ?? 0);
-    if (buy != null && (buy.every === "week" || isFirstFridayOfMonth(date))) {
-      coins += buy.amount / price;
-    }
+    const trendPrice = trendAt(document.fit, date);
+    const price = trendPrice * cycleRatio(document.template[step] ?? 0, templatePeak, peakMultiple(document.decay, date));
+    if (buy != null && (buy.every === "week" || isFirstFridayOfMonth(date))) coins += buy.amount / price;
     const mark = step === document.highIndex ? "high" : step === document.lowIndex ? "low" : null;
-    points.push({ date, price, coins, value: coins * price, phase: step, mark });
+    points.push({ date, price, coins, value: coins * price, trendValue: coins * trendPrice, phase: step, mark });
     step = (step + 1) % document.samples;
   }
+  placeHighs(points);
   return points;
 }
 
-function readingLines(points: readonly ProjectionPoint[], highIndex: number, lowIndex: number): string[] {
+function placeHighs(points: ProjectionPoint[]): void {
+  const lows: number[] = [];
+  for (let index = 0; index < points.length; index += 1) {
+    const point = points[index];
+    if (point?.mark === "low") lows.push(index);
+    if (point?.mark === "high") point.mark = null;
+  }
+  for (let index = 0; index < lows.length; index += 1) {
+    const start = (lows[index] ?? 0) + 1;
+    const end = index + 1 < lows.length ? lows[index + 1]! : points.length;
+    let best = start;
+    for (let cursor = start; cursor < end; cursor += 1) {
+      if ((points[cursor]?.value ?? 0) >= (points[best]?.value ?? 0)) best = cursor;
+    }
+    const chosen = points[best];
+    if (chosen != null && chosen.mark == null) chosen.mark = "high";
+  }
+}
+
+function readingLines(points: readonly ProjectionPoint[]): string[] {
   const lines: string[] = [];
   for (const point of points) {
-    if (point.phase === highIndex) lines.push(reading("high", point));
-    if (point.phase === lowIndex) lines.push(reading("low", point));
+    if (point.mark === "high" || point.mark === "low") lines.push(reading(point.mark, point));
   }
   const last = points[points.length - 1];
-  if (last != null && last.phase !== highIndex && last.phase !== lowIndex) {
+  if (last != null && last.mark == null) {
     lines.push(`In ${last.date.slice(0, 4)}, at the end of the 20 years, about ${chartMoney(last.value)}.`);
   }
   return lines;
@@ -185,6 +231,11 @@ function numberLines(
   for (const cycle of document.cycles) {
     lines.push(
       `${sentenceDate(cycle.low)} to ${sentenceDate(cycle.end)}. The high was about ${cycle.highRatio} times the long-run trend.`,
+    );
+  }
+  if (document.open != null) {
+    lines.push(
+      `${sentenceDate(document.open.high)}. The latest high was about ${document.open.highRatio} times the long-run trend.`,
     );
   }
   for (const point of points) {
@@ -222,6 +273,12 @@ function isFit(value: unknown): value is PowerLawFit {
   if (typeof value !== "object" || value === null) return false;
   const fit = value as Partial<PowerLawFit>;
   return typeof fit.a === "number" && Number.isFinite(fit.a) && typeof fit.b === "number" && Number.isFinite(fit.b);
+}
+
+function isDecay(value: unknown): value is PeakDecay {
+  if (typeof value !== "object" || value === null) return false;
+  const decay = value as Partial<PeakDecay>;
+  return typeof decay.intercept === "number" && Number.isFinite(decay.intercept) && typeof decay.slope === "number" && Number.isFinite(decay.slope);
 }
 
 function utcMs(iso: string): number {

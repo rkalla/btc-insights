@@ -8,9 +8,11 @@ import type { DatedPrice } from "../src/job/powerlaw.ts";
 import { paintProjection, projectionShell, projectionSvg } from "../src/painter/projection.ts";
 import {
   PROJECTION_COPY,
+  cycleRatio,
   formatCoins,
   isProjectionDocument,
   matchPhase,
+  peakMultiple,
   projectionFromDocuments,
 } from "../src/projection/portfolio.ts";
 import type { ProjectionReady } from "../src/projection/portfolio.ts";
@@ -73,7 +75,11 @@ test("five finished price cycles are averaged and the open cycle is stored apart
   assert.equal(document.open?.low, "2022-11-09");
   assert.equal(document.open?.high, "2025-10-06");
   assert.equal(Math.round(document.open?.highPrice ?? 0), 124824);
+  assert.equal(document.open?.highRatio, 1.21);
   assert.equal(document.cycles.some((cycle) => cycle.high === "2025-10-06"), false);
+  assert.equal(document.schema, 2);
+  assert.equal(document.decay.intercept.toFixed(6), "2.781389");
+  assert.equal(document.decay.slope.toFixed(12), "-0.000387248093");
 });
 
 test("the five-cycle template locks the measured shape", () => {
@@ -87,6 +93,17 @@ test("the five-cycle template locks the measured shape", () => {
   assert.equal(document.genesis, "2009-01-03");
   assert.equal(isProjectionDocument(document), true);
   assert.equal(isProjectionDocument({ ...document, cycles: undefined }), false);
+  assert.equal(isProjectionDocument({ ...document, schema: 1 }), false);
+  assert.equal(isProjectionDocument({ ...document, decay: undefined }), false);
+});
+
+test("peaks above the trend fall toward it and the trough stays put", () => {
+  const peak = document.template[document.highIndex] ?? 0;
+  assert.equal(peakMultiple(document.decay, "2029-05-04"), 1);
+  assert.equal(peakMultiple(document.decay, SPOT_DATE).toFixed(3), "1.316");
+  assert.equal(cycleRatio(peak, peak, peakMultiple(document.decay, "2029-05-04")), 1);
+  assert.equal(cycleRatio(document.template[0] ?? 0, peak, 1.3), document.template[0]);
+  assert.equal(cycleRatio(peak, peak, peakMultiple(document.decay, SPOT_DATE)).toFixed(3), "1.316");
 });
 
 test("25 September 2026 matches the last sample for the history close and for spot 84413", () => {
@@ -99,7 +116,7 @@ test("25 September 2026 matches the last sample for the history close and for sp
   assert.equal(matchPhase(document.template, document.highIndex, document.template[135] ?? 0), 135);
 });
 
-test("one bitcoin and $100 a month locks the May 2029 high", () => {
+test("one bitcoin and $100 a month locks the 2030 high", () => {
   const model = projectionFromDocuments(document, SPOT, SPOT_DATE, 1, 100, "month", false);
   assert.equal(model.status, "ready");
   if (model.status !== "ready") return;
@@ -107,10 +124,16 @@ test("one bitcoin and $100 a month locks the May 2029 high", () => {
   assert.equal(model.input, "Starts from 1 Bitcoin and adds $100 every month.");
   assert.equal(model.caption, "Your Bitcoin, on a log scale, through 2046.");
   const high = model.points.find((point) => point.mark === "high");
-  assert.equal(high?.date, "2029-05-04");
-  assert.equal(Math.round(high?.value ?? 0), 1_372_927);
-  assert.equal(model.readings[1], "In 2029, at the high, about $1.4M.");
+  assert.equal(high?.date, "2030-07-19");
+  assert.equal(Math.round(high?.value ?? 0), 433_968);
+  assert.equal(model.readings[1], "In 2030, at the high, about $434k.");
   assert.equal(model.readings[0], "In 2026, at the low, about $84.4k.");
+  assert.equal((model.points[0]?.trendValue ?? 0) > (model.points[0]?.value ?? 0), true);
+  assert.equal(
+    model.points.every((point) => Math.abs(point.trendValue - point.coins * trendAt(document.fit, point.date)) < 0.01),
+    true,
+  );
+  assert.equal(Math.abs((high?.trendValue ?? 0) - (high?.value ?? 0)) < 1, true);
   assert.equal(model.points[0]?.coins, 1);
   assert.equal(model.points[0]?.phase, null);
   const october2 = model.points.find((point) => point.date === "2026-10-02");
@@ -121,7 +144,11 @@ test("one bitcoin and $100 a month locks the May 2029 high", () => {
   const last = model.points[model.points.length - 1];
   assert.equal(last?.date, "2046-09-21");
   assert.equal(weekday(last?.date ?? ""), 5);
-  assert.equal(model.readings[model.readings.length - 1], "In 2046, at the end of the 20 years, about $8.9M.");
+  assert.equal(model.readings[model.readings.length - 1], "In 2046, at the end of the 20 years, about $9M.");
+  const html = paintProjection(model);
+  assert.equal(html.includes("Long-run trend"), true);
+  assert.equal(html.includes('stroke="var(--ink-2)"'), true);
+  assert.equal(html.includes('stroke="var(--ink)"'), true);
   assert.equal(model.numbers[0], "Today's price is $84,413.");
   assert.equal(model.numbers.some((line) => line.includes("power law")), false);
 });
@@ -202,7 +229,7 @@ test("the projection shell has the tab, the color boot, and only the repository 
   assert.equal(shell.includes('href="/projection/"'), true);
   assert.equal(shell.includes("btc-friday.color-mode"), true);
   assert.equal(shell.indexOf("btc-friday.color-mode") < shell.indexOf('href="/assets/site.css"'), true);
-  assert.equal(shell.includes("Loading the replay."), true);
+  assert.equal(shell.includes("Loading the projection."), true);
   const rest = shell.split("https://github.com/rkalla/btc-insights").join("");
   assert.equal(rest.includes("https://"), false);
   assert.equal(rest.includes("http://"), false);

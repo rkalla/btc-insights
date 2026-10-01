@@ -10,9 +10,9 @@ Projection is a tab in the header after Evidence. The tabs read This week, Evide
 
 The title is Projection. The open lead is these sentences, in this order:
 
-> If the last five finished cycles repeated, this is about what your Bitcoin would be worth. It replays those cycles. It is not a promise.
+> If the peaks keep falling toward the long-run trend, this is about what your Bitcoin would be worth. It is not a promise.
 
-> The shape is taken from five cycles, 2010 through 2022. Five is a small number.
+> The height above the trend follows the highs since 2011, including the latest one. Five finished cycles is a small number.
 
 Under that, one line states the inputs actually in use:
 
@@ -23,7 +23,7 @@ Under that, one line states the inputs actually in use:
 
 `{coins}` is the number the holder saved, trailing zeros removed, up to eight decimal places. The word stays Bitcoin. `{amount}` uses the existing whole-dollar format. The schedule word is `week` or `month`.
 
-The chart is one line on a log scale. The line is the portfolio in dollars. Small marks sit on each projected high and each projected low. Those marks use the neutral ink, not the buy color and not the caution color. The legend reads Your Bitcoin, High, and Low. The caption is `Your Bitcoin, on a log scale, through {year}.` `{year}` is the calendar year of the last Friday in the window.
+The chart is two lines on a log scale. One line is the portfolio in dollars. The other values those same coins at the long-run trend, so the gap is how far the projection sits from that curve. Small marks sit on each projected high and each projected low of the portfolio line. Those marks use the neutral ink, not the buy color and not the caution color. The legend reads Your Bitcoin, Long-run trend, High, and Low. The caption is `Your Bitcoin, on a log scale, through {year}.` `{year}` is the calendar year of the last Friday in the window.
 
 Under the chart, each high and each low is one sentence: `In {year}, at the high, about {dollars}.` and `In {year}, at the low, about {dollars}.` When the last Friday is not already one of those marks, it adds `In {year}, at the end of the 20 years, about {dollars}.` `{dollars}` uses the chart axis form (`$840`, `$12.4k`, `$1.2M`, `$3.4B`), and the axis gains the billion step. The word `about` is outside that form.
 
@@ -56,7 +56,7 @@ On the committed history through 25 September 2026 this rule produces five finis
 
 The open cycle runs from 9 Nov 2022 to the high on 6 Oct 2025. It joins the average on the first Friday whose daily close is at or below 30% of that high.
 
-The April 2013 high is its own cycle because the close fell by 70% within a week and the rise cleared four times. The site's cycle table leaves 2011 and 2013 unscored because the buy signal had not fired. This page is a price replay, so those runs are in the average.
+The April 2013 high is its own cycle because the close fell by 70% within a week and the rise cleared four times. The site's cycle table leaves 2011 and 2013 unscored because the buy signal had not fired. Those runs stay in the average shape.
 
 The shape has 204 samples. Sample `i` of a cycle, from 0 through 203, is the daily close on the date `low + round((end - low) * i / 203 days)`. The ratio is that close divided by the trend on that date. If that date has no close, use the latest close within the previous four days. The template is the week-by-week mean of the five ratios. The high index is the sample with the greatest mean. The low index is the sample with the least mean. Ties take the later sample.
 
@@ -68,7 +68,9 @@ Today's ratio is the live spot divided by the trend on the spot's date. The matc
 
 On the 25 September 2026 history the spot's ratio is about 0.59, and the match is the last sample. The next Friday uses sample 0, which is the low of the shape, and the high is sample 135, about 135 weeks later. The page does not hardcode that sentence. A different spot picks a different sample. A test locks the match at index 203 for the history close on that day and for the page spot 84413, both against the fit through 25 September 2026.
 
-The drawn line starts at today's spot. Each later Friday's price is that Friday's trend times the template sample for that step.
+The drawn line starts at today's spot. Each later Friday's price is that Friday's trend times a ratio. A template sample at or below 1 keeps its historical ratio, so the depth under the trend stays put and today's price stays on the shape. A sample above 1 is pulled toward 1 until the template's peak equals the peak multiple for that date. The peak multiple is `e` raised to `(intercept + slope · days since 2009-01-03)`, fitted by least squares on the log of the five finished high ratios and the open cycle's high ratio. A result below 1 becomes 1, so a future high sits on the trend and does not fall through it. The high mark in each stretch is the Friday with the greatest portfolio value, not the old template index. The low mark stays the template's low sample.
+
+The reference line values the same coins at that Friday's trend. It does not buy a second pile of coins. Where the lines meet, that Friday's price is the trend. Where the portfolio sits below, the price is under the trend.
 
 ## The portfolio
 
@@ -88,9 +90,10 @@ The document has this shape. `template` has 204 ratios, and `cycles` has five ro
 
 ```json
 {
-  "schema": 1,
+  "schema": 2,
   "asOf": "2026-09-25",
   "fit": { "a": -16.359, "b": 5.644 },
+  "decay": { "intercept": 2.781389, "slope": -0.000387248093 },
   "genesis": "2009-01-03",
   "samples": 204,
   "template": [],
@@ -100,7 +103,7 @@ The document has this shape. `template` has 204 ratios, and `cycles` has five ro
   "cycles": [
     { "low": "2010-07-25", "high": "2011-06-08", "end": "2011-11-18", "highRatio": 15.16 }
   ],
-  "open": { "low": "2022-11-09", "high": "2025-10-06", "highPrice": 124824 }
+  "open": { "low": "2022-11-09", "high": "2025-10-06", "highPrice": 124824, "highRatio": 1.21 }
 }
 ```
 
@@ -113,7 +116,7 @@ A site deploy does not upload `data/`. The public page can draw a chart only aft
 - No saved Bitcoin amount: `Add the Bitcoin you own in Settings to draw this.` The sentence links to Settings. No dollar figure is invented.
 - The live print is stale: the chart still draws, with `This price is late, so the projection is using an older price.` The word `print` is on This week's banned list, so the page says `older price`.
 - The live print is missing, or the spot is not a positive number: `Today's price is not available, so this cannot start.`
-- The projection file is missing, or its schema, fit, or template is unusable: `The replay is not available right now.`
+- The projection file is missing, or its schema, fit, decay, or template is unusable: `The projection is not available right now.`
 
 ## Voice and size
 
@@ -126,7 +129,7 @@ The SVG is decorative. The readings in the HTML are the accessible figures. The 
 - The cycle finder on `fixtures/history/btc-daily.json` returns the five date rows above and the open cycle from 9 Nov 2022 to 6 Oct 2025. It does not include the open cycle in the mean.
 - The template has length 204. On the fit through 25 September 2026, index 0 is 0.592, index 135 is 4.413, index 203 is 0.616, the high index is 135, and the low index is 0.
 - The phase match is 203 for that day's history close and for spot 84413.
-- A known coin count plus a monthly amount produces a locked portfolio value on one future Friday. A blank regular buy leaves the coin count unchanged. A blank coin field produces no dollars.
+- A known coin count plus a monthly amount produces a locked portfolio value on one future Friday. On the 25 September 2026 fit, 1 Bitcoin and $100 a month is about $84.4k at the 2 October 2026 low and about $434k at the 19 July 2030 high. A blank regular buy leaves the coin count unchanged. A blank coin field produces no dollars.
 - The shell has the Projection tab, the color-mode boot before the stylesheet, and no remote URL other than the repository link.
 - The browser test covers a filled Settings sample, which shows a high reading and a low reading, and a blank Settings sample, which shows the Settings link and no dollar figure. Axe stays clean at desktop width and at 390 pixels.
 - Open text fails on a banned word, a sentence over 25 words, a brace, `undefined`, `NaN`, or `null`.

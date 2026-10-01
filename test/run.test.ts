@@ -639,7 +639,7 @@ test("a published Friday writes projection.json beside the Friday call", async (
       cyclesUsed: number;
       template: number[];
     };
-    assert.equal(projection.schema, 1);
+    assert.equal(projection.schema, 2);
     assert.equal(projection.asOf, "2026-09-25");
     assert.equal(projection.samples, 204);
     assert.equal(projection.cyclesUsed, 5);

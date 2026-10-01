@@ -637,9 +637,12 @@ for (const width of [1440, 1100, 390]) {
     await expect(page.getByRole("heading", { level: 1, name: "Projection" })).toBeVisible();
     await expect(page.locator("header.site .tabs a")).toHaveText(["This week", "Evidence", "Projection"]);
     await expect(page.locator("header.site a[aria-current='page']")).toHaveText("Projection");
-    await expect(page.getByText("If the last five finished cycles repeated, this is about what your Bitcoin would be worth.")).toBeVisible();
+    await expect(page.getByText("If the peaks keep falling toward the long-run trend, this is about what your Bitcoin would be worth.")).toBeVisible();
+    await expect(page.locator(".legend").getByText("Long-run trend")).toBeVisible();
+    await expect(page.locator('.projection-svg path[stroke="var(--ink)"]')).toHaveCount(1);
+    await expect(page.locator('.projection-svg path[stroke="var(--ink-2)"]')).toHaveCount(1);
     await expect(page.getByText("Starts from 1 Bitcoin and adds $100 every month.")).toBeVisible();
-    await expect(page.getByText("In 2029, at the high, about $1.4M.")).toBeVisible();
+    await expect(page.getByText("In 2030, at the high, about $434k.")).toBeVisible();
     await expect(page.getByText("In 2026, at the low, about $84.4k.")).toBeVisible();
     await expect(page.locator("body")).not.toContainText("power law");
     await expect(page.locator(".projection-svg")).toBeVisible();
@@ -677,13 +680,13 @@ test("a late price still draws the projection", async ({ page }) => {
   });
   await page.goto("/projection/");
   await expect(page.getByText("This price is late, so the projection is using an older price.")).toBeVisible();
-  await expect(page.getByText("In 2029, at the high, about $1.4M.")).toBeVisible();
+  await expect(page.getByText("In 2030, at the high, about $434k.")).toBeVisible();
 });
 
 test("a missing replay says so and a missing price does not invent dollars", async ({ page }) => {
   await page.route("**/data/projection.json", (route) => route.abort());
   await page.goto("/projection/");
-  await expect(page.getByText("The replay is not available right now.")).toBeVisible();
+  await expect(page.getByText("The projection is not available right now.")).toBeVisible();
   await expect(page.locator("#projection")).not.toContainText("$");
   await page.unroute("**/data/projection.json");
   await page.route("**/data/live.json", (route) => route.abort());
