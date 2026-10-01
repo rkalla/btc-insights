@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { colorModeBoot } from "../src/painter/color-mode.ts";
 import { siteHeader } from "../src/painter/site-header.ts";
 import { thisWeekShell } from "../src/painter/this-week.ts";
+import { visitorsShell } from "../src/visitors/page.ts";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const dist = join(root, "dist");
@@ -95,9 +96,10 @@ writeCss("site.css");
 writeCss("this-week.css");
 writeCss("evidence.css");
 writeCss("settings.css");
+writeCss("visitors.css");
 
 function assertPages() {
-  const pages = ["index.html", "this-week/index.html", "evidence/index.html", "settings.html"];
+  const pages = ["index.html", "this-week/index.html", "evidence/index.html", "settings.html", "visitors/index.html"];
   for (const rel of pages) {
     const html = readFileSync(join(dist, rel), "utf8");
     if (html.includes("dashboard.css")) {
@@ -142,6 +144,9 @@ ${loading}
 `,
 );
 
+mkdirSync(join(dist, "visitors"), { recursive: true });
+writeFileSync(join(dist, "visitors", "index.html"), visitorsShell(iconLinks));
+
 writeFileSync(
   join(dist, "settings.html"),
   `<!doctype html>
@@ -167,6 +172,7 @@ await esbuild.build({
     dashboard: join(root, "src", "client", "dashboard.ts"),
     settings: join(root, "src", "client", "settings.ts"),
     "this-week": join(root, "src", "client", "this-week.ts"),
+    visitors: join(root, "src", "client", "visitors.ts"),
   },
   bundle: true,
   format: "esm",
@@ -178,13 +184,17 @@ await esbuild.build({
 });
 
 await esbuild.build({
-  entryPoints: [join(root, "src", "job", "run.ts")],
-  outfile: join(root, "job", "run.mjs"),
+  entryPoints: {
+    run: join(root, "src", "job", "run.ts"),
+    visitors: join(root, "src", "job", "visitors.ts"),
+  },
+  outdir: join(root, "job"),
   bundle: true,
   format: "esm",
   platform: "node",
   target: "node24",
   packages: "external",
+  outExtension: { ".js": ".mjs" },
 });
 
 assertPages();

@@ -11,6 +11,7 @@ const fixtureNames = [
   "published-record.json",
   "settings-blank.json",
   "settings-sample.json",
+  "visitors.json",
 ];
 
 function readFixture(name: string): { text: string; value: unknown } {

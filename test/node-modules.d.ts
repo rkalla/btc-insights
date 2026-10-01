@@ -10,7 +10,11 @@ declare module "node:assert/strict" {
 }
 
 declare module "node:fs" {
+  export interface FileBytes {
+    toString(encoding: "utf8"): string;
+  }
   export function readFileSync(path: URL | string, encoding: "utf8"): string;
+  export function readFileSync(path: URL | string): FileBytes;
   export function readdirSync(path: URL | string): string[];
   export function statSync(path: URL | string): {
     mode: number;
@@ -22,7 +26,7 @@ declare module "node:fs" {
   export function mkdirSync(path: string): void;
   export function mkdtempSync(path: string): string;
   export function rmSync(path: string, options?: { recursive?: boolean; force?: boolean }): void;
-  export function writeFileSync(path: string, data: string): void;
+  export function writeFileSync(path: string, data: string | { readonly length: number }): void;
   export function utimesSync(path: string, atime: Date, mtime: Date): void;
   export function chmodSync(path: string, mode: number): void;
 }
@@ -148,7 +152,7 @@ declare const process: {
 
 declare function fetch(
   url: string,
-  init?: { headers?: Record<string, string> },
+  init?: { headers?: Record<string, string>; cache?: "no-store" },
 ): Promise<{
   ok: boolean;
   status: number;
@@ -160,5 +164,10 @@ declare function setTimeout(callback: () => void, ms: number): unknown;
 declare function clearTimeout(handle: unknown): void;
 
 declare module "node:zlib" {
-  export function gzipSync(data: string): { readonly length: number };
+  export interface GzipBytes {
+    readonly length: number;
+    toString(encoding: "utf8"): string;
+  }
+  export function gzipSync(data: string): GzipBytes;
+  export function gunzipSync(data: { toString(encoding: "utf8"): string }): GzipBytes;
 }

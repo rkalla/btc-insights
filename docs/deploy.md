@@ -76,6 +76,8 @@ The site file is `/etc/nginx/sites-available/default`. The extra file is `/etc/n
 - `server_tokens off`.
 - CSS, JavaScript, JSON, and SVG responses are compressed.
 - `/data/friday.json` is cached for a day (`max-age=86400`). `/data/live.json` is cached for a minute (`max-age=60`). The live slice carries the Friday date, and the page refetches `friday.json` when that date changes.
+- `/visitors/` and `/data/visitors.json` ask for a password. The realm is `Visitors`. The file is `/etc/nginx/btc-insights-visitors.htpasswd`, mode `640`, owner `root`, group `www-data`. The plaintext stays off the VM and out of git. To replace it, write a new apr1 hash with `openssl passwd -apr1` and reload nginx. The locations are `location /visitors/` and `location = /data/visitors.json`.
+- The visitors snippet is `deploy/nginx/visitors.conf`, copied to `/etc/nginx/btc-insights-visitors.conf` and included from the server block. The log format is `deploy/nginx/log-format.conf`, copied to `/etc/nginx/conf.d/btc-insights-log.conf`. New lines append the forwarded client chain and the public host. The server `access_log` uses that format, so each request is still written once.
 
 ## Leave Docker stopped
 
@@ -85,6 +87,6 @@ The site file is `/etc/nginx/sites-available/default`. The extra file is `/etc/n
 
 `scripts/deploy-job.sh` copies `job/run.mjs` to `/home/exedev/btc-insights/job/` and excludes `.env`. It does not use `--delete`.
 
-The four units are `deploy/btc-insights-live.service`, `deploy/btc-insights-live.timer`, `deploy/btc-insights-friday.service`, and `deploy/btc-insights-friday.timer`. Both services run as `exedev` with `Restart=on-failure`. The live timer is `OnActiveSec=1min` and then `OnUnitActiveSec=10min`. The Friday timer is `OnCalendar=Sat *-*-* 00:05:00 UTC`. These files have no `WantedBy` and do not enable the timers.
+The six units are `deploy/btc-insights-live.service`, `deploy/btc-insights-live.timer`, `deploy/btc-insights-friday.service`, `deploy/btc-insights-friday.timer`, `deploy/btc-insights-visitors.service`, and `deploy/btc-insights-visitors.timer`. The services run as `exedev` with `Restart=on-failure`. The live timer is `OnActiveSec=1min` and then `OnUnitActiveSec=10min`. The Friday timer is `OnCalendar=Sat *-*-* 00:05:00 UTC`. The visitors timer is `OnActiveSec=30s` and then `OnUnitActiveSec=1min`. It reads the nginx access log and writes `/var/www/html/data/visitors.json`. It does not load `.env`. These files have no `WantedBy`. On the VM, each timer is enabled by `/etc/systemd/system/<timer>.d/enable.conf` with `WantedBy=timers.target`.
 
 The job umask is 027. Docker stays stopped.
