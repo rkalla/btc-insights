@@ -94,6 +94,11 @@ test("the shell is the header, a loading sentence, and a no-javascript sentence"
   const header = shell.slice(shell.indexOf("<header"), shell.indexOf("</header>"));
   assert.equal(header.includes('class="theme"'), true);
   assert.equal(header.indexOf('class="theme"') < header.indexOf('class="gear"'), true);
+  assert.equal(document.querySelector(".theme")?.getAttribute("aria-label"), "Color mode: System");
+  assert.equal(document.querySelector(".theme")?.textContent?.includes("Color mode"), false);
+  assert.equal(document.querySelector(".theme-icon--system")?.getAttribute("hidden"), null);
+  assert.equal(document.querySelector(".theme-icon--light")?.getAttribute("hidden"), "");
+  assert.equal(document.querySelector(".theme-icon--dark")?.getAttribute("hidden"), "");
   assert.equal(shell.includes("btc-friday.color-mode"), true);
   assert.equal(shell.indexOf("btc-friday.color-mode") < shell.indexOf('href="/assets/site.css"'), true);
   assert.equal(document.querySelector(".boot")?.textContent, WEEK_LOADING);

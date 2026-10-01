@@ -4,6 +4,7 @@ const SCRIPT = `(function () {
   var key = ${JSON.stringify(COLOR_MODE_KEY)};
   var modes = ["system", "light", "dark"];
   var spoken = { system: "Using system colors", light: "Using light colors", dark: "Using dark colors" };
+  var labels = { system: "Color mode: System", light: "Color mode: Light", dark: "Color mode: Dark" };
   var query = typeof window.matchMedia === "function" ? window.matchMedia("(prefers-color-scheme: dark)") : null;
   function stored() {
     try {
@@ -19,14 +20,33 @@ const SCRIPT = `(function () {
     var dark = mode === "dark" || (mode === "system" && query !== null && query.matches);
     meta.setAttribute("content", dark ? "#1C1B18" : "#F7F6F2");
   }
+  function paintButton(mode) {
+    var button = document.querySelector(".theme");
+    if (!button || !button.setAttribute) return;
+    button.setAttribute("aria-label", labels[mode] || labels.system);
+    if (!button.querySelectorAll) return;
+    var icons = button.querySelectorAll(".theme-icon");
+    for (var i = 0; i < icons.length; i++) {
+      var icon = icons[i];
+      var show = icon.classList && icon.classList.contains("theme-icon--" + mode);
+      if (show) icon.removeAttribute("hidden");
+      else icon.setAttribute("hidden", "");
+    }
+  }
   function apply(mode) {
     var root = document.documentElement;
     root.setAttribute("data-color-mode", mode);
     if (mode === "system") root.removeAttribute("data-theme");
     else root.setAttribute("data-theme", mode);
     paintMeta(mode);
+    paintButton(mode);
   }
   apply(stored());
+  function syncButton() {
+    paintButton(document.documentElement.getAttribute("data-color-mode") || "system");
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", syncButton);
+  else syncButton();
   if (query !== null && query.addEventListener) {
     query.addEventListener("change", function () {
       if ((document.documentElement.getAttribute("data-color-mode") || "system") === "system") apply("system");
