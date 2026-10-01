@@ -1,4 +1,4 @@
-import { fitPowerLaw, trendAt, type DatedPrice, type PowerLawFit } from "./powerlaw.ts";
+import { daysSinceGenesis, fitPowerLaw, trendAt, type DatedPrice, type PowerLawFit } from "./powerlaw.ts";
 
 const SAMPLES = 204;
 const DAY_MS = 86_400_000;
@@ -13,6 +13,12 @@ export interface OpenCycle {
   low: string;
   high: string;
   highPrice: number;
+  highRatio: number;
+}
+
+export interface PeakDecay {
+  intercept: number;
+  slope: number;
 }
 
 export interface ProjectionCycle extends FinishedCycle {
@@ -20,9 +26,10 @@ export interface ProjectionCycle extends FinishedCycle {
 }
 
 export interface ProjectionDocument {
-  schema: 1;
+  schema: 2;
   asOf: string;
   fit: PowerLawFit;
+  decay: PeakDecay;
   genesis: "2009-01-03";
   samples: 204;
   template: number[];
@@ -39,9 +46,31 @@ interface Scan {
   confirmed: number;
 }
 
+export function fitPeakDecay(peaks: readonly { date: string; ratio: number }[]): PeakDecay {
+  let n = 0;
+  let sx = 0;
+  let sy = 0;
+  let sxx = 0;
+  let sxy = 0;
+  for (const peak of peaks) {
+    if (!(peak.ratio > 0)) throw new Error("peak decay needs a positive high");
+    const x = daysSinceGenesis(peak.date);
+    const y = Math.log(peak.ratio);
+    n += 1;
+    sx += x;
+    sy += y;
+    sxx += x * x;
+    sxy += x * y;
+  }
+  if (n < 2) throw new Error("peak decay needs two highs");
+  const slope = (n * sxy - sx * sy) / (n * sxx - sx * sx);
+  const intercept = (sy - slope * sx) / n;
+  return { intercept, slope };
+}
+
 export function findCycles(points: readonly DatedPrice[]): {
   finished: FinishedCycle[];
-  open: OpenCycle | null;
+  open: Omit<OpenCycle, "highRatio"> | null;
 } {
   const finished: FinishedCycle[] = [];
   let pending: { low: string; high: string } | null = null;
@@ -80,10 +109,17 @@ export function buildProjectionDocument(
   const byDate = new Map(used.map((point) => [point.date, point.price]));
   const series = finished.map((cycle) => sampleCycle(cycle, byDate, fit));
   const template = averageColumns(series.map((row) => row.ratios));
+  const peaks = series.map((row, index) => ({
+    date: finished[index]!.high,
+    ratio: Math.max(...row.ratios),
+  }));
+  const openHighRatio = open == null ? null : open.highPrice / trendAt(fit, open.high);
+  if (open != null && openHighRatio != null) peaks.push({ date: open.high, ratio: openHighRatio });
   return {
-    schema: 1,
+    schema: 2,
     asOf: through,
     fit: { a: fit.a, b: fit.b },
+    decay: fitPeakDecay(peaks),
     genesis: "2009-01-03",
     samples: SAMPLES,
     template,
@@ -94,7 +130,7 @@ export function buildProjectionDocument(
       ...cycle,
       highRatio: round2(Math.max(...series[index]!.ratios)),
     })),
-    open,
+    open: open == null || openHighRatio == null ? null : { ...open, highRatio: round2(openHighRatio) },
   };
 }
 

@@ -20,7 +20,7 @@ ${iconLinks}
 ${siteHeader("projection")}
 <main class="page" id="projection">
   <h1>Projection</h1>
-  <p class="note">Loading the replay.</p>
+  <p class="note">Loading the projection.</p>
 </main>
 ${siteFooter()}
 <script type="module" src="/assets/projection.js"></script>
@@ -50,6 +50,7 @@ function chartBlock(model: ProjectionReady): string {
     <figcaption>${esc(model.caption)}</figcaption>
     <ul class="legend">
       <li><span class="swatch swatch--line" aria-hidden="true"></span>Your Bitcoin</li>
+      <li><span class="swatch swatch--trend" aria-hidden="true"></span>Long-run trend</li>
       <li><span class="swatch swatch--high" aria-hidden="true"></span>High</li>
       <li><span class="swatch swatch--low" aria-hidden="true"></span>Low</li>
     </ul>
@@ -58,7 +59,7 @@ function chartBlock(model: ProjectionReady): string {
 }
 
 export function projectionSvg(points: readonly ProjectionPoint[]): string {
-  const plotted = points.filter((point) => point.value > 0);
+  const plotted = points.filter((point) => point.value > 0 || point.trendValue > 0);
   if (plotted.length === 0) return "";
   const width = 640;
   const height = 420;
@@ -67,7 +68,7 @@ export function projectionSvg(points: readonly ProjectionPoint[]): string {
   const plotHeight = height - margin.top - margin.bottom;
   const plotRight = margin.left + plotWidth;
   const plotBottom = margin.top + plotHeight;
-  const values = plotted.map((point) => point.value);
+  const values = plotted.flatMap((point) => [point.value, point.trendValue].filter((value) => value > 0));
   const yMin = 10 ** Math.floor(Math.log10(Math.min(...values)));
   const yMax = 10 ** Math.ceil(Math.log10(Math.max(...values) * 1.001));
   const safeMax = yMax > yMin ? yMax : yMin * 10;
@@ -103,8 +104,15 @@ export function projectionSvg(points: readonly ProjectionPoint[]): string {
 
   let path = "";
   for (const point of plotted) {
+    if (!(point.value > 0)) continue;
     const command = path === "" ? "M" : "L";
     path += `${command}${fmt(xAt(point.date))} ${fmt(yAt(point.value))}`;
+  }
+  let trend = "";
+  for (const point of plotted) {
+    if (!(point.trendValue > 0)) continue;
+    const command = trend === "" ? "M" : "L";
+    trend += `${command}${fmt(xAt(point.date))} ${fmt(yAt(point.trendValue))}`;
   }
   const marks = plotted
     .filter((point) => point.mark != null)
@@ -120,6 +128,7 @@ export function projectionSvg(points: readonly ProjectionPoint[]): string {
 
   return `<svg class="projection-svg" aria-hidden="true" viewBox="0 0 ${width} ${height}" width="100%" height="auto">
     ${grid}
+    <path fill="none" stroke="var(--ink-2)" stroke-width="1.5" stroke-linejoin="round" d="${trend}"/>
     <path fill="none" stroke="var(--ink)" stroke-width="1.5" stroke-linejoin="round" d="${path}"/>
     ${marks}
     <line stroke="var(--line-strong)" stroke-width="1" x1="${fmt(margin.left)}" y1="${fmt(plotBottom)}" x2="${fmt(plotRight)}" y2="${fmt(plotBottom)}"/>
