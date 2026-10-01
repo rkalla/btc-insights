@@ -573,6 +573,83 @@ test("a missing Friday bar does not replace friday.json before the deadline", as
   }
 });
 
+test("a published Friday writes projection.json beside the Friday call", async () => {
+  const { root, dataDir, stateDir } = scene();
+  writePrivateState(stateDir, "2026-09-18");
+  const history = JSON.parse(
+    readFileSync(new URL("../fixtures/history/btc-daily.json", import.meta.url), "utf8"),
+  ) as { time: string; PriceUSD?: unknown; CapMVRVCur?: unknown }[];
+  const row = history.find((item) => item.time.slice(0, 10) === "2026-09-25");
+  if (row == null) throw new Error("missing 2026-09-25 close");
+  const stub = await startStub((_url, response) => {
+    sendJson(response, 200, { data: [row] });
+  });
+  try {
+    const code = await run({
+      env: {
+        DATA_DIR: dataDir,
+        STATE_DIR: stateDir,
+        COINGECKO_API_KEY: "",
+        COINMETRICS_BASE_URL: stub.origin,
+        GOLD_QUOTE_URL: "",
+      },
+      argv: ["node", runScript, "friday"],
+      fetch: stubFetch(stub.origin),
+      now: () => new Date("2026-09-26T01:00:00.000Z"),
+      sleep: async () => {
+        throw new Error("friday retried");
+      },
+      stderr: () => undefined,
+    });
+    assert.equal(code, 0);
+    const names = readdirSync(dataDir).filter((name) => !name.startsWith(".")).sort();
+    assert.deepEqual(names, ["friday.json", "live.json", "projection.json"]);
+    assert.equal(statSync(join(dataDir, "friday.json")).mode & 0o777, 0o640);
+    assert.equal(statSync(join(dataDir, "projection.json")).mode & 0o777, 0o640);
+    const friday = JSON.parse(readFileSync(join(dataDir, "friday.json"), "utf8")) as {
+      cash: { word: string };
+      cycles: {
+        intro: string;
+        footnote: string;
+        cards: { isProgress: boolean; range: string }[];
+      };
+      chart: { fires: { date: string }[] };
+    };
+    const fixture = JSON.parse(
+      readFileSync(new URL("../fixtures/friday-2026-09-25.json", import.meta.url), "utf8"),
+    ) as typeof friday;
+    assert.equal(friday.cash.word, "All in");
+    assert.deepEqual(friday.cash, fixture.cash);
+    assert.equal(friday.cycles.intro, fixture.cycles.intro);
+    assert.equal(friday.cycles.footnote, fixture.cycles.footnote);
+    assert.deepEqual(
+      friday.cycles.cards.filter((card) => !card.isProgress),
+      fixture.cycles.cards.filter((card) => !card.isProgress),
+    );
+    assert.equal(friday.cycles.cards.some((card) => card.isProgress && card.range.includes("$84,062")), true);
+    assert.deepEqual(
+      friday.chart.fires.map((fire) => fire.date),
+      fixture.chart.fires.map((fire) => fire.date),
+    );
+    assert.equal(JSON.stringify(friday).includes("\"template\""), false);
+    const projection = JSON.parse(readFileSync(join(dataDir, "projection.json"), "utf8")) as {
+      schema: number;
+      asOf: string;
+      samples: number;
+      cyclesUsed: number;
+      template: number[];
+    };
+    assert.equal(projection.schema, 1);
+    assert.equal(projection.asOf, "2026-09-25");
+    assert.equal(projection.samples, 204);
+    assert.equal(projection.cyclesUsed, 5);
+    assert.equal(projection.template.length, 204);
+  } finally {
+    await stub.close();
+    cleanup(root);
+  }
+});
+
 test("a priced daily row is stored when the CoinGecko key is empty", async () => {
   const { root, dataDir, stateDir } = scene();
   const livePath = join(dataDir, "live.json");

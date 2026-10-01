@@ -20,6 +20,8 @@ test("chartMoney uses axis suffixes without extra decimals", () => {
   assert.equal(chartMoney(10000), "$10k");
   assert.equal(chartMoney(100000), "$100k");
   assert.equal(chartMoney(1000000), "$1M");
+  assert.equal(chartMoney(1_200_000_000), "$1.2B");
+  assert.equal(chartMoney(3_400_000_000), "$3.4B");
 });
 
 test("signedPercent uses a plus and U+2212", () => {

@@ -28,9 +28,11 @@ export function chartMoney(usd: number): string {
   if (abs < 1000) {
     return `${sign}$${Math.round(abs)}`;
   }
+  const billions = abs >= 1_000_000_000;
   const millions = abs >= 1_000_000;
-  const scaled = abs / (millions ? 1_000_000 : 1000);
-  const suffix = millions ? "M" : "k";
+  const scale = billions ? 1_000_000_000 : millions ? 1_000_000 : 1000;
+  const suffix = billions ? "B" : millions ? "M" : "k";
+  const scaled = abs / scale;
   const rounded = Math.round(scaled * 10) / 10;
   const digits = rounded === Math.trunc(rounded) ? String(Math.trunc(rounded)) : rounded.toFixed(1);
   return `${sign}$${digits}${suffix}`;

@@ -1,0 +1,20 @@
+main.page > h1{margin:0;font-size:clamp(28px,8vw,36px);font-weight:700;letter-spacing:-.02em;line-height:1.15}
+.lede{display:flex;flex-direction:column;gap:8px;min-width:0}
+.lede p{margin:0;font-size:17px;line-height:1.5}
+.lede .note,main.page > .note{margin:0;font-size:14.5px;line-height:1.5;color:var(--ink-2)}
+.chart{margin:0;display:flex;flex-direction:column;gap:12px;min-width:0}
+.chart figcaption{color:var(--ink-3);font-size:13px}
+.projection-svg{display:block;width:100%;height:auto}
+.projection-svg .tick{fill:var(--ink-3);font-size:12px;font-family:var(--font)}
+.legend,.readings{list-style:none;margin:0;padding:0}
+.legend{display:flex;flex-wrap:wrap;gap:8px 16px}
+.legend li{display:inline-flex;align-items:center;gap:8px;min-height:32px;font-size:14px;color:var(--ink-2)}
+.swatch{display:inline-block;width:18px;height:18px;flex:none}
+.swatch--line{height:0;border-top:2px solid var(--ink);transform:translateY(-1px)}
+.swatch--high{width:10px;height:10px;border-radius:50%;background:var(--ink-2);margin-left:4px}
+.swatch--low{width:10px;height:10px;border-radius:50%;border:1.6px solid var(--ink-2);margin-left:4px}
+.readings{display:flex;flex-direction:column;gap:6px}
+.readings li{font-size:16px;line-height:1.45;font-variant-numeric:tabular-nums}
+details.numbers{min-width:0}
+details.numbers summary{cursor:pointer;font-weight:600;font-size:16px;min-height:44px;display:flex;align-items:center}
+details.numbers p{margin:8px 0 0;font-size:15px;line-height:1.45;color:var(--ink-2)}
