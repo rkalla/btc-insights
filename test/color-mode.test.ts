@@ -11,10 +11,16 @@ interface FakeDocument {
   click(target: { closest(selector: string): unknown }): void;
 }
 
+interface FakeTheme {
+  label: string;
+  icons: Array<{ mode: string; hidden: boolean }>;
+}
+
 function mount(options: { stored?: string | null; matches?: boolean; throwOnRead?: boolean; throwOnWrite?: boolean } = {}): {
   document: FakeDocument;
   store: Map<string, string>;
   query: { matches: boolean };
+  theme: FakeTheme;
 } {
   const attrs = new Map<string, string>();
   const root = {
@@ -35,17 +41,39 @@ function mount(options: { stored?: string | null; matches?: boolean; throwOnRead
     },
   };
   const live = { textContent: "" };
-  const button = {
+  const icons = ["system", "light", "dark"].map((mode) => ({
+    mode,
+    hidden: false,
+    classList: { contains: (name: string) => name === `theme-icon--${mode}` },
+    setAttribute(name: string) {
+      if (name === "hidden") this.hidden = true;
+    },
+    removeAttribute(name: string) {
+      if (name === "hidden") this.hidden = false;
+    },
+  }));
+  const theme = {
+    label: "",
+    icons,
+    setAttribute(name: string, value: string) {
+      if (name === "aria-label") this.label = value;
+    },
+    querySelectorAll(selector: string) {
+      return selector === ".theme-icon" ? icons : [];
+    },
     closest(selector: string) {
-      return selector === ".theme" ? button : null;
+      return selector === ".theme" ? theme : null;
     },
   };
   const listeners: Array<(event: { target: unknown }) => void> = [];
   const document = {
     documentElement: root,
+    theme,
+    icons,
     querySelector(selector: string) {
       if (selector === 'meta[name="theme-color"]') return meta;
       if (selector === "[data-color-mode-live]") return live;
+      if (selector === ".theme") return theme;
       return null;
     },
     addEventListener(_type: string, fn: (event: { target: unknown }) => void) {
@@ -73,14 +101,16 @@ function mount(options: { stored?: string | null; matches?: boolean; throwOnRead
   const window = { matchMedia: () => query };
   const run = new Function("document", "localStorage", "window", colorModeSource());
   run(document, localStorage, window);
-  return { document, store, query };
+  return { document, store, query, theme };
 }
 
 test("color mode starts on system and cycles light, dark, then system", () => {
-  const { document, store } = mount();
+  const { document, store, theme } = mount();
   assert.equal(document.documentElement.getAttribute("data-color-mode"), "system");
   assert.equal(document.documentElement.getAttribute("data-theme"), null);
   assert.equal(document.meta.content, "#F7F6F2");
+  assert.equal(theme.label, "Color mode: System");
+  assert.deepEqual(theme.icons.map((icon) => icon.hidden), [false, true, true]);
 
   const icon = { closest: (selector: string) => (selector === ".theme" ? icon : null) };
   document.click(icon);
@@ -89,6 +119,8 @@ test("color mode starts on system and cycles light, dark, then system", () => {
   assert.equal(store.get(COLOR_MODE_KEY), "light");
   assert.equal(document.live.textContent, "Using light colors");
   assert.equal(document.meta.content, "#F7F6F2");
+  assert.equal(theme.label, "Color mode: Light");
+  assert.deepEqual(theme.icons.map((icon) => icon.hidden), [true, false, true]);
 
   document.click(icon);
   assert.equal(document.documentElement.getAttribute("data-theme"), "dark");

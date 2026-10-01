@@ -492,6 +492,52 @@ test("settings validate on blur and save, and cancel does not write", async ({ p
   expect(await page.evaluate(() => localStorage.getItem("btc-insights.settings.v1"))).toBeNull();
 });
 
+test("header controls stay apart at phone and desktop widths", async ({ page }) => {
+  for (const width of [390, 640, 677, 720, 800, 1100, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/");
+    await expect(page.getByRole("heading", { level: 1, name: "A strong week to buy Bitcoin." })).toBeVisible();
+    const layout = await page.evaluate(() => {
+      const nodes = [
+        ...document.querySelectorAll("header.site .brand, header.site .tabs a, header.site .theme, header.site .gear"),
+      ];
+      const boxes = nodes.map((el) => {
+        const rect = el.getBoundingClientRect();
+        const name = (el.getAttribute("aria-label") || el.textContent || "").replace(/\s+/g, " ").trim();
+        return { name, x: rect.x, y: rect.y, right: rect.right, bottom: rect.bottom };
+      });
+      const hits: string[] = [];
+      for (let i = 0; i < boxes.length; i++) {
+        for (let j = i + 1; j < boxes.length; j++) {
+          const a = boxes[i];
+          const b = boxes[j];
+          if (a == null || b == null) continue;
+          const overlapW = Math.min(a.right, b.right) - Math.max(a.x, b.x);
+          const overlapH = Math.min(a.bottom, b.bottom) - Math.max(a.y, b.y);
+          if (overlapW > 1 && overlapH > 1) hits.push(`${a.name} over ${b.name}`);
+        }
+      }
+      const button = document.querySelector(".theme");
+      const buttonBox = button == null ? null : button.getBoundingClientRect();
+      const icons = [...document.querySelectorAll(".theme-icon")].filter((el) => {
+        return getComputedStyle(el).display !== "none" && el.getBoundingClientRect().width > 0;
+      });
+      return {
+        hits,
+        buttonWidth: buttonBox == null ? 0 : Math.round(buttonBox.width),
+        icons: icons.length,
+        scrolls: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+      };
+    });
+    expect(layout.hits, `${width}: ${layout.hits.join(", ")}`).toEqual([]);
+    expect(layout.buttonWidth, `${width} button`).toBeLessThanOrEqual(48);
+    expect(layout.buttonWidth, `${width} button`).toBeGreaterThanOrEqual(40);
+    expect(layout.icons, `${width} icons`).toBe(1);
+    expect(layout.scrolls, `${width} scroll`).toBe(false);
+    await expect(page.getByRole("button", { name: "Color mode: System" })).toBeVisible();
+  }
+});
+
 test("color mode sits left of Settings and cycles system, light, and dark", async ({ page }) => {
   await page.emulateMedia({ colorScheme: "light" });
   await page.setViewportSize({ width: 1100, height: 800 });

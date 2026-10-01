@@ -24,10 +24,7 @@ export function siteHeader(current: SitePage | null): string {
       </ul>
     </nav>
     <div class="site-tools">
-      <button type="button" class="theme">
-        <span class="theme-name theme-name--system">Color mode: System</span>
-        <span class="theme-name theme-name--light">Color mode: Light</span>
-        <span class="theme-name theme-name--dark">Color mode: Dark</span>
+      <button type="button" class="theme" aria-label="Color mode: System">
         ${systemIcon()}
         ${sunIcon()}
         ${moonIcon()}
@@ -59,11 +56,11 @@ function systemIcon(): string {
 }
 
 function sunIcon(): string {
-  return `<svg class="theme-icon theme-icon--light" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v1.6M12 19.4V21M4.9 4.9l1.1 1.1M18 18l1.1 1.1M3 12h1.6M19.4 12H21M4.9 19.1l1.1-1.1M18 6l1.1-1.1"/></svg>`;
+  return `<svg hidden class="theme-icon theme-icon--light" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v1.6M12 19.4V21M4.9 4.9l1.1 1.1M18 18l1.1 1.1M3 12h1.6M19.4 12H21M4.9 19.1l1.1-1.1M18 6l1.1-1.1"/></svg>`;
 }
 
 function moonIcon(): string {
-  return `<svg class="theme-icon theme-icon--dark" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8.2 8.2 0 0 1 9.5 4 7 7 0 1 0 20 14.5z"/></svg>`;
+  return `<svg hidden class="theme-icon theme-icon--dark" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8.2 8.2 0 0 1 9.5 4 7 7 0 1 0 20 14.5z"/></svg>`;
 }
 
 function gearIcon(): string {
