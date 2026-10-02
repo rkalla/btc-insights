@@ -25,7 +25,7 @@ Under that, one line states the inputs actually in use:
 
 The chart is two lines on a log scale. One line is the portfolio in dollars. The other values those same coins at the long-run trend, so the gap is how far the projection sits from that curve. Small marks sit on each projected high and each projected low of the portfolio line. Those marks use the neutral ink, not the buy color and not the caution color. The legend reads Your Bitcoin, Long-run trend, High, and Low. The caption is `Your Bitcoin, on a log scale, through {year}.` `{year}` is the calendar year of the last Friday in the window.
 
-Under the chart, each high and each low is one sentence: `In {year}, at the high, about {dollars}.` and `In {year}, at the low, about {dollars}.` When the last Friday is not already one of those marks, it adds `In {year}, at the end of the 20 years, about {dollars}.` `{dollars}` uses the chart axis form (`$840`, `$12.4k`, `$1.2M`, `$3.4B`), and the axis gains the billion step. The word `about` is outside that form.
+Under the chart, each high and each low is one sentence: `In {year}, at the high, about {dollars}.` and `In {year}, at the low, about {dollars}.` When the last Friday is not already one of those marks, it adds `In {year}, at the end of the 10 years, about {dollars}.` `{dollars}` uses the chart axis form (`$840`, `$12.4k`, `$1.2M`, `$3.4B`), and the axis gains the billion step. The word `about` is outside that form.
 
 `Show the numbers` is closed. It holds today's price, today's long-run trend, how far that price sits from the trend, the five cycle spans with each high as a multiple of the trend, and, for each reading, that Friday's trend and the portfolio. The open page does not contain the words `power law`.
 
@@ -78,7 +78,7 @@ The line starts at today's spot times the Bitcoin the holder owns. No buy happen
 
 A blank coin field draws nothing. Zero is a saved value and follows the sentences above. A blank amount or a blank schedule adds no coins.
 
-The window runs from the spot date through the last Friday on or before the calendar date 20 years later.
+The window runs from the spot date through the last Friday on or before the calendar date 10 years later.
 
 These Settings fields are unused: cash available, the build amount, net worth, the target share, the upper limit, the thesis declaration, and the account.
 
@@ -129,7 +129,7 @@ The SVG is decorative. The readings in the HTML are the accessible figures. The 
 - The cycle finder on `fixtures/history/btc-daily.json` returns the five date rows above and the open cycle from 9 Nov 2022 to 6 Oct 2025. It does not include the open cycle in the mean.
 - The template has length 204. On the fit through 25 September 2026, index 0 is 0.592, index 135 is 4.413, index 203 is 0.616, the high index is 135, and the low index is 0.
 - The phase match is 203 for that day's history close and for spot 84413.
-- A known coin count plus a monthly amount produces a locked portfolio value on one future Friday. On the 25 September 2026 fit, 1 Bitcoin and $100 a month is about $84.4k at the 2 October 2026 low and about $434k at the 19 July 2030 high. A blank regular buy leaves the coin count unchanged. A blank coin field produces no dollars.
+- A known coin count plus a monthly amount produces a locked portfolio value on one future Friday. On the 25 September 2026 fit, 1 Bitcoin and $100 a month is about $84.4k at the 2 October 2026 low and about $434k at the 19 July 2030 high. The window ends on 19 September 2036, and that Friday is the high, about $1.8M. A blank regular buy leaves the coin count unchanged. A blank coin field produces no dollars.
 - The shell has the Projection tab, the color-mode boot before the stylesheet, and no remote URL other than the repository link.
 - The browser test covers a filled Settings sample, which shows a high reading and a low reading, and a blank Settings sample, which shows the Settings link and no dollar figure. Axe stays clean at desktop width and at 390 pixels.
 - Open text fails on a banned word, a sentence over 25 words, a brace, `undefined`, `NaN`, or `null`.

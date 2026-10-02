@@ -644,6 +644,9 @@ for (const width of [1440, 1100, 390]) {
     await expect(page.getByText("Starts from 1 Bitcoin and adds $100 every month.")).toBeVisible();
     await expect(page.getByText("In 2030, at the high, about $434k.")).toBeVisible();
     await expect(page.getByText("In 2026, at the low, about $84.4k.")).toBeVisible();
+    await expect(page.getByText("Your Bitcoin, on a log scale, through 2036.")).toBeVisible();
+    await expect(page.locator("#projection")).not.toContainText("2040");
+    await expect(page.locator("#projection")).not.toContainText("20 years");
     await expect(page.locator("body")).not.toContainText("power law");
     await expect(page.locator(".projection-svg")).toBeVisible();
     await expect(page.locator("details.numbers")).not.toHaveAttribute("open", "");

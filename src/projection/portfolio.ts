@@ -3,6 +3,7 @@ import { daysSinceGenesis, trendAt, type PowerLawFit } from "../job/powerlaw.ts"
 import type { PeakDecay, ProjectionDocument } from "../job/projection.ts";
 
 const DAY_MS = 86_400_000;
+const HORIZON_YEARS = 10;
 const LEAD_ONE = "If the peaks keep falling toward the long-run trend, this is about what your Bitcoin would be worth. It is not a promise.";
 const LEAD_TWO = "The height above the trend follows the highs since 2011, including the latest one. Five finished cycles is a small number.";
 const BLANK = "Add the Bitcoin you own in Settings to draw this.";
@@ -161,7 +162,7 @@ function walk(
       mark: null,
     },
   ];
-  const end = lastFridayOnOrBefore(addYears(spotDate, 20));
+  const end = lastFridayOnOrBefore(addYears(spotDate, HORIZON_YEARS));
   const templatePeak = document.template[document.highIndex] ?? 1;
   let coins = coinsHeld;
   let step = (phase + 1) % document.samples;
@@ -203,7 +204,7 @@ function readingLines(points: readonly ProjectionPoint[]): string[] {
   }
   const last = points[points.length - 1];
   if (last != null && last.mark == null) {
-    lines.push(`In ${last.date.slice(0, 4)}, at the end of the 20 years, about ${chartMoney(last.value)}.`);
+    lines.push(`In ${last.date.slice(0, 4)}, at the end of the ${HORIZON_YEARS} years, about ${chartMoney(last.value)}.`);
   }
   return lines;
 }

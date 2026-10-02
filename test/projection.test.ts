@@ -122,7 +122,7 @@ test("one bitcoin and $100 a month locks the 2030 high", () => {
   if (model.status !== "ready") return;
   assert.equal(model.chart, true);
   assert.equal(model.input, "Starts from 1 Bitcoin and adds $100 every month.");
-  assert.equal(model.caption, "Your Bitcoin, on a log scale, through 2046.");
+  assert.equal(model.caption, "Your Bitcoin, on a log scale, through 2036.");
   const high = model.points.find((point) => point.mark === "high");
   assert.equal(high?.date, "2030-07-19");
   assert.equal(Math.round(high?.value ?? 0), 433_968);
@@ -142,9 +142,12 @@ test("one bitcoin and $100 a month locks the 2030 high", () => {
   assert.equal((october2?.coins ?? 0) > 1, true);
   assert.equal(october9?.coins, october2?.coins);
   const last = model.points[model.points.length - 1];
-  assert.equal(last?.date, "2046-09-21");
+  assert.equal(last?.date, "2036-09-19");
   assert.equal(weekday(last?.date ?? ""), 5);
-  assert.equal(model.readings[model.readings.length - 1], "In 2046, at the end of the 20 years, about $9M.");
+  assert.equal(last?.mark, "high");
+  assert.equal(Math.round(last?.value ?? 0), 1_816_031);
+  assert.equal(model.readings[model.readings.length - 1], "In 2036, at the high, about $1.8M.");
+  assert.equal(model.readings.some((line) => line.includes("20 years")), false);
   const html = paintProjection(model);
   assert.equal(html.includes("Long-run trend"), true);
   assert.equal(html.includes('stroke="var(--ink-2)"'), true);
