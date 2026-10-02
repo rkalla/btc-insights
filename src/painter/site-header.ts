@@ -1,3 +1,5 @@
+import { PROJECTION_PUBLIC } from "../projection/publish.ts";
+
 export type SitePage = "week" | "evidence" | "projection" | "settings";
 
 const WEEK_HREF = "/";
@@ -13,6 +15,9 @@ export function siteHeader(current: SitePage | null): string {
   const evidenceCurrent = current === "evidence" ? ` aria-current="page"` : "";
   const projectionCurrent = current === "projection" ? ` aria-current="page"` : "";
   const settingsCurrent = current === "settings" ? ` aria-current="page"` : "";
+  const projectionTab = PROJECTION_PUBLIC
+    ? `<li><a href="${PROJECTION_HREF}"${projectionCurrent}>Projection</a></li>`
+    : "";
   return `<header class="site">
   <div class="site-inner">
     <a class="brand" href="${WEEK_HREF}"><span class="brand-mark" aria-hidden="true"></span>BTC Friday</a>
@@ -20,7 +25,7 @@ export function siteHeader(current: SitePage | null): string {
       <ul class="tabs">
         <li><a href="${WEEK_HREF}"${weekCurrent}>This week</a></li>
         <li><a href="${EVIDENCE_HREF}"${evidenceCurrent}>Evidence</a></li>
-        <li><a href="${PROJECTION_HREF}"${projectionCurrent}>Projection</a></li>
+        ${projectionTab}
       </ul>
     </nav>
     <div class="site-tools">
@@ -44,7 +49,8 @@ export function siteFooter(): string {
 }
 
 export function footerLinks(): string {
-  return `<div class="foot-links"><a href="${EVIDENCE_HREF}">Evidence</a><a href="${PROJECTION_HREF}">Projection</a><a href="${SETTINGS_HREF}">Settings</a><a class="repo" href="${REPO_HREF}">${githubIcon()}<span>GitHub</span></a></div>`;
+  const projection = PROJECTION_PUBLIC ? `<a href="${PROJECTION_HREF}">Projection</a>` : "";
+  return `<div class="foot-links"><a href="${EVIDENCE_HREF}">Evidence</a>${projection}<a href="${SETTINGS_HREF}">Settings</a><a class="repo" href="${REPO_HREF}">${githubIcon()}<span>GitHub</span></a></div>`;
 }
 
 function githubIcon(): string {

@@ -4,6 +4,7 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
+import { PROJECTION_PUBLIC } from "../src/projection/publish.ts";
 import { readAccessLogs, rollupAccessLog, type VisitorsReport } from "../src/visitors/log.ts";
 import {
   VISITORS_POLL_MS,
@@ -146,7 +147,7 @@ test("the visitors shell is a private page with the shared header and no Visitor
   assert.equal(html.includes('aria-current="page"'), false);
   assert.equal(html.includes(">This week</a>"), true);
   assert.equal(html.includes(">Evidence</a>"), true);
-  assert.equal(html.includes('href="/projection/">Projection</a>'), true);
+  assert.equal(html.includes('href="/projection/">Projection</a>'), PROJECTION_PUBLIC);
 });
 
 test("the chart and table show the three daily counts and an unrecorded unique", () => {

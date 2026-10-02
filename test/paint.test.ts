@@ -8,6 +8,7 @@ import type { CashPosture, DashboardVM, FridayDocument, LiveSlice, Tone } from "
 import { BANNED_THIS_WEEK } from "../src/copy/thisWeek.ts";
 import { paintDashboard } from "../src/painter/dashboard.ts";
 import { paintSettings, settingsShell } from "../src/painter/settings.ts";
+import { PROJECTION_PUBLIC } from "../src/projection/publish.ts";
 import { parseSettings } from "../src/settings/store.ts";
 
 const OPENED = "2026-09-26T15:00:00.000Z";
@@ -560,18 +561,28 @@ test("settings is a blank sheet with the reference fields", () => {
   assert.equal(document.querySelector("a.btn")?.getAttribute("href"), "index.html");
   assert.equal(document.querySelector("a.btn")?.textContent, "Cancel");
   const tabs = document.querySelectorAll(".tabs a");
-  assert.equal(tabs.length, 3);
-  assert.equal(tabs[2]?.textContent, "Projection");
-  assert.equal(tabs[2]?.getAttribute("href"), "/projection/");
+  if (PROJECTION_PUBLIC) {
+    assert.equal(tabs.length, 3);
+    assert.equal(tabs[2]?.textContent, "Projection");
+    assert.equal(tabs[2]?.getAttribute("href"), "/projection/");
+  } else {
+    assert.equal(tabs.length, 2);
+    assert.equal(html.includes('href="/projection/"'), false);
+  }
 });
 
-test("the settings document includes the Projection tab before the script runs", () => {
+test("the settings document includes the header before the script runs", () => {
   const html = settingsShell(`<link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" type="image/png" href="/favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">`);
   const document = parse(html);
   assert.equal(document.querySelectorAll("header.site").length, 1);
-  assert.equal(document.querySelectorAll(".tabs a")[2]?.textContent, "Projection");
+  const tabList = document.querySelectorAll(".tabs a");
+  let sawProjection = false;
+  for (let index = 0; index < tabList.length; index += 1) {
+    if (tabList[index]?.textContent === "Projection") sawProjection = true;
+  }
+  assert.equal(sawProjection, PROJECTION_PUBLIC);
   assert.equal(document.querySelector(".gear")?.getAttribute("aria-current"), "page");
   assert.equal(html.includes('src="/assets/settings.js"'), true);
   assert.equal(html.includes('href="/assets/site.css"'), true);

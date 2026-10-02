@@ -9,6 +9,7 @@ import type { HistoryRow, PublishedRecord } from "./friday.ts";
 import { buildLive } from "./live.ts";
 import type { FrozenFriday, LivePrint } from "./live.ts";
 import { fitPowerLaw, trendAt } from "./powerlaw.ts";
+import { PROJECTION_PUBLIC } from "../projection/publish.ts";
 import { buildProjectionDocument } from "./projection.ts";
 import {
   createPace,
@@ -470,7 +471,9 @@ async function onFridayBar(ctx: Ctx, friday: string, rows: HistoryRow[]): Promis
       anchors: record.anchors,
     };
     await writeDataFile(ctx.dataDir, "friday.json", doc);
-    await writeDataFile(ctx.dataDir, "projection.json", buildProjectionDocument(points, friday, fit));
+    if (PROJECTION_PUBLIC) {
+      await writeDataFile(ctx.dataDir, "projection.json", buildProjectionDocument(points, friday, fit));
+    }
     const next: StoredState = {
       frozen,
       spotUsd: price,

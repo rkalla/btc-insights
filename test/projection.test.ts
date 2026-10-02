@@ -6,6 +6,7 @@ import { trendAt } from "../src/job/powerlaw.ts";
 import { buildProjectionDocument } from "../src/job/projection.ts";
 import type { DatedPrice } from "../src/job/powerlaw.ts";
 import { paintProjection, projectionShell, projectionSvg } from "../src/painter/projection.ts";
+import { PROJECTION_PUBLIC } from "../src/projection/publish.ts";
 import {
   PROJECTION_COPY,
   cycleRatio,
@@ -226,10 +227,12 @@ test("open projection text stays inside the voice rules", () => {
 
 test("the projection shell has the tab, the color boot, and only the repository link", () => {
   const shell = projectionShell('<link rel="icon" href="/favicon.ico">');
-  assert.equal(shell.includes('aria-current="page">Projection'), true);
   assert.equal(shell.indexOf(">This week</a>") < shell.indexOf(">Evidence</a>"), true);
-  assert.equal(shell.indexOf(">Evidence</a>") < shell.indexOf(">Projection</a>"), true);
-  assert.equal(shell.includes('href="/projection/"'), true);
+  assert.equal(shell.includes('href="/projection/"'), PROJECTION_PUBLIC);
+  if (PROJECTION_PUBLIC) {
+    assert.equal(shell.includes('aria-current="page">Projection'), true);
+    assert.equal(shell.indexOf(">Evidence</a>") < shell.indexOf(">Projection</a>"), true);
+  }
   assert.equal(shell.includes("btc-friday.color-mode"), true);
   assert.equal(shell.indexOf("btc-friday.color-mode") < shell.indexOf('href="/assets/site.css"'), true);
   assert.equal(shell.includes("Loading the projection."), true);

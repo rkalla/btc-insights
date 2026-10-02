@@ -8,6 +8,7 @@ import { settingsShell } from "../src/painter/settings.ts";
 import { siteHeader } from "../src/painter/site-header.ts";
 import { thisWeekShell } from "../src/painter/this-week.ts";
 import { buildProjectionDocument } from "../src/job/projection.ts";
+import { PROJECTION_PUBLIC } from "../src/projection/publish.ts";
 import { visitorsShell } from "../src/visitors/page.ts";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
@@ -99,11 +100,12 @@ writeCss("site.css");
 writeCss("this-week.css");
 writeCss("evidence.css");
 writeCss("settings.css");
-writeCss("projection.css");
+if (PROJECTION_PUBLIC) writeCss("projection.css");
 writeCss("visitors.css");
 
 function assertPages() {
-  const pages = ["index.html", "this-week/index.html", "evidence/index.html", "settings.html", "projection/index.html", "visitors/index.html"];
+  const pages = ["index.html", "this-week/index.html", "evidence/index.html", "settings.html", "visitors/index.html"];
+  if (PROJECTION_PUBLIC) pages.push("projection/index.html");
   for (const rel of pages) {
     const html = readFileSync(join(dist, rel), "utf8");
     if (html.includes("dashboard.css")) {
@@ -151,29 +153,32 @@ ${loading}
 mkdirSync(join(dist, "visitors"), { recursive: true });
 writeFileSync(join(dist, "visitors", "index.html"), visitorsShell(iconLinks));
 
-mkdirSync(join(dist, "projection"), { recursive: true });
-writeFileSync(join(dist, "projection", "index.html"), projectionShell(iconLinks));
-
-const history = JSON.parse(readFileSync(join(root, "fixtures", "history", "btc-daily.json"), "utf8"));
-const projectionPoints = history
-  .map((row) => ({ date: String(row.time).slice(0, 10), price: Number(row.PriceUSD) }))
-  .filter((point) => point.price > 0);
-mkdirSync(join(dist, "data"), { recursive: true });
-writeFileSync(
-  join(dist, "data", "projection.json"),
-  `${JSON.stringify(buildProjectionDocument(projectionPoints, "2026-09-25"))}\n`,
-);
+if (PROJECTION_PUBLIC) {
+  mkdirSync(join(dist, "projection"), { recursive: true });
+  writeFileSync(join(dist, "projection", "index.html"), projectionShell(iconLinks));
+  const history = JSON.parse(readFileSync(join(root, "fixtures", "history", "btc-daily.json"), "utf8"));
+  const projectionPoints = history
+    .map((row) => ({ date: String(row.time).slice(0, 10), price: Number(row.PriceUSD) }))
+    .filter((point) => point.price > 0);
+  mkdirSync(join(dist, "data"), { recursive: true });
+  writeFileSync(
+    join(dist, "data", "projection.json"),
+    `${JSON.stringify(buildProjectionDocument(projectionPoints, "2026-09-25"))}\n`,
+  );
+}
 
 writeFileSync(join(dist, "settings.html"), settingsShell(iconLinks));
 
+const entryPoints = {
+  dashboard: join(root, "src", "client", "dashboard.ts"),
+  settings: join(root, "src", "client", "settings.ts"),
+  "this-week": join(root, "src", "client", "this-week.ts"),
+  visitors: join(root, "src", "client", "visitors.ts"),
+};
+if (PROJECTION_PUBLIC) entryPoints.projection = join(root, "src", "client", "projection.ts");
+
 await esbuild.build({
-  entryPoints: {
-    dashboard: join(root, "src", "client", "dashboard.ts"),
-    settings: join(root, "src", "client", "settings.ts"),
-    "this-week": join(root, "src", "client", "this-week.ts"),
-    projection: join(root, "src", "client", "projection.ts"),
-    visitors: join(root, "src", "client", "visitors.ts"),
-  },
+  entryPoints,
   bundle: true,
   format: "esm",
   target: "es2022",

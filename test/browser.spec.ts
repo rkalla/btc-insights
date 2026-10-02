@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { PROJECTION_PUBLIC } from "../src/projection/publish.ts";
 
 async function overflows(page: Page): Promise<boolean> {
   return page.evaluate(() => {
@@ -10,9 +11,9 @@ async function overflows(page: Page): Promise<boolean> {
 }
 
 test("bundles do not name a market client", () => {
-  const js = ["dist/assets/dashboard.js", "dist/assets/settings.js", "dist/assets/this-week.js", "dist/assets/projection.js"]
-    .map((path) => readFileSync(path, "utf8"))
-    .join("\n");
+  const paths = ["dist/assets/dashboard.js", "dist/assets/settings.js", "dist/assets/this-week.js"];
+  if (PROJECTION_PUBLIC) paths.push("dist/assets/projection.js");
+  const js = paths.map((path) => readFileSync(path, "utf8")).join("\n");
   for (const word of ["coingecko", "coinmetrics", "api_key", "GOLD_QUOTE", "wss://", "WebSocket"]) {
     expect(js.includes(word), word).toBe(false);
   }
@@ -52,7 +53,9 @@ for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 1000 });
     await page.goto("/settings.html");
     await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
-    await expect(page.locator("header.site .tabs a")).toHaveText(["This week", "Evidence", "Projection"]);
+    await expect(page.locator("header.site .tabs a")).toHaveText(
+      PROJECTION_PUBLIC ? ["This week", "Evidence", "Projection"] : ["This week", "Evidence"],
+    );
     await expect(page.locator("header.site a[aria-current='page']")).toHaveText("Settings");
     await expect(page.getByLabel("Amount").first()).toBeVisible();
     await expect(page.getByRole("radiogroup", { name: "How often" })).toBeVisible();
@@ -118,9 +121,6 @@ test("no horizontal scroll at 320", async ({ page }) => {
   expect(await overflows(page)).toBe(false);
   await page.goto("/settings.html");
   await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
-  expect(await overflows(page)).toBe(false);
-  await page.goto("/projection/");
-  await expect(page.getByRole("heading", { level: 1, name: "Projection" })).toBeVisible();
   expect(await overflows(page)).toBe(false);
 });
 
@@ -230,7 +230,8 @@ test("this week bundle has no font host or market host", () => {
   expect(evidence).not.toContain("dashboard.css");
   const settings = readFileSync("dist/settings.html", "utf8");
   expect(settings).toContain("<title>Settings · BTC Friday</title>");
-  expect(settings).toContain('href="/projection/">Projection</a>');
+  if (PROJECTION_PUBLIC) expect(settings).toContain('href="/projection/">Projection</a>');
+  else expect(settings).not.toContain("/projection/");
   expect(settings).toContain("/assets/site.css");
   expect(settings).toContain("/assets/settings.css");
   expect(settings).toContain('src="/assets/settings.js"');
@@ -430,14 +431,12 @@ for (const width of [320, 390, 412]) {
   for (const scale of [1, 1.3]) {
     test(`no sideways scroll at ${width} with ${Math.round(scale * 100)}% text`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
-      for (const path of ["/", "/evidence/", "/settings.html", "/projection/"]) {
+      for (const path of ["/", "/evidence/", "/settings.html"]) {
         await page.goto(path);
         if (path === "/") {
           await expect(page.getByRole("heading", { level: 1, name: "A strong week to buy Bitcoin." })).toBeVisible();
         } else if (path === "/evidence/") {
           await expect(page.getByRole("heading", { level: 1, name: "Why this week says Buy strongly" })).toBeVisible();
-        } else if (path === "/projection/") {
-          await expect(page.getByRole("heading", { level: 1, name: "Projection" })).toBeVisible();
         } else {
           await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
         }
@@ -627,6 +626,24 @@ const FILLED_SETTINGS = JSON.stringify({
   account: null,
 });
 
+test("the projection page is not on the public site", async ({ page }) => {
+  test.skip(PROJECTION_PUBLIC, "Projection is published");
+  for (const path of ["/", "/evidence/", "/settings.html"]) {
+    await page.goto(path);
+    const heading =
+      path === "/" ? "A strong week to buy Bitcoin." : path === "/evidence/" ? "Why this week says Buy strongly" : "Settings";
+    await expect(page.getByRole("heading", { level: 1, name: heading })).toBeVisible();
+    await expect(page.locator("header.site .tabs a")).toHaveText(["This week", "Evidence"]);
+    await expect(page.locator("footer .foot-links")).not.toContainText("Projection");
+    expect(await overflows(page)).toBe(false);
+  }
+  const response = await page.goto("/projection/");
+  expect(response?.status()).toBe(404);
+});
+
+test.describe("published projection", () => {
+  test.skip(!PROJECTION_PUBLIC, "Projection is unpublished");
+
 for (const width of [1440, 1100, 390]) {
   test(`projection at ${width}`, async ({ page }) => {
     await page.setViewportSize({ width, height: 1000 });
@@ -696,4 +713,6 @@ test("a missing replay says so and a missing price does not invent dollars", asy
   await page.goto("/projection/");
   await expect(page.getByText("Today's price is not available, so this cannot start.")).toBeVisible();
   await expect(page.locator("#projection")).not.toContainText("$");
+});
+
 });
