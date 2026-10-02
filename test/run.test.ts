@@ -9,6 +9,7 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import type { ProgressAnchors } from "../src/job/cycle.ts";
 import { run } from "../src/job/run.ts";
+import { PROJECTION_PUBLIC } from "../src/projection/publish.ts";
 import { addUtcDays, fridayDate, fridayStep, FRIDAY_RETRY_MS } from "../src/job/run.ts";
 import { coinGeckoSpotUrl, COINGECKO_SPOT_URL, createPace, paceCoinMetrics } from "../src/job/vendors.ts";
 import type { FetchLike } from "../src/job/vendors.ts";
@@ -603,9 +604,8 @@ test("a published Friday writes projection.json beside the Friday call", async (
     });
     assert.equal(code, 0);
     const names = readdirSync(dataDir).filter((name) => !name.startsWith(".")).sort();
-    assert.deepEqual(names, ["friday.json", "live.json", "projection.json"]);
+    assert.deepEqual(names, PROJECTION_PUBLIC ? ["friday.json", "live.json", "projection.json"] : ["friday.json", "live.json"]);
     assert.equal(statSync(join(dataDir, "friday.json")).mode & 0o777, 0o640);
-    assert.equal(statSync(join(dataDir, "projection.json")).mode & 0o777, 0o640);
     const friday = JSON.parse(readFileSync(join(dataDir, "friday.json"), "utf8")) as {
       cash: { word: string };
       cycles: {
@@ -632,6 +632,8 @@ test("a published Friday writes projection.json beside the Friday call", async (
       fixture.chart.fires.map((fire) => fire.date),
     );
     assert.equal(JSON.stringify(friday).includes("\"template\""), false);
+    if (!PROJECTION_PUBLIC) return;
+    assert.equal(statSync(join(dataDir, "projection.json")).mode & 0o777, 0o640);
     const projection = JSON.parse(readFileSync(join(dataDir, "projection.json"), "utf8")) as {
       schema: number;
       asOf: string;

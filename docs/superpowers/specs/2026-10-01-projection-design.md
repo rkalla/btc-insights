@@ -4,6 +4,8 @@ Date: 1 October 2026.
 
 This is the design for a new page, Projection. It is a holder-visible page. The implementation opens one GitHub issue before the code, and the pull request contains `Fixes #N`. This document does not change the site.
 
+The page is unpublished. `PROJECTION_PUBLIC` in `src/projection/publish.ts` is false. While that flag is false, the header and the footer omit Projection, the build does not emit `/projection/` or its script or stylesheet, and the Friday job does not write `projection.json`. The chart code stays in the repo.
+
 ## What the holder sees
 
 Projection is a tab in the header after Evidence. The tabs read This week, Evidence, Projection. Settings stays the gear. The address is `/projection/`. The footer link list gains Projection, placed after Evidence and before Settings.
