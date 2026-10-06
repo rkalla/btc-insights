@@ -972,6 +972,232 @@ test("built job/run.mjs resolves the committed fixtures", async () => {
   }
 });
 
+test("saturday publishes the rollup when the record is still on the previous Friday", async () => {
+  const { root, dataDir, stateDir } = scene();
+  const fridayPath = join(dataDir, "friday.json");
+  writeFileSync(
+    fridayPath,
+    `${JSON.stringify({
+      official: {
+        closeDate: "2026-09-25",
+        closeLabel: "Fri 25 Sep 2026",
+        nextCloseDate: "2026-10-02",
+        nextCloseLabel: "Fri 2 Oct 2026",
+      },
+      context: [
+        {
+          key: "buyCross",
+          label: "Buy cross",
+          flag: "FIRED",
+          flagTone: "buy",
+          value: "Fired 18 Sep 2026. Open.",
+          note: "Z-score crossed above 0. Gap about −41%, past −20%.",
+        },
+      ],
+    })}\n`,
+  );
+  writePrivateState(stateDir, "2026-10-05");
+  const stub = await startStub((_url, response) => {
+    sendJson(response, 200, {
+      data: [
+        {
+          time: "2026-10-02T00:00:00.000000000Z",
+          PriceUSD: "84517.5188820339",
+          CapMVRVCur: "1.574737386059323847",
+        },
+      ],
+    });
+  });
+  try {
+    const code = await run({
+      env: {
+        DATA_DIR: dataDir,
+        STATE_DIR: stateDir,
+        COINGECKO_API_KEY: "",
+        COINMETRICS_BASE_URL: stub.origin,
+        GOLD_QUOTE_URL: "",
+      },
+      argv: ["node", runScript, "friday"],
+      fetch: stubFetch(stub.origin),
+      now: () => new Date("2026-10-03T01:00:00.000Z"),
+      sleep: async () => {
+        throw new Error("friday retried");
+      },
+      stderr: () => undefined,
+    });
+    assert.equal(code, 0);
+    const friday = JSON.parse(readFileSync(fridayPath, "utf8")) as {
+      official: { closeDate: string; nextCloseDate: string };
+      cash: { word: string; posture: string; sentences: string[] };
+      caveats: { kind: string; body: string }[];
+      context: { key: string; flag: string; value: string; note: string }[];
+      previousOfficial: { closeDate: string; context: { note: string }[] } | null;
+      dollarSlot: { pile: string } | null;
+    };
+    assert.equal(friday.official.closeDate, "2026-10-02");
+    assert.equal(friday.official.nextCloseDate, "2026-10-09");
+    assert.equal(friday.cash.word, "Lump in");
+    assert.equal(friday.cash.posture, "LUMP_IN");
+    assert.equal(friday.cash.sentences[0], "Cash available goes in on the Friday it is available.");
+    assert.equal(friday.cash.sentences[0]?.includes("Buy now"), false);
+    assert.equal(friday.dollarSlot?.pile, "cashAvailable");
+    const fit = friday.caveats.find((item) => item.kind === "fit");
+    assert.match(fit?.body ?? "", /Gap about \u2212\d+%/);
+    assert.match(fit?.body ?? "", /Not a price target\./);
+    assert.equal(fit?.body.includes("25 Sep"), false);
+    assert.equal(fit?.body.includes("Other start years"), false);
+    const realized = friday.context.find((item) => item.key === "realizedPrice");
+    assert.match(realized?.value ?? "", /above cost/);
+    assert.equal(realized?.note, "Build is off.");
+    const buy = friday.context.find((item) => item.key === "buyCross");
+    assert.match(buy?.note ?? "", /Gap about −41%/);
+    assert.equal(friday.previousOfficial?.closeDate, "2026-09-25");
+    assert.match(friday.previousOfficial?.context[0]?.note ?? "", /Gap about −41%/);
+    const live = JSON.parse(readFileSync(join(dataDir, "live.json"), "utf8")) as {
+      officialCloseDate: string;
+      missingClose: boolean;
+    };
+    assert.equal(live.officialCloseDate, "2026-10-02");
+    assert.equal(live.missingClose, false);
+    const state = JSON.parse(readFileSync(join(stateDir, "state.json"), "utf8")) as {
+      lastMetricsDate: string;
+    };
+    assert.equal(state.lastMetricsDate, "2026-10-05");
+  } finally {
+    await stub.close();
+    cleanup(root);
+  }
+});
+
+test("a later live run fills an empty cap and leaves a stored cap in place", async () => {
+  const { root, dataDir, stateDir } = scene();
+  writeFileSync(join(dataDir, "live.json"), "{\"keep\":\"live\"}\n");
+  writePrivateState(stateDir, "2026-09-29");
+  writeFileSync(
+    join(stateDir, "history.json"),
+    `${JSON.stringify([
+      { time: "2026-09-27T00:00:00.000000000Z", PriceUSD: "80000", CapMVRVCur: null },
+      { time: "2026-09-28T00:00:00.000000000Z", PriceUSD: "81000", CapMVRVCur: "1.4" },
+    ])}\n`,
+  );
+  const stub = await startStub((_url, response) => {
+    sendJson(response, 200, {
+      data: [
+        { time: "2026-09-27T00:00:00.000000000Z", PriceUSD: "80000", CapMVRVCur: "1.55" },
+        { time: "2026-09-28T00:00:00.000000000Z", PriceUSD: "81000", CapMVRVCur: null },
+      ],
+    });
+  });
+  const env = {
+    DATA_DIR: dataDir,
+    STATE_DIR: stateDir,
+    COINGECKO_API_KEY: "",
+    COINMETRICS_BASE_URL: stub.origin,
+    GOLD_QUOTE_URL: "",
+  };
+  try {
+    const first = await run({
+      env,
+      fetch: stubFetch(stub.origin),
+      now: () => new Date("2026-09-29T15:00:00.000Z"),
+      sleep: async () => undefined,
+      stderr: () => undefined,
+    });
+    assert.equal(first, 0);
+    assert.equal(stub.paths.length, 1);
+    const history = JSON.parse(readFileSync(join(stateDir, "history.json"), "utf8")) as {
+      time: string;
+      CapMVRVCur: string | number | null;
+    }[];
+    const cap = (date: string) => history.find((row) => row.time.slice(0, 10) === date)?.CapMVRVCur;
+    assert.equal(Number(cap("2026-09-27")), 1.55);
+    assert.equal(Number(cap("2026-09-28")), 1.4);
+    const stored = JSON.parse(readFileSync(join(stateDir, "state.json"), "utf8")) as {
+      lastMetricsDate: string;
+      capCheckedOn: string;
+      frozen: { realizedAsOf: string };
+    };
+    assert.equal(stored.lastMetricsDate, "2026-09-29");
+    assert.equal(stored.capCheckedOn, "2026-09-29");
+    assert.equal(stored.frozen.realizedAsOf, "2026-09-27");
+    const second = await run({
+      env,
+      fetch: stubFetch(stub.origin),
+      now: () => new Date("2026-09-29T16:00:00.000Z"),
+      sleep: async () => undefined,
+      stderr: () => undefined,
+    });
+    assert.equal(second, 0);
+    assert.equal(stub.paths.length, 1);
+    assert.equal(readFileSync(join(dataDir, "live.json"), "utf8"), "{\"keep\":\"live\"}\n");
+  } finally {
+    await stub.close();
+    cleanup(root);
+  }
+});
+
+test("a live run publishes a Friday the Saturday job missed", async () => {
+  const { root, dataDir, stateDir } = scene();
+  writeFileSync(
+    join(dataDir, "friday.json"),
+    `${JSON.stringify({
+      official: {
+        closeDate: "2026-09-25",
+        closeLabel: "Fri 25 Sep 2026",
+        nextCloseDate: "2026-10-02",
+        nextCloseLabel: "Fri 2 Oct 2026",
+      },
+      context: [],
+    })}\n`,
+  );
+  writePrivateState(stateDir, "2026-10-06");
+  const stub = await startStub((_url, response) => {
+    sendJson(response, 200, {
+      data: [
+        {
+          time: "2026-10-02T00:00:00.000000000Z",
+          PriceUSD: "84517.5188820339",
+          CapMVRVCur: "1.574737386059323847",
+        },
+      ],
+    });
+  });
+  try {
+    const code = await run({
+      env: {
+        DATA_DIR: dataDir,
+        STATE_DIR: stateDir,
+        COINGECKO_API_KEY: "",
+        COINMETRICS_BASE_URL: stub.origin,
+        GOLD_QUOTE_URL: "",
+      },
+      fetch: stubFetch(stub.origin),
+      now: () => new Date("2026-10-06T15:00:00.000Z"),
+      sleep: async () => undefined,
+      stderr: () => undefined,
+    });
+    assert.equal(code, 0);
+    assert.equal(stub.paths.length, 1);
+    assert.equal(stub.paths[0]?.includes("2026-10-02"), true);
+    const friday = JSON.parse(readFileSync(join(dataDir, "friday.json"), "utf8")) as {
+      cash: { word: string; posture: string };
+      official: { closeDate: string };
+    };
+    assert.equal(friday.official.closeDate, "2026-10-02");
+    assert.equal(friday.cash.word, "Lump in");
+    assert.equal(friday.cash.posture, "LUMP_IN");
+    const live = JSON.parse(readFileSync(join(dataDir, "live.json"), "utf8")) as {
+      officialCloseDate: string;
+      missingClose: boolean;
+    };
+    assert.equal(live.officialCloseDate, "2026-10-02");
+    assert.equal(live.missingClose, false);
+  } finally {
+    await stub.close();
+    cleanup(root);
+  }
+});
+
 test(".env.example has empty keys and the community Coin Metrics URL", () => {
   const example = readFileSync(new URL("../.env.example", import.meta.url), "utf8");
   assert.equal(

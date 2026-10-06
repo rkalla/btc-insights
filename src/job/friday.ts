@@ -43,6 +43,7 @@ export interface PublishedRecord {
   anchors: ProgressAnchors;
   footer: FridayDocument["footer"];
   previousOfficial: FridayDocument["previousOfficial"];
+  activeFireDate?: string | null;
   captions: string[];
   feedCrossFridays?: readonly string[];
 }
@@ -122,7 +123,12 @@ export function buildFriday(history: readonly HistoryRow[], record: PublishedRec
   const close = closes.get(through);
   if (close == null) throw new Error(`history missing ${through}`);
   const endTrend = trendAt(fit, through);
-  const cash = cashCopy(record.cashFlags);
+  const cash = cashCopy(
+    record.cashFlags,
+    record.cashFlags.allIn && record.activeFireDate != null
+      ? { fireDate: record.activeFireDate, closeDate: through }
+      : undefined,
+  );
   const hold = coinHold();
   let standDownFireDate: string | null = null;
   if (cash.posture === "STAND_DOWN") {
