@@ -86,7 +86,7 @@ The rules below are evaluated at the Friday close. That evaluation is the offici
 
 **Bitcoin price.** A daily USD close from 2010 onward, so the trend can be refit from scratch and the old fires can be reproduced. The study used the Coin Metrics community series `PriceUSD`. A replacement has to be a daily close. A last-trade print that moves the Friday close will move the fires.
 
-**Gold.** A daily gold close, filled forward at most 10 days when the gold market is shut. The study used COMEX gold futures. A spot fix is acceptable only if a check shows the z-score still crosses zero on the same Fridays. The chart plots the Bitcoin leg and the gold leg of the ratio, and it flags an arm or a fire that gold drove.
+**Gold.** A daily gold close, filled forward at most 10 days when the gold market is shut. The study used COMEX gold futures. A spot fix is acceptable only if a check shows the z-score still crosses zero on the same Fridays. The check on 6 October 2026 is written in the stack document. The COMEX daily close, filled forward at most 10 days, fires on the five published Fridays. The live vendor's daily XAUUSD bars start on 1 October 2024, so they leave the four earlier fires on the study series. Inside the year they can score, they arm and fire on the same Fridays as COMEX. A longer public XAU/USD rate also fires on 18 September 2026, and it crosses zero on 7 March 2025, a Friday this COMEX series does not cross. The official series stays the COMEX study series. The live quote does not arm or fire. The chart plots the Bitcoin leg and the gold leg of the ratio, and it flags an arm or a fire that gold drove.
 
 **Power law, calculated.** Each Friday, fit
 

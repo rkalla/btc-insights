@@ -55,7 +55,7 @@ The function holds the frozen Friday state: the trend price, the inputs for the 
 | Series | Role | Interval | Upstream |
 |---|---|---|---|
 | Bitcoin spot | Now, gap, chart tip, progress, realized-price ratio | Every 10 minutes | Free Bitcoin price API. Planning figure: a CoinGecko demo key, about 10,000 credits a month and about a year of history. |
-| Gold | Developing z-score only, until the cross check below | Every 10 minutes | `GOLD_QUOTE_URL`. When `GOLD_QUOTE_API_KEY` is set, the job sends it as `X-API-Key`. The XAUUSD snapshot last trade is the developing print. |
+| Gold | Developing z-score only. The cross check below left the official series on the study COMEX closes. | Every 10 minutes | `GOLD_QUOTE_URL`. When `GOLD_QUOTE_API_KEY` is set, the job sends it as `X-API-Key`. The XAUUSD snapshot last trade is the developing print. |
 | Realized price | Denominator of the ratio | Once a day | Coin Metrics community. |
 | New daily Bitcoin close | Friday fit and the official history | Once a day | Coin Metrics community `PriceUSD`. |
 | History back to 2010 | The one-time backfill | Once | Coin Metrics community. |
@@ -64,7 +64,15 @@ A poll every 10 minutes is about 4,300 calls a month for Bitcoin. That fits a 10
 
 CoinGecko's short history is not the power-law source. The official daily close, the Friday refit, and the reproduced fires use Coin Metrics community daily bars. The community API allows 10 requests per 6 seconds per IP. One new row a day is the whole ongoing use.
 
-That gold quote feeds the developing score. The operator's URL is the sifting.io commodities snapshot for XAUUSD, and the snapshot requires gzip. It does not replace the official Friday z-score until a check shows the z-score still crosses zero on the same Fridays. Until that check, the official gold series remains the study series, COMEX filled forward at most 10 days, and the study fire dates stay the record.
+That gold quote feeds the developing score. The operator's URL is the sifting.io commodities snapshot for XAUUSD, and the snapshot requires gzip.
+
+A check on 6 October 2026 replayed the locked Friday rules on daily gold closes and the Coin Metrics Bitcoin history in `fixtures/history/btc-daily.json`. The COMEX continuous future, the Yahoo Finance `GC=F` daily close, filled forward at most 10 days, reproduces the study. It arms on 3 October 2014, 23 November 2018, 13 March 2020, 13 May 2022, and 21 November 2025. It fires on 24 July 2015, 3 May 2019, 31 July 2020, 17 March 2023, and 18 September 2026. Those five Fridays are the published list. The same series also crosses zero on fifteen other Fridays while it is unarmed, and those Fridays are not in the published list. The 12 September 2025 close is 3,686.4 and the 21 November 2025 close is 4,079.5, which round to the published 3,686 and 4,080. Leaving out the 28 Fridays with no COMEX print, instead of filling forward at most 10 days, moves the fires to 23 October 2015, 10 May 2019, 31 July 2020, 17 March 2023, and 25 September 2026. The fill is what lines the fires up with the published list.
+
+The sifting.io daily XAUUSD bars on the operator's key start on 1 October 2024. The four earlier fire months are empty. A 52-week score from those bars runs from 26 September 2025 through 25 September 2026, the last Friday in the checked-in Bitcoin history. In that window the score arms on 21 November 2025 and crosses zero once, on 18 September 2026, the same Fridays as COMEX. On the arm Friday the spot close was 4,064 against the COMEX close of 4,079.5. On the fire Friday it was 4,378 against 4,424.9. Across the 50 Fridays with a close on both series, the spot close ran from 1.9% under the COMEX close to 3.2% over it.
+
+A second daily XAU/USD rate, the public currency-api XAU series from 6 March 2024, also arms on 21 November 2025 and fires on 18 September 2026. It crosses zero on 7 March 2025 as well. That Friday the COMEX score was already above zero. The two daily spot series do not agree with each other on every cross, and the longer one adds a Friday the COMEX series does not cross.
+
+The published fire list stays as it is. The live quote feeds the developing score. The official gold series remains the study series, COMEX filled forward at most 10 days. A later change may add a fire only after a daily series covers the published Fridays and its armed fires are those five dates.
 
 On a rate-limit response or any other upstream failure, the job keeps the last good print, backs off, and does not retry in a loop. The page continues to show that print and its as-of time.
 
