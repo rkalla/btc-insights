@@ -1,3 +1,4 @@
+import { sentenceDate } from "../contract/format.ts";
 import type { CashPosture, CoinPosture, FridayDocument, RecordRow, Tone } from "../contract/types.ts";
 import { highConfidence, wilsonLower } from "./wilson.ts";
 
@@ -42,6 +43,50 @@ const ALL_IN_WINDOW: NonNullable<FridayDocument["cash"]["window"]> = {
   lastGraceCloseUtc: "2026-10-03T00:00:00Z",
 };
 
+export interface AllInSchedule {
+  fireDate: string;
+  closeDate: string;
+}
+
+function addDays(isoDate: string, days: number): string {
+  const year = Number(isoDate.slice(0, 4));
+  const month = Number(isoDate.slice(5, 7));
+  const day = Number(isoDate.slice(8, 10));
+  return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
+}
+
+function shortFri(isoDate: string): string {
+  return `Fri ${sentenceDate(isoDate).slice(0, -5)}`;
+}
+
+function graceWindow(fireDate: string, closeDate: string): NonNullable<FridayDocument["cash"]["window"]> {
+  const grace = addDays(fireDate, 7);
+  const last = addDays(fireDate, 14);
+  const step = (date: string, caption: string) => ({
+    dateLabel: shortFri(date),
+    caption,
+    state: (date < closeDate ? "done" : date === closeDate ? "current" : "next") as "done" | "current" | "next",
+  });
+  return {
+    steps: [
+      step(fireDate, "fired"),
+      step(grace, closeDate === grace ? "grace, this call" : "grace"),
+      step(last, "last grace"),
+    ],
+    lastGraceCloseUtc: `${addDays(last, 1)}T00:00:00Z`,
+  };
+}
+
+function allInSentences(schedule?: AllInSchedule): string[] {
+  if (schedule == null) return [...ALL_IN_SENTENCES];
+  const last = sentenceDate(addDays(schedule.fireDate, 14));
+  return [
+    `Buy now, or by the Friday ${last} close.`,
+    "After that close, the call is whatever that Friday says.",
+    "Standing contribution continues.",
+  ];
+}
+
 function cashBlock(
   posture: CashPosture,
   word: string,
@@ -63,15 +108,21 @@ function cashBlock(
   return cash;
 }
 
-export function cashCopy(input: CashFlags): FridayDocument["cash"] {
+export function cashCopy(input: CashFlags, schedule?: AllInSchedule): FridayDocument["cash"] {
   if (input.exit) {
     return cashBlock("NO_NEW_BUY", "No new buy", "neutral", ["No new buy."], [
       { key: "RECORD", text: "No floor." },
     ], false);
   }
   if (input.allIn) {
-    const sentences = [...ALL_IN_SENTENCES];
+    const sentences = allInSentences(schedule);
     if (input.build) sentences.push("The build slice also runs.");
+    const window = schedule == null
+      ? {
+          steps: ALL_IN_WINDOW.steps.map((step) => ({ ...step })),
+          lastGraceCloseUtc: ALL_IN_WINDOW.lastGraceCloseUtc,
+        }
+      : graceWindow(schedule.fireDate, schedule.closeDate);
     return cashBlock(
       "ALL_IN",
       "All in",
@@ -79,10 +130,7 @@ export function cashCopy(input: CashFlags): FridayDocument["cash"] {
       sentences,
       ALL_IN_ROWS.map((row) => ({ ...row })),
       highConfidence(wilsonLower(4, 4)),
-      {
-        steps: ALL_IN_WINDOW.steps.map((step) => ({ ...step })),
-        lastGraceCloseUtc: ALL_IN_WINDOW.lastGraceCloseUtc,
-      },
+      window,
     );
   }
   if (input.build) {
