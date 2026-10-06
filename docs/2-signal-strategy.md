@@ -137,7 +137,7 @@ Each row is an instruction. Cash and coins are separate columns, so the spectrum
 | Trim | No new cash instruction. | Sell down from the ceiling to the target, highest-cost lots first. A sell-roll pause speeds that sale. | A policy, not a signal. No hit rate. |
 | Exit | No new cash instruction. | Sell all, only after the holder dates a "Thesis broken" declaration. | Cannot be backtested. No floor is printed. |
 
-**All in is the fire, spent once.** The historical entry was the fire Friday. The same cash beat a 52-week spread in 4 of 4 fires, by +18% to +92% coins, and beat a 26-week spread in 4 of 4, by +2% to +60% coins. Grace exists so a missed check still catches the fire. After the second grace Friday the window is over, and the next Friday's posture takes over. If the gap is still at least 20% under the trend and the cross is not armed, that posture is Lump in, so unspent cash is bought rather than left sitting. The coins bought at the fire keep the 12-month holding note from the study: the worst dip in the year after the historical fires was −27%, −12%, −11%, and −9%, inside the published range of −9% to −27%. The note does not create a reserve.
+**All in is the fire, spent once.** The historical entry was the fire Friday. The same cash beat a 52-week spread in 4 of 4 fires, by +18% to +92% coins, and beat a 26-week spread in 4 of 4, by +2% to +60% coins. Grace exists so a missed check still catches the fire. The official document dated the second grace Friday is already the next posture. If the gap is still at least 20% under the trend and the cross is not armed, that posture is Lump in, so unspent cash is bought rather than left sitting. The coins bought at the fire keep the 12-month holding note from the study: the worst dip in the year after the historical fires was −27%, −12%, −11%, and −9%, inside the published range of −9% to −27%. The note does not create a reserve.
 
 **Do not refill cash to wait for the next cross.** Between episodes, new money follows Lump in, Slow in, Build, or Stay the course as it arrives. The years between fires are where a standing reserve lost.
 
@@ -165,8 +165,8 @@ The order is All in, then Build, then Stand down, then Lump in, then Slow in, th
 
 Every record line uses the same contract: wins of episodes, then the floor. A weekly percentage does not sit on that line.
 
-1. **All in**, if the buy cross is on its fire Friday or inside the two grace Fridays.
-   Cash available goes in, up to about $100,000. Buy on the day the page is read, or by the last grace Friday. The standing contribution continues. If the ratio is below 1, the build slice also runs. The week is not a higher probability.
+1. **All in**, if this Friday is the fire Friday or the first grace Friday.
+   Cash available goes in, up to about $100,000. Buy on the day the page is read, or by the second grace Friday's close. The standing contribution continues. If the ratio is below 1, the build slice also runs. The week is not a higher probability. The document dated the second grace Friday is the next posture. On 2 October 2026 that document is Lump in.
    If Stand down is also inside its pause, All in still wins. The sell is shown beside the call as a disagreement. The week is not cut to a half-size buy.
    The line reads: 4 of 4, floor about 60%. Beat a 52-week spread, 4 of 4, +18% to +92% coins. Open episode, if the year is unfinished. Not high confidence.
 2. **Build**, if the ratio is below 1 and a tranche is still slicing, and All in is not on.
