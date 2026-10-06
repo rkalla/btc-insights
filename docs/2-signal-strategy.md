@@ -272,7 +272,7 @@ Three numbers change Trim, Exit, and the after-tax score. They are the holder's,
 
 Constants stay frozen. The order is:
 
-1. Arm to fire: buy at the arm, wait for the fire, or spread between them, scored in coins. This needs the gold series. It decides whether Lump in and the armed wait disagree.
+1. Arm to fire: buy at the arm, wait for the fire, or spread between them, scored in coins. The gold series for that replay is the COMEX close in the stack document, filled forward at most 10 days. It decides whether Lump in and the armed wait disagree.
 2. The posture set against steady buying, in coins at 1, 2, and 4 years. After-tax dollars join when the account type is known.
 3. The five-Friday spell rule on the 2015 bear. The 2022 boundary is already known: four Fridays do not end that spell.
 4. A new arm, scored with the same 15% gold-share rule. The five arms already measured are not refit.
