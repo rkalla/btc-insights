@@ -78,7 +78,9 @@ Geist stays the self-hosted files already in `public/fonts` (weights 400, 500, 6
 
 ## Chart fix
 
-The live `friday.json` chart has 15 weekly points, the fires plus 4 Jan 2013 and 25 Sep 2026. The price line therefore skips the 2022 low and the 2025 high. `sma200w` is one point, so the legend's 200-week line does not draw. `buildFriday` already keeps every Friday and samples the trend every four weeks. The shipped fixture was hand-thinned, and the Friday job will not replace it while the published record stays on 2026-09-25.
+As of the 2 October 2026 publish, the Friday job writes `friday.json`. Do not copy `fixtures/friday-2026-09-25.json` over that file. The live chart has every Friday from 2013-01-04 through 2026-10-02. `sma200w` is still one point, so the 200-week line does not draw. The gzipped document is just under the 20480 byte cap.
+
+Before that publish the live chart had 15 weekly points, the fires plus 4 Jan 2013 and 25 Sep 2026, so the price line skipped the 2022 low and the 2025 high. `buildFriday` already keeps every Friday and samples the trend every four weeks. The shipped fixture was hand-thinned, and until 6 October 2026 the Friday job left it in place while the published record stayed on 2026-09-25.
 
 PR 1 commits a fixture that matches what `buildFriday` would emit, with these pins:
 
@@ -93,7 +95,7 @@ Checks: at least 700 weekly points; the 25 Nov 2022 close is under $17,000; the 
 
 On the current page, the Now gap label reads "Now, against Friday's trend". The fit caveat begins "At Friday's close (25 Sep 2026), gap about −41%". Do not reorder the spectrum. Do not change "Use your cash available to invest" in this pull request. This week replaces that sentence later.
 
-Deploy this fixture to `/var/www/html/data/friday.json` with mode 640 and group `www-data`. `scripts/deploy-site.sh` excludes `data/`, so copy that file on purpose. Do not delete `live.json`. Do not let the Friday job regenerate the document.
+That fixture deploy was for the hand-thinned file. The Friday job now owns `/var/www/html/data/friday.json`. `scripts/deploy-site.sh` still excludes `data/`. Do not delete `live.json`.
 
 ## Presentation facts
 
