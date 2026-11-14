@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proposal D · Composite · BTC Friday</title>
+<style>
+@font-face { font-family: Geist; src: url("../../../public/fonts/geist-latin-400-normal.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: Geist; src: url("../../../public/fonts/geist-latin-500-normal.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+@font-face { font-family: Geist; src: url("../../../public/fonts/geist-latin-600-normal.woff2") format("woff2"); font-weight: 600; font-display: swap; }
+@font-face { font-family: Geist; src: url("../../../public/fonts/geist-latin-700-normal.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+:root {
+  --paper: #f3efe6; --ink: #1c1915; --muted: #6f675e; --line: #e3dacd;
+  --card: #fffcf8; --buy: #0c6a42; --buy-bg: #e7f5ee; --live: #1d4e89;
+  --live-bg: #e7f0fa; --watch: #8a5a10; --watch-bg: #f8f0dc; --off: #8a837a;
+  --pair: #533b8a; --pair-bg: #ece7f8;
+  --shadow: 0 1px 0 rgba(28,25,21,.04), 0 18px 40px rgba(80,60,30,.06);
+  color: var(--ink); background: var(--paper);
+  font-family: Geist, "Segoe UI", sans-serif; font-size: 16px; line-height: 1.45;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+button, a { font: inherit; color: inherit; }
+button { background: none; border: 0; padding: 0; cursor: pointer; }
+.ribbon { display: flex; justify-content: space-between; gap: 16px; padding: 8px 28px; background: #1c1915; color: #f3efe6; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
+.ribbon b { font-weight: 600; letter-spacing: 0; text-transform: none; font-size: 13px; }
+header.bar { display: flex; align-items: center; gap: 22px; padding: 16px 28px 0; }
+.brand { font-weight: 600; letter-spacing: -.03em; font-size: 18px; }
+nav { display: flex; gap: 4px; background: rgba(255,255,255,.65); padding: 4px; border-radius: 999px; border: 1px solid var(--line); }
+nav button { padding: 7px 14px; border-radius: 999px; color: var(--muted); }
+nav button[aria-current="page"] { background: var(--ink); color: var(--paper); }
+.when { margin-left: auto; text-align: right; font-size: 13px; color: var(--muted); }
+.when strong { color: var(--ink); font-weight: 600; }
+main { padding: 16px 28px 48px; max-width: 1180px; margin: 0 auto; }
+.view { display: none; }
+.view.on { display: block; }
+.clock-label { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; margin: 0 0 8px; }
+.clock-label h2 { margin: 0; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; }
+.clock-label p { margin: 0; color: var(--muted); font-size: 13px; }
+.clock-label.today h2 { color: var(--live); }
+.clock-label.friday { color: var(--buy); margin-top: 22px; }
+.tape { display: grid; grid-template-columns: 1.25fr repeat(4, 1fr); gap: 8px; }
+.tick { text-align: left; background: var(--live-bg); border: 1px solid #d3e2f4; border-radius: 14px; padding: 12px 12px 10px; min-height: 118px; }
+.tick:hover, .rule:hover, .ind:hover { border-color: var(--ink); }
+.tick em { font-style: normal; color: var(--live); font-size: 12px; font-weight: 600; }
+.tick em i { font-style: normal; font-weight: 500; color: var(--muted); }
+.tick b { display: block; font-size: 26px; letter-spacing: -.04em; font-weight: 600; margin: 2px 0; }
+.tick span { display: block; color: var(--muted); font-size: 12px; line-height: 1.35; }
+.tick svg { width: 100%; height: 28px; margin-top: 6px; display: block; }
+.split { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center; margin: 18px 0 0; color: var(--muted); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+.split i { height: 1px; background: var(--line); }
+.home-grid { display: grid; grid-template-columns: 400px 1fr; gap: 16px; align-items: start; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); }
+.call { padding: 20px 20px 16px; }
+.kicker { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--buy); font-weight: 600; }
+h1 { font-size: 38px; line-height: 1.02; letter-spacing: -.04em; margin: 6px 0; font-weight: 600; }
+.sub { margin: 0; color: var(--muted); }
+.scale { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 18px 0 6px; padding: 0; list-style: none; }
+.scale li { text-align: center; font-size: 12px; color: var(--muted); padding-top: 8px; border-top: 3px solid #ddd4c6; }
+.scale li.on { color: var(--buy); font-weight: 600; border-top-color: var(--buy); }
+.note { margin: 0 0 12px; font-size: 13px; color: var(--muted); }
+.rules-head { margin: 0 0 8px; }
+.rules-head h2 { margin: 0; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; }
+.rules-head p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+.status-key { margin: 0 0 8px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+.rule .kind { margin-left: 6px; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--live); }
+.rule.pace { border-style: dashed; background: #f4f7fb; }
+ol.do { margin: 0; padding-left: 18px; }
+ol.do li { margin: 4px 0; }
+.record { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 14px; }
+.record b { font-weight: 600; }
+.rules { display: flex; flex-direction: column; gap: 6px; }
+.rule { display: grid; grid-template-columns: 28px 1fr auto; gap: 8px 10px; align-items: start; text-align: left; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; }
+.rule .n { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 13px; padding-top: 2px; }
+.rule strong { display: block; font-weight: 600; }
+.rule small { display: block; color: var(--muted); font-size: 13px; }
+.rule .state { font-size: 12px; font-weight: 600; color: var(--off); padding-top: 2px; white-space: nowrap; }
+.rule.on { border-color: var(--buy); background: #f4fbf7; }
+.rule.on .state { color: var(--buy); }
+.rule .state.off { color: var(--off); font-weight: 500; }
+.foot { margin: 14px 0 0; color: var(--muted); font-size: 12px; }
+.desk { display: grid; grid-template-columns: 230px 1fr 280px; gap: 14px; align-items: start; }
+.ind-list { display: flex; flex-direction: column; gap: 4px; }
+.ind { text-align: left; padding: 10px 12px; border-radius: 12px; border: 1px solid transparent; }
+.ind[aria-pressed="true"] { background: var(--card); border-color: var(--line); box-shadow: var(--shadow); }
+.ind strong { display: block; font-weight: 600; font-size: 15px; }
+.ind span { color: var(--muted); font-size: 12px; }
+.chart-card, .side { padding: 16px; }
+.chart-card header, .side header { display: flex; justify-content: space-between; gap: 10px; align-items: center; padding: 0; }
+.chart-card h2 { margin: 0; font-size: 26px; letter-spacing: -.03em; font-weight: 600; }
+.aka { margin: 4px 0 8px; color: var(--muted); font-size: 13px; }
+.badge { font-size: 11px; font-weight: 650; font-weight: 600; padding: 4px 8px; border-radius: 999px; white-space: nowrap; }
+.badge.used { background: var(--buy-bg); color: var(--buy); }
+.badge.pair { background: var(--pair-bg); color: var(--pair); }
+.badge.pace { background: var(--live-bg); color: var(--live); }
+.badge.watch { background: var(--watch-bg); color: var(--watch); }
+.badge.passed { background: #f0ebe3; color: var(--off); }
+svg.chart { width: 100%; height: auto; display: block; }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--muted); margin-top: 4px; }
+.sw { display: inline-block; width: 16px; height: 3px; margin-right: 5px; vertical-align: middle; background: currentColor; }
+.key { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 0 0 12px; }
+.key p { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.panel { display: none; }
+.panel.on { display: block; }
+.side h3 { margin: 14px 0 6px; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.side p { margin: 0 0 8px; font-size: 14px; }
+.formula { font-family: ui-monospace, monospace; font-size: 12px; background: #f6f1e8; border-radius: 10px; padding: 10px 12px; white-space: pre-line; line-height: 1.5; }
+.mini { list-style: none; margin: 0; padding: 0; }
+.mini li { display: block; padding: 6px 0; border-top: 1px solid var(--line); font-size: 13px; }
+.mini li span:last-child { display: block; color: var(--muted); font-size: 12px; font-weight: 500; }
+.mini li.on { color: var(--buy); font-weight: 600; }
+.mini li.on span:last-child { color: var(--buy); font-weight: 600; }
+.words { margin-top: 16px; }
+.words summary { cursor: pointer; color: var(--muted); font-size: 14px; }
+.words dl { display: grid; grid-template-columns: 180px 1fr; gap: 6px 16px; margin: 10px 0 0; }
+.words dt { font-weight: 600; }
+.words dd { margin: 0; color: var(--muted); }
+</style>
+</head>
+<body>
+<p class="ribbon"><span>Proposal D · Composite</span><b>Today’s readings on top. One Friday answer on the left. The checklist that picked it on the right.</b></p>
+<header class="bar">
+  <div class="brand">BTC Friday</div>
+  <nav>
+    <button type="button" id="nav-week" data-go="week">This week</button>
+    <button type="button" id="nav-ind" data-go="indicators">Indicators</button>
+  </nav>
+  <div class="when">Answer set <strong>Friday 13 Nov</strong><br>Next answer Friday 20 Nov, 5:00 pm your time</div>
+</header>
+<main>
+  <section class="view" id="week">
+    <div class="clock-label today">
+      <h2>Today</h2>
+      <p>Saturday 14 Nov, 9:07 am. Current readings of what the site watches. Three of them were inputs on Friday. QQE is watched and was not used. Opening the page can move the price. It cannot move the answer.</p>
+    </div>
+    <div class="tape">
+      <button class="tick" data-open="trend"><em>Bitcoin today <i>· live price</i></em><b>$65,590</b><span>About 55% under the power law.</span><svg viewBox="0 0 220 28" aria-hidden="true"><path d="M2 22 C 40 20, 70 8, 100 12 C 140 18, 170 16, 218 14" fill="none" stroke="#1d4e89" stroke-width="2"/></svg></button>
+      <button class="tick" data-open="trend"><em>Power law <i>· used Friday</i></em><b>−55%</b><span>Long-run curve, set Friday at $145,800.</span><svg viewBox="0 0 120 28" aria-hidden="true"><path d="M2 6 L118 18" stroke="#9bb0c8" stroke-width="2"/><path d="M2 18 L118 24" stroke="#0c6a42" stroke-width="2"/></svg></button>
+      <button class="tick" data-open="gold"><em>Z-score <i>· used Friday</i></em><b>Gold rose</b><span>Bitcoin versus gold. Only Friday can change the answer.</span><svg viewBox="0 0 120 28" aria-hidden="true"><path d="M2 20 C 30 22, 50 8, 80 10 C 100 12, 110 14, 118 12" fill="none" stroke="#533b8a" stroke-width="2"/></svg></button>
+      <button class="tick" data-open="cost"><em>Realized price <i>· used Friday</i></em><b>1.22×</b><span>Above the average price people paid, so the weekly slice is off.</span><svg viewBox="0 0 120 28" aria-hidden="true"><path d="M2 14 H118" stroke="#9bb0c8" stroke-dasharray="3 3"/><path d="M2 20 C 40 8, 70 12, 118 11" fill="none" stroke="#1d4e89" stroke-width="2"/></svg></button>
+      <button class="tick" data-open="qqe"><em>QQE <i>· watched, not used</i></em><b>Turning up</b><span>Weighted oscillator. Not tested yet. Not part of the answer.</span><svg viewBox="0 0 120 28" aria-hidden="true"><path d="M2 8 C 30 20, 60 22, 90 14 L 118 10" fill="none" stroke="#8a5a10" stroke-width="2"/></svg></button>
+    </div>
+    <div class="split"><i></i><span>Friday’s answer is separate from today’s readings</span><i></i></div>
+    <div class="clock-label friday">
+      <h2>Set Friday 13 Nov</h2>
+      <p>One answer, left alone until next Friday. The card is the answer. The list is how it was chosen.</p>
+    </div>
+    <div class="home-grid">
+      <article class="card call">
+        <div class="kicker">This week’s answer</div>
+        <h1>Add</h1>
+        <p class="sub">A good time to add to bitcoin. Keep what you already hold.</p>
+        <ol class="scale" aria-label="What to do, from most cautious to most eager">
+          <li>Pause</li><li>Go slow</li><li>Steady</li><li class="on">Add</li><li>Buy strongly</li>
+        </ol>
+        <p class="note">The mark shows which of these five answers won. Left is more cautious. Right is more eager. A bigger step is not a surer step. Below the average price paid is a pace, so it is not on this line.</p>
+        <ol class="do">
+          <li>Put the money you have set aside into bitcoin when you have it.</li>
+          <li>Keep your regular buy going.</li>
+        </ol>
+        <p class="record"><b>This has worked in all 6 finished stretches.</b> A cautious reading of a record that small is about 7 times in 10. The current stretch started in November 2025 and is still open, so it is not counted yet.</p>
+      </article>
+      <div>
+        <div class="rules-head">
+          <h2>Checklist</h2>
+          <p>Conditions, checked from the top. Stop at the first one that fits. That condition sets the answer on the left.</p>
+        </div>
+        <p class="status-key"><b>Already happened</b> means that week is over. <b>Does not fit</b> means we checked it and the condition is false. <b>The answer</b> is the first condition that fits. <b>Not used</b> means we stopped, because an earlier condition already won.</p>
+        <div class="rules" aria-label="Conditions checked in order">
+          <button class="rule" data-open="buy"><span class="n">1</span><span><strong>Buy-cross week</strong><small>Would say Buy strongly. That week was 18 Sep. The extra Friday was 25 Sep.</small></span><span class="state">Already happened</span></button>
+          <button class="rule pace" data-open="cost"><span class="n">2</span><span><strong>Below the average price paid <span class="kind">Pace</span></strong><small>Would add the weekly slice beside the answer. Price is 1.22 times the average people paid, so the slice does not fit.</small></span><span class="state">Does not fit</span></button>
+          <button class="rule" data-open="pause"><span class="n">3</span><span><strong>Rich market turning down</strong><small>Would say Pause. It has been quiet since 2021.</small></span><span class="state">Does not fit</span></button>
+          <button class="rule on" data-open="trend"><span class="n">4</span><span><strong>20% under the power law</strong><small>Would say Add. A buy cross is not waiting to happen.</small></span><span class="state">The answer</span></button>
+          <button class="rule" data-open="trend"><span class="n">5</span><span><strong>55% above the power law</strong><small>Would say Go slow. Price is 55% under, so this would not have fit either.</small></span><span class="state">Not used</span></button>
+          <button class="rule" data-open="trend"><span class="n">6</span><span><strong>Ordinary week</strong><small>Would say Steady, and only when nothing above fits.</small></span><span class="state">Not used</span></button>
+        </div>
+        <p class="foot">Open a row to see the indicator behind that rule. Coins you already hold stay held. Research, not personal advice.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="indicators">
+    <div class="key" aria-label="What the labels mean">
+      <p><span class="badge used">Used this week</span> changes Friday’s answer</p>
+      <p><span class="badge pair">Used as a pair</span> never decides a week alone</p>
+      <p><span class="badge pace">Sets the pace</span> how fast an extra buy is spread</p>
+      <p><span class="badge passed">Passed</span> the moment is over</p>
+      <p><span class="badge watch">Watching</span> visible, not in the answer</p>
+    </div>
+    <div class="desk">
+      <div class="ind-list" role="tablist">
+        <button class="ind" data-ind="trend"><strong>Power law</strong><span>Used this week · −55%</span></button>
+        <button class="ind" data-ind="gold"><strong>Z-score</strong><span>Used as a pair · gold rose</span></button>
+        <button class="ind" data-ind="cost"><strong>Realized price</strong><span>Sets the pace · 1.22×</span></button>
+        <button class="ind" data-ind="buy"><strong>Buy cross</strong><span>Passed · 18 Sep 2026</span></button>
+        <button class="ind" data-ind="pause"><strong>Sell roll</strong><span>Quiet since 2021</span></button>
+        <button class="ind" data-ind="qqe"><strong>QQE</strong><span>Watching · not tested</span></button>
+      </div>
+      <article class="card chart-card">
+        <div class="panel" id="p-trend">
+          <header><h2>Power law</h2><span class="badge used">Used this week</span></header>
+          <p class="aka">The long-run curve through bitcoin’s daily price since 2010. It shows where price usually sits. It is not a promise of a future price.</p>
+          <svg class="chart" viewBox="0 0 720 260" role="img" aria-label="Price and the long-run trend, on a scale that shows percent changes evenly">
+            <rect width="720" height="260" fill="#fffcf8"/>
+            <g stroke="#efe7db"><path d="M36 36 H680 M36 96 H680 M36 156 H680 M36 210 H680"/></g>
+            <path d="M36 220 C 180 198, 360 160, 680 70" fill="none" stroke="#c4b59a" stroke-width="1.5" stroke-dasharray="5 5"/>
+            <path d="M36 196 C 180 170, 360 126, 680 32" fill="none" stroke="#1d4e89" stroke-width="2"/>
+            <path d="M36 232 C 150 220, 230 140, 270 158 C 320 180, 370 110, 410 70 C 450 34, 490 86, 530 142 C 570 186, 620 156, 660 176 C 675 184, 678 196, 684 204" fill="none" stroke="#0c6a42" stroke-width="2.4"/>
+            <circle cx="684" cy="204" r="4.5" fill="#0c6a42"/>
+            <text x="612" y="196" font-size="12" fill="#0c6a42" font-family="Geist, sans-serif">$65,590</text>
+            <text x="36" y="22" font-size="11" fill="#6f675e" font-family="Geist, sans-serif">2013</text>
+            <text x="250" y="22" font-size="11" fill="#6f675e" font-family="Geist, sans-serif">2017</text>
+            <text x="430" y="22" font-size="11" fill="#6f675e" font-family="Geist, sans-serif">2021</text>
+            <text x="640" y="22" font-size="11" fill="#6f675e" font-family="Geist, sans-serif">2026</text>
+          </svg>
+          <div class="legend"><span><i class="sw" style="color:#0c6a42"></i>Friday prices</span><span><i class="sw" style="color:#1d4e89"></i>Power law, set Friday 13 Nov</span><span><i class="sw" style="color:#c4b59a"></i>20% under the power law</span></div>
+          <p>Today’s price can move the gap to the power law. The curve itself is redrawn only on Friday, using prices known that day. Being 55% under is why this week says Add. It does not make the answer surer.</p>
+        </div>
+        <div class="panel" id="p-gold">
+          <header><h2>Z-score</h2><span class="badge pair">Used as a pair</span></header>
+          <p class="aka">Bitcoin’s price divided by gold’s price, compared with the past year of Fridays. A low z-score means bitcoin is unusually cheap next to gold. This is not the on-chain MVRV z-score.</p>
+          <svg class="chart" viewBox="0 0 720 180" role="img" aria-label="Bitcoin versus gold over the past years">
+            <line x1="36" y1="90" x2="690" y2="90" stroke="#e3dacd"/>
+            <path d="M36 40 C 100 52, 150 140, 210 146 C 290 154, 340 36, 420 46 C 500 56, 540 150, 620 118 C 660 100, 675 72, 690 78" fill="none" stroke="#533b8a" stroke-width="2.4"/>
+            <text x="36" y="28" font-size="12" fill="#6f675e" font-family="Geist, sans-serif">High z-score · rich versus gold</text>
+            <text x="36" y="168" font-size="12" fill="#6f675e" font-family="Geist, sans-serif">Low z-score · cheap versus gold</text>
+          </svg>
+          <p>From 12 Sep 2025 to the setup on 21 Nov 2025, bitcoin fell about 27% and gold rose about 11%. About a quarter of that cheapening was gold rising, which is why this z-score is marked “gold rose.” The answer stays the same. We show the split so a gold rally is not mistaken for bitcoin getting cheap on its own.</p>
+        </div>
+        <div class="panel" id="p-cost">
+          <header><h2>Realized price</h2><span class="badge pace">Sets the pace</span></header>
+          <p class="aka">The average price paid for the bitcoin that exists, weighted by when it last moved. Under realized price, one larger sum is sliced across Fridays.</p>
+          <svg class="chart" viewBox="0 0 720 180" role="img" aria-label="Price compared with the average price people paid">
+            <line x1="36" y1="96" x2="690" y2="96" stroke="#1d4e89" stroke-dasharray="4 4"/>
+            <path d="M36 70 C 120 36, 190 130, 270 142 C 360 156, 420 78, 500 58 C 580 40, 640 88, 690 74" fill="none" stroke="#1d4e89" stroke-width="2.4"/>
+            <text x="44" y="88" font-size="12" fill="#1d4e89" font-family="Geist, sans-serif">Realized price</text>
+          </svg>
+          <p>Today bitcoin is 1.22 times realized price, so the extra weekly slice stays off. While price was under realized price, about 79% of those weeks were up at least 50% a year later. That happened in four separate stretches, not in 79 separate bets. The exact weekly pace was not tested.</p>
+        </div>
+        <div class="panel" id="p-buy">
+          <header><h2>Buy cross</h2><span class="badge passed">Passed</span></header>
+          <p class="aka">The rare week when the power law and the z-score line up, in that order. It is the only pairing that earned a timing result. Buy strongly is the name of that week’s answer.</p>
+          <svg class="chart" viewBox="0 0 720 170" role="img" aria-label="Five rare buy weeks since 2015">
+            <line x1="40" y1="88" x2="680" y2="88" stroke="#e3dacd" stroke-width="2"/>
+            <g font-family="Geist, sans-serif" font-size="12">
+              <circle cx="110" cy="88" r="6" fill="#0c6a42"/><text x="78" y="68" fill="#1c1915">Jul 2015</text>
+              <circle cx="240" cy="88" r="6" fill="#0c6a42"/><text x="206" y="118" fill="#1c1915">May 2019</text>
+              <circle cx="340" cy="88" r="6" fill="#0c6a42"/><text x="308" y="68" fill="#1c1915">Jul 2020</text>
+              <circle cx="470" cy="88" r="6" fill="#0c6a42"/><text x="436" y="118" fill="#1c1915">Mar 2023</text>
+              <circle cx="630" cy="88" r="6" fill="#1d4e89"/><text x="574" y="68" fill="#1d4e89">Sep 2026, open</text>
+            </g>
+          </svg>
+          <p>All 4 finished years after these weeks gained at least 50%. A cautious reading is about 6 times in 10. The 2026 week is still open, so it is not in that count. Buy strongly applied on 18 Sep and, if you missed it, on 25 Sep. It does not stay on just because price is still low.</p>
+        </div>
+        <div class="panel" id="p-pause">
+          <header><h2>Sell roll</h2><span class="badge passed">Quiet</span></header>
+          <p class="aka">The power law and the z-score on the expensive side. It can pause new buying for up to a year. It does not sell the bitcoin you hold.</p>
+          <svg class="chart" viewBox="0 0 720 150" role="img" aria-label="Past pause weeks, none since 2021">
+            <line x1="40" y1="78" x2="680" y2="78" stroke="#e3dacd" stroke-width="2"/>
+            <g fill="#8f2d2d">
+              <circle cx="70" cy="78" r="5"/><circle cx="120" cy="78" r="5"/><circle cx="160" cy="78" r="5"/>
+              <circle cx="280" cy="78" r="5"/><circle cx="330" cy="78" r="5"/><circle cx="370" cy="78" r="5"/>
+              <circle cx="470" cy="78" r="5"/><circle cx="520" cy="78" r="5"/>
+            </g>
+            <text x="548" y="74" font-size="12" fill="#6f675e" font-family="Geist, sans-serif">quiet since 2021</text>
+          </svg>
+          <p>In 6 of 8 finished cases the next year was flat or down. Two cases were followed by very large gains, which is why this never sells your coins. It also missed the 2019–20 drop and the 2025–26 drop. A cautious reading is about 6 times in 10.</p>
+        </div>
+        <div class="panel" id="p-qqe">
+          <header><h2>QQE</h2><span class="badge watch">Watching</span></header>
+          <p class="aka">QQE weighted oscillator. A smoothed strength reading with a trailing line, from a 12 Nov 2026 chart that said it had marked bitcoin lows since 2012. That claim is the author’s. We have not tested it.</p>
+          <svg class="chart" viewBox="0 0 720 180" role="img" aria-label="Schematic momentum line turning up">
+            <path d="M36 48 C 90 92, 140 142, 190 128 C 250 112, 290 40, 360 48 C 430 58, 470 150, 540 138 C 600 126, 640 92, 690 84" fill="none" stroke="#8a5a10" stroke-width="2.4"/>
+            <path d="M36 66 C 90 104, 140 152, 190 140 C 250 126, 290 58, 360 66 C 430 76, 470 158, 540 148 C 600 136, 650 104, 690 96" fill="none" stroke="#c4b59a" stroke-width="1.6"/>
+            <circle cx="690" cy="84" r="4" fill="#8a5a10"/>
+          </svg>
+          <p>The line is here so you can see the same picture the post was about. It does not move Add, Buy strongly, or Pause. If a later test beats simply buying and holding, on the same rules as the other indicators, it can earn a place in the list. It has not.</p>
+        </div>
+      </article>
+      <aside class="card side">
+        <header><h3 style="margin:0">How this fits</h3></header>
+        <p id="fit"></p>
+        <h3>Friday’s order</h3>
+        <ol class="mini" id="mini"></ol>
+        <h3>The calculation</h3>
+        <p class="formula" id="calc"></p>
+      </aside>
+    </div>
+    <details class="words">
+      <summary>Plain meanings for the quieter words</summary>
+      <dl>
+        <dt>Indicator</dt><dd>One named calculation, such as the power law or the z-score. An indicator is not itself the instruction.</dd>
+        <dt>Today’s readings</dt><dd>The live price and the current value of each indicator the site watches. They can change when you open the page. They do not change the answer until Friday.</dd>
+        <dt>This week’s answer</dt><dd>The one instruction set each Friday. Pause, Go slow, Steady, Add, or Buy strongly. The five marks show where it sits. They are not a second list of indicators.</dd>
+        <dt>Checklist</dt><dd>The conditions in the order Friday checks them. The first one that fits sets the answer. Below the average price paid is a pace on that list, not a sixth answer.</dd>
+        <dt>Already happened</dt><dd>The buy-cross week is over. It was 18 Sep, plus one extra Friday on 25 Sep.</dd>
+        <dt>Does not fit</dt><dd>Friday checked the condition and it was false.</dd>
+        <dt>Not used</dt><dd>A later condition. An earlier one already won, so the walk stopped.</dd>
+        <dt>Cautious reading</dt><dd>A smaller number than the raw win rate, so four successes in four tries are not treated as a sure thing. About 6 or 7 times in 10, depending on the rule.</dd>
+        <dt>Stretch</dt><dd>One continuous run of similar weeks. Overlapping weeks are not counted as separate tries.</dd>
+        <dt>Open</dt><dd>The year after the event is not finished, so that event is shown and not added to the record.</dd>
+      </dl>
+    </details>
+  </section>
+  <p class="foot">Mockup. Readings from the Friday 13 Nov 2026 answer and the Saturday 14 Nov 2026 live price. Charts are drawings of that story, not a fresh fit. Research, not advice.</p>
+</main>
+<script>
+const fit = {
+  trend: {
+    text: "The power law is the reading that makes the answer Add. Price is about 55% under the curve set on Friday. The rule needs at least 20% under, and it only applies when a buy cross is not waiting.",
+    on: 4,
+    calc: "A curve is fit to every daily close since bitcoin had a usable price.\nGap = today’s price ÷ Friday’s trend − 1.\nToday’s price can move the gap.\nThe curve waits until Friday."
+  },
+  gold: {
+    text: "The z-score never chooses the week by itself. It is the other half of the buy cross and of the sell roll. Between Fridays we can show a preview. Only Friday’s z-score can start or finish those weeks.",
+    on: 0,
+    calc: "Compare bitcoin’s Friday close with gold’s close.\nSee how unusual that is against the past 52 Fridays.\nGold’s share of a drop is noted when gold rose.\nA preview during the week changes nothing."
+  },
+  cost: {
+    text: "Realized price decides whether a separate, larger sum is sliced across Fridays. It does not upgrade Add into Buy strongly. At 1.22 times realized price, the slice is off.",
+    on: 2,
+    calc: "Realized price = what the market values bitcoin at ÷ the average price of coins that exist.\nUnder 1 on a Friday: slice one larger sum.\nFive Fridays back above realized price end the cheap stretch."
+  },
+  buy: {
+    text: "The buy cross turns on Buy strongly for that Friday, plus one extra Friday if you missed it. Both have passed. The year after 18 Sep 2026 is still unfinished, so this episode is shown as open.",
+    on: 1,
+    calc: "Setup: bitcoin at least 20% under the trend, and unusually cheap versus gold.\nBuy week: a later Friday, when bitcoin is no longer cheap versus gold.\nThen the setup ends. One buy week per setup."
+  },
+  pause: {
+    text: "The sell roll is the condition “rich market turning down.” It has not turned on since 2021. While it is quiet, the walk continues to “20% under the power law,” which is why the answer is Add.",
+    on: 3,
+    calc: "Setup: at least 55% above the trend, and rich versus gold.\nPause week: leave that zone, at least 10% under the high of that stretch.\nNew buying can wait up to 12 months. Coins stay held."
+  },
+  qqe: {
+    text: "QQE is here so you can read it. Watching means it cannot change the answer. There is no rule number for it.",
+    on: 0,
+    calc: "QQE weighted oscillator: smoothed strength versus a trailing line.\nSettings are not frozen, and the history is not scored.\nNo rule. No record."
+  }
+};
+const rules = [
+  ["Buy-cross week", "Already happened"],
+  ["Below the average price paid", "Does not fit"],
+  ["Rich market turning down", "Does not fit"],
+  ["20% under the power law", "The answer"],
+  ["55% above the power law", "Not used"],
+  ["Ordinary week", "Not used"]
+];
+function paintSide(id) {
+  const row = fit[id];
+  document.getElementById("fit").textContent = row.text;
+  document.getElementById("calc").textContent = row.calc;
+  document.getElementById("mini").innerHTML = rules.map((rule, i) => {
+    const on = i + 1 === row.on ? " class=\"on\"" : "";
+    return `<li${on}><span>${i + 1}. ${rule[0]}</span><span>${rule[1]}</span></li>`;
+  }).join("");
+}
+function show(view, id) {
+  document.getElementById("week").classList.toggle("on", view === "week");
+  document.getElementById("indicators").classList.toggle("on", view === "indicators");
+  document.getElementById("nav-week").setAttribute("aria-current", view === "week" ? "page" : "false");
+  document.getElementById("nav-ind").setAttribute("aria-current", view === "indicators" ? "page" : "false");
+  if (view === "indicators") {
+    const pick = id || "trend";
+    document.querySelectorAll(".ind").forEach((btn) => btn.setAttribute("aria-pressed", btn.dataset.ind === pick ? "true" : "false"));
+    document.querySelectorAll(".panel").forEach((panel) => panel.classList.toggle("on", panel.id === "p-" + pick));
+    paintSide(pick);
+  }
+  const next = view === "week" ? "#week" : "#indicators/" + (id || "trend");
+  if (location.hash !== next) history.replaceState(null, "", next);
+}
+function fromHash() {
+  const hash = location.hash.replace("#", "");
+  if (hash.startsWith("indicators")) {
+    const id = hash.split("/")[1] || "trend";
+    show("indicators", fit[id] ? id : "trend");
+  } else show("week");
+}
+document.querySelectorAll("[data-go]").forEach((btn) => btn.addEventListener("click", () => show(btn.dataset.go, "trend")));
+document.querySelectorAll("[data-open]").forEach((btn) => btn.addEventListener("click", () => show("indicators", btn.dataset.open)));
+document.querySelectorAll(".ind").forEach((btn) => btn.addEventListener("click", () => show("indicators", btn.dataset.ind)));
+window.addEventListener("hashchange", fromHash);
+fromHash();
+</script>
+</body>
+</html>

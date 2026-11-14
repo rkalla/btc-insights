@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proposal A · The desk · BTC Friday</title>
+<style>
+@font-face { font-family: Geist; src: url("../../../public/fonts/geist-latin-400-normal.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: Geist; src: url("../../../public/fonts/geist-latin-500-normal.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+@font-face { font-family: Geist; src: url("../../../public/fonts/geist-latin-600-normal.woff2") format("woff2"); font-weight: 600; font-display: swap; }
+@font-face { font-family: Geist; src: url("../../../public/fonts/geist-latin-700-normal.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+:root {
+  --paper: #f3efe6; --ink: #1c1915; --muted: #6f675e; --line: #e3dacd;
+  --card: #fffcf8; --buy: #0c6a42; --buy-bg: #e7f5ee; --live: #1d4e89;
+  --live-bg: #e8f0fa; --watch: #8a5a10; --watch-bg: #f8f0dc; --off: #8a837a;
+  --shadow: 0 1px 0 rgba(28,25,21,.04), 0 16px 40px rgba(80,60,30,.06);
+  color: var(--ink); background: var(--paper);
+  font-family: Geist, "Segoe UI", sans-serif; font-size: 16px; line-height: 1.45;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+button, a { font: inherit; color: inherit; }
+button { background: none; border: 0; cursor: pointer; }
+.ribbon { display: flex; justify-content: space-between; gap: 16px; padding: 8px 28px; background: #1c1915; color: #f3efe6; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
+.ribbon b { font-weight: 600; letter-spacing: 0; text-transform: none; font-size: 13px; }
+header { display: flex; align-items: center; gap: 28px; padding: 18px 28px 8px; }
+.brand { font-weight: 650; font-weight: 600; letter-spacing: -.03em; font-size: 18px; }
+.brand span { color: var(--muted); font-weight: 500; }
+nav { display: flex; gap: 4px; background: rgba(255,255,255,.6); padding: 4px; border-radius: 999px; border: 1px solid var(--line); }
+nav button { padding: 6px 14px; border-radius: 999px; color: var(--muted); }
+nav button[aria-current="page"] { background: var(--ink); color: var(--paper); }
+.stamp { margin-left: auto; text-align: right; font-size: 13px; color: var(--muted); }
+.stamp strong { color: var(--ink); font-weight: 600; }
+main { padding: 12px 28px 40px; max-width: 1240px; }
+.view { display: none; }
+.view.on { display: block; }
+.grid { display: grid; grid-template-columns: 420px 1fr; gap: 18px; align-items: start; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); }
+.call { padding: 22px 22px 18px; }
+.kicker { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--buy); font-weight: 600; }
+h1 { font-size: 40px; line-height: 1.05; letter-spacing: -.04em; margin: 8px 0 6px; font-weight: 600; }
+.sub { margin: 0; color: var(--muted); }
+.scale { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 22px 0 8px; padding: 0; list-style: none; }
+.scale li { text-align: center; font-size: 12px; color: var(--muted); padding-top: 10px; border-top: 3px solid #ddd4c6; }
+.scale li.on { color: var(--buy); font-weight: 600; border-color: var(--buy); }
+.scale-note { margin: 0 0 16px; font-size: 12px; color: var(--muted); }
+.todo { margin: 0; padding-left: 18px; }
+.todo li { margin: 6px 0; }
+.record { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
+.record b { display: block; font-size: 15px; }
+.record span { color: var(--muted); }
+.developing { margin-top: 14px; background: var(--live-bg); color: var(--live); border-radius: 12px; padding: 10px 12px; font-size: 13px; }
+.developing strong { font-weight: 600; }
+.stack h2, .inspector h2, .models-head h2 { font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 0 0 10px; }
+.reading { width: 100%; text-align: left; display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); margin-bottom: 8px; }
+.reading .name { font-weight: 600; }
+.reading small { grid-column: 1 / -1; color: var(--muted); }
+.reading .num { font-variant-numeric: tabular-nums; font-weight: 600; font-size: 18px; letter-spacing: -.03em; }
+.reading[aria-pressed="true"] { border-color: var(--ink); }
+.badge { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; padding: 3px 7px; border-radius: 999px; justify-self: end; }
+.badge.votes { background: var(--buy-bg); color: var(--buy); }
+.badge.pair { background: #ece7f8; color: #533b8a; }
+.badge.pace { background: var(--live-bg); color: var(--live); }
+.badge.watch { background: var(--watch-bg); color: var(--watch); }
+.badge.off { background: #f0ebe3; color: var(--off); }
+.models { display: grid; grid-template-columns: 220px 1fr 280px; gap: 16px; }
+.model-list { display: flex; flex-direction: column; gap: 6px; }
+.model-list button { text-align: left; padding: 10px 12px; border-radius: 12px; border: 1px solid transparent; }
+.model-list button[aria-pressed="true"] { background: var(--card); border-color: var(--line); }
+.model-list strong { display: block; font-weight: 600; }
+.model-list span { color: var(--muted); font-size: 12px; }
+.chart-card, .inspector { padding: 16px 16px 12px; }
+.chart-card header, .inspector header { display: flex; justify-content: space-between; align-items: baseline; padding: 0; gap: 12px; }
+.chart-card h2, .inspector h3 { margin: 0; font-size: 20px; letter-spacing: -.03em; }
+svg.chart { width: 100%; height: auto; display: block; margin-top: 8px; }
+.legend { display: flex; gap: 14px; font-size: 12px; color: var(--muted); margin-top: 6px; }
+.sw { display: inline-block; width: 14px; height: 3px; margin-right: 6px; vertical-align: middle; background: currentColor; }
+.sw.trend { color: #1d4e89; }
+.sw.price { color: #0c6a42; }
+.sw.band { color: #b9a88a; }
+.formula { font-family: ui-monospace, "SFMono-Regular", monospace; font-size: 12px; background: #f6f1e8; padding: 10px 12px; border-radius: 10px; line-height: 1.5; white-space: pre-line; }
+.gates { list-style: none; margin: 8px 0 0; padding: 0; }
+.gates li { display: flex; justify-content: space-between; gap: 8px; padding: 7px 0; border-top: 1px solid var(--line); font-size: 13px; }
+.gates li.on { color: var(--buy); font-weight: 600; }
+.gates .why { color: var(--muted); font-weight: 400; }
+.foot { margin-top: 14px; color: var(--muted); font-size: 12px; }
+.panel { display: none; }
+.panel.on { display: block; }
+</style>
+</head>
+<body>
+<p class="ribbon"><span>Proposal A · The desk</span><b>A call you can open. Each input is an instrument. The stamp is still Friday.</b></p>
+<header>
+  <div class="brand">BTC Friday <span>desk</span></div>
+  <nav>
+    <button type="button" data-view="home" aria-current="page">Call</button>
+    <button type="button" data-view="models">Models</button>
+  </nav>
+  <div class="stamp">Official stamp <strong>Fri 13 Nov 2026</strong><br>Next stamp Fri 20 Nov · 5:00 pm your time</div>
+</header>
+<main>
+  <section class="view on" id="home">
+    <div class="grid">
+      <article class="card call">
+        <div class="kicker">Cash · Add</div>
+        <h1>A good time to add.</h1>
+        <p class="sub">Keep the bitcoin you already hold. This is the Friday stamp, not a live trade.</p>
+        <ol class="scale">
+          <li>Pause</li><li>Go slow</li><li>Steady</li><li class="on">Add</li><li>Buy strongly</li>
+        </ol>
+        <p class="scale-note">Where you are on the scale. Not how sure the model is.</p>
+        <ol class="todo">
+          <li>Put the money you have set aside into bitcoin when you have it.</li>
+          <li>Keep your regular buy going.</li>
+        </ol>
+        <div class="record">
+          <div><b>6 of 6 finished stretches</b><span>Floor about 69%. One stretch open since Nov 2025.</span></div>
+          <div><b>Not high confidence</b><span>High confidence needs a floor of 80%.</span></div>
+        </div>
+        <p class="developing"><strong>Live, 14 Nov, 9:07 am.</strong> Bitcoin $65,590, about 55% under the Friday trend of $145,800. If today were Friday, the first matching gate would still be Add. The stamp does not move until Friday.</p>
+      </article>
+      <div class="stack">
+        <h2>Why Add, and not Buy strongly</h2>
+        <button class="reading" data-model="power" aria-pressed="true">
+          <span class="name">Power-law gap</span>
+          <span class="badge votes">Votes</span>
+          <span class="num">−55%</span>
+          <small>Under the $145,800 trend. At least 20% under turns on Add, once stronger gates are off. Price is live. The fit was stamped Friday.</small>
+        </button>
+        <button class="reading" data-model="cross">
+          <span class="name">Buy cross</span>
+          <span class="badge off">Closed</span>
+          <span class="num">18 Sep</span>
+          <small>Fired 18 Sep. The grace Fridays have passed. Buy strongly is only that window. It is not “more cheap.” 4 of 4 finished years, floor about 60%. This year is still open.</small>
+        </button>
+        <button class="reading" data-model="realized">
+          <span class="name">Realized cost</span>
+          <span class="badge pace">Sets pace</span>
+          <span class="num">1.22×</span>
+          <small>Above cost, so the weekly build slice stays off. Live print. It does not vote on Add.</small>
+        </button>
+        <button class="reading" data-model="gold">
+          <span class="name">Bitcoin / gold</span>
+          <span class="badge pair">Pair only</span>
+          <span class="num">Flag on</span>
+          <small>Gold drove 24.5% of the cheapening into the November 2025 arm. The z-score is not its own buy. A developing score can show today. It cannot fire.</small>
+        </button>
+        <button class="reading" data-model="qqe">
+          <span class="name">QQE weighted</span>
+          <span class="badge watch">Watched</span>
+          <span class="num">Unscored</span>
+          <small>Turning up on the two-week chart in the 12 Nov 2026 note. Not in this call until it is scored the same way as the others.</small>
+        </button>
+      </div>
+    </div>
+    <p class="foot">Mockup of https://btcfriday.app using the 13 Nov 2026 stamp and the 14 Nov 2026 live print. Open any row to see that model.</p>
+  </section>
+
+  <section class="view" id="models">
+    <div class="models">
+      <div class="model-list" role="tablist">
+        <button data-model="power" aria-pressed="true"><strong>Power law</strong><span>Votes · −55%</span></button>
+        <button data-model="cross"><strong>Buy cross</strong><span>Closed · 18 Sep 2026</span></button>
+        <button data-model="gold"><strong>Bitcoin / gold</strong><span>Pair only · flag on</span></button>
+        <button data-model="realized"><strong>Realized cost</strong><span>Sets pace · 1.22×</span></button>
+        <button data-model="sell"><strong>Sell roll</strong><span>Quiet since 2021</span></button>
+        <button data-model="qqe"><strong>QQE weighted</strong><span>Watched · unscored</span></button>
+      </div>
+      <article class="card chart-card">
+        <div class="panel on" id="panel-power">
+          <header><h2>Power law</h2><span class="badge votes">Votes</span></header>
+          <p class="sub">Log price against the trend fit through Friday. The −20% and +55% lines are the tested gates. They are not a price target.</p>
+          <svg class="chart" viewBox="0 0 720 280" role="img" aria-label="Schematic log-price chart with trend and bands">
+            <rect width="720" height="280" fill="#fffcf8"/>
+            <g stroke="#efe7db" stroke-width="1">
+              <path d="M40 40 H690 M40 100 H690 M40 160 H690 M40 220 H690"/>
+            </g>
+            <path d="M40 236 C 180 214, 360 176, 690 78" fill="none" stroke="#c4b59a" stroke-width="1.5" stroke-dasharray="5 5"/>
+            <path d="M40 210 C 180 184, 360 140, 690 36" fill="none" stroke="#1d4e89" stroke-width="2"/>
+            <path d="M40 248 C 160 236, 240 150, 280 168 C 330 190, 370 120, 410 78 C 450 40, 490 92, 530 150 C 570 196, 610 168, 650 188 C 670 198, 680 206, 690 214" fill="none" stroke="#0c6a42" stroke-width="2.4"/>
+            <circle cx="690" cy="214" r="4.5" fill="#0c6a42"/>
+            <text x="628" y="204" font-size="11" fill="#0c6a42" font-family="Geist, sans-serif">$65,590</text>
+            <text x="40" y="24" font-size="11" fill="#6f675e" font-family="Geist, sans-serif">2013</text>
+            <text x="250" y="24" font-size="11" fill="#6f675e" font-family="Geist, sans-serif">2017</text>
+            <text x="430" y="24" font-size="11" fill="#6f675e" font-family="Geist, sans-serif">2021</text>
+            <text x="640" y="24" font-size="11" fill="#6f675e" font-family="Geist, sans-serif">2026</text>
+          </svg>
+          <div class="legend"><span><i class="sw price"></i>Friday closes</span><span><i class="sw trend"></i>Trend, fit through 13 Nov</span><span><i class="sw band"></i>20% under</span></div>
+        </div>
+        <div class="panel" id="panel-cross">
+          <header><h2>Buy cross</h2><span class="badge off">Window closed</span></header>
+          <p class="sub">Arms when price is 20% under trend and the gold z-score is at or below −90. Fires when z later crosses back above zero. One fire per arm.</p>
+          <svg class="chart" viewBox="0 0 720 180" role="img" aria-label="Five buy-cross fires marked on a timeline">
+            <line x1="40" y1="90" x2="690" y2="90" stroke="#e3dacd" stroke-width="2"/>
+            <g fill="#0c6a42" font-family="Geist, sans-serif" font-size="12">
+              <circle cx="120" cy="90" r="6"/><text x="92" y="70">Jul 2015</text>
+              <circle cx="250" cy="90" r="6"/><text x="222" y="120">May 2019</text>
+              <circle cx="340" cy="90" r="6"/><text x="308" y="70">Jul 2020</text>
+              <circle cx="470" cy="90" r="6"/><text x="438" y="120">Mar 2023</text>
+              <circle cx="640" cy="90" r="6" fill="#1d4e89"/><text x="600" y="70" fill="#1d4e89">Sep 2026 open</text>
+            </g>
+          </svg>
+        </div>
+        <div class="panel" id="panel-gold">
+          <header><h2>Bitcoin / gold z-score</h2><span class="badge pair">Pair only</span></header>
+          <p class="sub">52 Friday ratios. −100 means one standard deviation cheap versus gold. The chart splits the bitcoin leg from the gold leg. It never prints its own call.</p>
+          <svg class="chart" viewBox="0 0 720 180" role="img" aria-label="Schematic z-score">
+            <line x1="40" y1="90" x2="690" y2="90" stroke="#e3dacd"/>
+            <path d="M40 40 C 100 50, 140 130, 200 140 C 280 150, 320 40, 400 50 C 480 60, 520 150, 600 120 C 650 100, 670 70, 690 78" fill="none" stroke="#533b8a" stroke-width="2.4"/>
+            <text x="40" y="28" font-size="11" fill="#6f675e" font-family="Geist, sans-serif">Rich</text>
+            <text x="40" y="168" font-size="11" fill="#6f675e" font-family="Geist, sans-serif">Cheap</text>
+          </svg>
+        </div>
+        <div class="panel" id="panel-realized">
+          <header><h2>Realized cost</h2><span class="badge pace">Sets pace</span></header>
+          <p class="sub">Market value divided by realized value. Under 1, one tranche is sliced on Fridays. The schedule itself was not tested. Today’s live ratio is 1.22, so the slice is off.</p>
+          <svg class="chart" viewBox="0 0 720 180" role="img" aria-label="Schematic realized-price ratio">
+            <line x1="40" y1="100" x2="690" y2="100" stroke="#1d4e89" stroke-dasharray="4 4"/>
+            <path d="M40 70 C 120 40, 180 130, 260 140 C 340 150, 400 80, 480 60 C 560 40, 620 90, 690 78" fill="none" stroke="#1d4e89" stroke-width="2.4"/>
+            <text x="48" y="94" font-size="11" fill="#1d4e89" font-family="Geist, sans-serif">1.00 cost</text>
+          </svg>
+        </div>
+        <div class="panel" id="panel-sell">
+          <header><h2>Sell roll</h2><span class="badge off">Quiet</span></header>
+          <p class="sub">Can pause new cash for up to 12 months. It does not sell coins. Not armed since 2021. Silent through the 2019–20 and 2025–26 declines. 7 of 8, floor about 59%.</p>
+          <svg class="chart" viewBox="0 0 720 160" role="img" aria-label="Sell-roll fires, none since 2021">
+            <line x1="40" y1="80" x2="690" y2="80" stroke="#e3dacd" stroke-width="2"/>
+            <g fill="#8f2d2d">
+              <circle cx="80" cy="80" r="5"/><circle cx="140" cy="80" r="5"/><circle cx="180" cy="80" r="5"/>
+              <circle cx="300" cy="80" r="5"/><circle cx="360" cy="80" r="5"/><circle cx="400" cy="80" r="5"/>
+              <circle cx="500" cy="80" r="5"/><circle cx="540" cy="80" r="5"/>
+            </g>
+            <text x="560" y="76" font-size="12" fill="#6f675e" font-family="Geist, sans-serif">quiet since 2021</text>
+          </svg>
+        </div>
+        <div class="panel" id="panel-qqe">
+          <header><h2>QQE weighted oscillator</h2><span class="badge watch">Watched</span></header>
+          <p class="sub">LuxAlgo smoothed RSI with a weighted trailing stop, as posted by James Easton on 12 Nov 2026. The “100% since 2012” line is the post’s claim. This site has not scored it. The lane is here so you can see it. It does not move the call.</p>
+          <svg class="chart" viewBox="0 0 720 180" role="img" aria-label="Schematic QQE oscillator turning up">
+            <path d="M40 50 C 90 90, 130 140, 180 130 C 240 118, 280 40, 340 48 C 410 58, 450 150, 520 140 C 580 130, 620 90, 660 110 C 675 118, 684 100, 690 88" fill="none" stroke="#8a5a10" stroke-width="2.4"/>
+            <path d="M40 70 C 90 100, 130 150, 180 142 C 240 130, 280 60, 340 66 C 410 74, 450 158, 520 150 C 580 140, 620 104, 690 96" fill="none" stroke="#c4b59a" stroke-width="1.6"/>
+            <circle cx="690" cy="88" r="4" fill="#8a5a10"/>
+          </svg>
+        </div>
+      </article>
+      <aside class="card inspector">
+        <h2>This week’s rollup</h2>
+        <p class="sub">First matching gate wins. There is no average and no vote count.</p>
+        <ol class="gates">
+          <li><span>Buy strongly</span><span class="why">Fire window closed</span></li>
+          <li><span>Build</span><span class="why">Above cost</span></li>
+          <li><span>Pause</span><span class="why">Sell roll quiet</span></li>
+          <li class="on"><span>Add</span><span>−55% gap</span></li>
+          <li><span>Go slow</span><span class="why">Not 55% rich</span></li>
+          <li><span>Steady</span><span class="why">Not reached</span></li>
+        </ol>
+        <p class="formula" id="formula">gap = price / trend − 1<br>trend from Friday’s fit<br>live price may move the gap<br>the fit waits for Friday</p>
+        <p class="foot">Coins: Hold. Trim is off. Exit is off. Research, not advice.</p>
+      </aside>
+    </div>
+  </section>
+</main>
+<script>
+const formulas = {
+  power: "log10(price) = a + b · log10(days since 3 Jan 2009)\ngap = price / trend − 1\nFit uses closes through Friday only.",
+  cross: "Arm: z ≤ −90 and gap ≤ −20%.\nFire: a later Friday, z crosses above 0.\nThen disarm. Grace is one more Friday.",
+  gold: "z = 100 × (ratio − mean) / sd\nratio = bitcoin / gold, 52 Fridays.\nGold share above 15% raises the flag.",
+  realized: "ratio = market value / realized value\nUnder 1: slice one tranche on Fridays.\n1.22 today: slice off.",
+  sell: "Arm: gap ≥ +55% and z ≥ +40.\nFire: leave that zone and drop 10% from the spell peak.\nPause cash up to 12 months. Coins stay.",
+  qqe: "Smoothed RSI versus a weighted trailing stop.\nLength, factor, smooth, weight still unset.\nUnscored. Watched. No gate."
+};
+function show(view) {
+  document.querySelectorAll(".view").forEach((el) => el.classList.toggle("on", el.id === view));
+  document.querySelectorAll("nav button").forEach((btn) => {
+    btn.setAttribute("aria-current", btn.dataset.view === view ? "page" : "false");
+  });
+}
+function model(id) {
+  document.querySelectorAll("[data-model]").forEach((el) => {
+    if (el.closest(".model-list, .stack")) el.setAttribute("aria-pressed", el.dataset.model === id ? "true" : "false");
+  });
+  document.querySelectorAll(".panel").forEach((el) => el.classList.toggle("on", el.id === "panel-" + id));
+  const box = document.getElementById("formula");
+  if (box && formulas[id]) box.textContent = formulas[id];
+  show("models");
+}
+document.querySelectorAll("nav button").forEach((btn) => btn.addEventListener("click", () => show(btn.dataset.view)));
+document.querySelectorAll(".stack .reading, .model-list button").forEach((btn) => btn.addEventListener("click", () => model(btn.dataset.model)));
+const params = new URLSearchParams(location.search);
+if (params.get("view") === "models") show("models");
+if (params.get("model")) model(params.get("model"));
+</script>
+</body>
+</html>

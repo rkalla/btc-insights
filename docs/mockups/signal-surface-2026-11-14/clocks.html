@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proposal B · Two clocks · BTC Friday</title>
+<style>
+@font-face { font-family: Geist; src: url("../../../public/fonts/geist-latin-400-normal.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: Geist; src: url("../../../public/fonts/geist-latin-500-normal.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+@font-face { font-family: Geist; src: url("../../../public/fonts/geist-latin-600-normal.woff2") format("woff2"); font-weight: 600; font-display: swap; }
+@font-face { font-family: Geist; src: url("../../../public/fonts/geist-latin-700-normal.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+:root { color: #f4f1ea; background: #10140f; font-family: Geist, sans-serif; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+a { color: inherit; }
+.ribbon { display: flex; justify-content: space-between; padding: 8px 22px; background: #c8f54b; color: #142006; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+.ribbon b { letter-spacing: 0; text-transform: none; font-size: 13px; }
+.topbar { display: flex; align-items: center; gap: 18px; padding: 14px 22px; }
+.brand { font-weight: 600; letter-spacing: -.03em; }
+nav { display: flex; gap: 8px; }
+nav button { padding: 6px 12px; border-radius: 8px; color: #b7c0ad; }
+nav button[aria-current="page"] { background: #1c2618; color: #f4f1ea; }
+.live-tag { margin-left: auto; font-size: 12px; color: #c8f54b; }
+.view { display: none; }
+.view.on { display: block; }
+.now { padding: 6px 22px 22px; }
+.now h1 { font-size: 13px; letter-spacing: .16em; text-transform: uppercase; color: #c8f54b; font-weight: 600; margin: 0 0 12px; }
+.tape { display: grid; grid-template-columns: 1.3fr repeat(4, 1fr); gap: 10px; }
+.tick { background: #171d15; border: 1px solid #2a3326; border-radius: 16px; padding: 14px; min-height: 148px; text-align: left; }
+.tick b { display: block; font-size: 28px; letter-spacing: -.04em; font-weight: 600; }
+.tick em { font-style: normal; color: #9aa892; font-size: 12px; }
+.tick svg { width: 100%; height: 42px; margin-top: 8px; }
+.horizon { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 14px; padding: 0 22px; color: #9aa892; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; }
+.horizon i { height: 1px; background: #2a3326; }
+.stamp { background: #f7f4ee; color: #1a1814; margin: 18px 22px 28px; border-radius: 22px; padding: 22px; display: grid; grid-template-columns: 280px 1fr; gap: 22px; }
+.stamp h2 { margin: 0; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: #6d6a64; }
+.word { font-size: 64px; line-height: .9; letter-spacing: -.05em; margin: 10px 0; font-weight: 600; }
+.gates { display: flex; flex-direction: column; }
+.gate { display: grid; grid-template-columns: 140px 1fr auto; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid #e6e0d6; font-size: 14px; }
+.gate .bar { height: 8px; background: #ece7de; border-radius: 99px; overflow: hidden; }
+.gate .bar span { display: block; height: 100%; width: 0; background: #c8c2b6; }
+.gate.on .bar span { width: 100%; background: #0c6a42; }
+.gate.on { font-weight: 600; }
+.meta { color: #6d6a64; font-size: 13px; }
+.library { padding: 8px 22px 32px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.card { background: #171d15; border: 1px solid #2a3326; border-radius: 18px; padding: 14px; text-align: left; color: #f4f1ea; }
+.card header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.card h3 { margin: 0; font-size: 18px; letter-spacing: -.03em; }
+.card p { color: #b7c0ad; font-size: 13px; min-height: 54px; }
+.pill { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; padding: 3px 7px; border-radius: 99px; }
+.pill.v { background: #234828; color: #b6f0c8; }
+.pill.w { background: #3a3014; color: #f0d48a; }
+.pill.p { background: #1d2c44; color: #b9d4f5; }
+.pill.o { background: #2a261f; color: #b7aea0; }
+.sheet { display: none; position: fixed; inset: 0; background: rgba(8,10,7,.72); padding: 40px 8vw; }
+.sheet.on { display: block; }
+.sheet article { background: #f7f4ee; color: #1a1814; border-radius: 20px; padding: 22px; max-height: calc(100vh - 80px); overflow: auto; }
+.sheet h3 { margin: 0 0 6px; font-size: 28px; letter-spacing: -.03em; }
+.close { float: right; border: 1px solid #ddd; border-radius: 99px; padding: 6px 10px; }
+.formula { font-family: ui-monospace, monospace; background: #efeae1; padding: 12px; border-radius: 10px; font-size: 13px; }
+svg.big { width: 100%; height: 220px; }
+.note { padding: 0 22px 20px; color: #9aa892; font-size: 12px; }
+</style>
+</head>
+<body>
+<p class="ribbon"><span>Proposal B · Two clocks</span><b>The top half refreshes with the page. The bottom half is the Friday stamp.</b></p>
+<div class="topbar">
+  <div class="brand">BTC Friday</div>
+  <nav>
+    <button data-view="home" aria-current="page">Today</button>
+    <button data-view="library">Model library</button>
+  </nav>
+  <div class="live-tag">Refreshed Sat 14 Nov · 9:07 am your time</div>
+</div>
+
+<section class="view on" id="home">
+  <section class="now">
+    <h1>Now · moves when the page loads · cannot change the stamp</h1>
+    <div class="tape">
+      <button class="tick" data-open="spot"><em>Bitcoin</em><b>$65,590</b><em>Live print. Gap −55% vs Friday trend.</em>
+        <svg viewBox="0 0 220 42" aria-hidden="true"><path d="M2 34 C 30 32, 50 10, 70 16 C 90 22, 110 6, 130 12 C 160 20, 180 28, 218 24" fill="none" stroke="#c8f54b" stroke-width="2"/></svg>
+      </button>
+      <button class="tick" data-open="gap"><em>Gap vs trend</em><b>−55%</b><em>$145,800 trend. Fit is Friday’s.</em>
+        <svg viewBox="0 0 120 42" aria-hidden="true"><path d="M2 10 L 118 34" stroke="#9aa892" stroke-width="2"/><path d="M2 28 L 118 36" stroke="#c8f54b" stroke-width="2"/></svg>
+      </button>
+      <button class="tick" data-open="z"><em>Developing z</em><b>Gold flag</b><em>Shows today. Does not arm or fire.</em>
+        <svg viewBox="0 0 120 42" aria-hidden="true"><path d="M2 30 C 30 34, 50 8, 80 12 C 100 16, 110 22, 118 18" fill="none" stroke="#9ec0f0" stroke-width="2"/></svg>
+      </button>
+      <button class="tick" data-open="rp"><em>Realized ratio</em><b>1.22×</b><em>Above cost. Build stays off.</em>
+        <svg viewBox="0 0 120 42" aria-hidden="true"><path d="M2 20 H118" stroke="#9aa892" stroke-dasharray="3 3"/><path d="M2 28 C 40 8, 70 14, 118 16" fill="none" stroke="#9ec0f0" stroke-width="2"/></svg>
+      </button>
+      <button class="tick" data-open="qqe"><em>QQE weighted</em><b>Rising</b><em>Unscored. Not a gate.</em>
+        <svg viewBox="0 0 120 42" aria-hidden="true"><path d="M2 12 C 30 30, 60 34, 90 22 L 118 14" fill="none" stroke="#f0d48a" stroke-width="2"/></svg>
+      </button>
+    </div>
+  </section>
+  <div class="horizon"><i></i><span>Friday is the study clock</span><i></i></div>
+  <section class="stamp">
+    <div>
+      <h2>Friday stamp · 13 Nov 2026</h2>
+      <div class="word">Add</div>
+      <p class="meta">Put set-aside money in when you have it. Keep the regular buy. Hold the coins. Next stamp Friday 20 Nov.</p>
+      <p class="meta">6 of 6 finished stretches. Floor about 69%. Not high confidence. One stretch still open.</p>
+    </div>
+    <div class="gates" aria-label="Gate order">
+      <div class="gate"><span>Buy strongly</span><div class="bar"><span></span></div><em>Closed after 25 Sep</em></div>
+      <div class="gate"><span>Build</span><div class="bar"><span></span></div><em>Price above cost</em></div>
+      <div class="gate"><span>Pause</span><div class="bar"><span></span></div><em>Sell roll quiet</em></div>
+      <div class="gate on"><span>Add</span><div class="bar"><span></span></div><em>55% under trend</em></div>
+      <div class="gate"><span>Go slow</span><div class="bar"><span></span></div><em>Would need +55%</em></div>
+      <div class="gate"><span>Steady</span><div class="bar"><span></span></div><em>Only if nothing else matches</em></div>
+    </div>
+  </section>
+  <p class="note">Routes in this proposal: /now for the tape, /call for the stamp, /call/2026-11-13 for a past stamp, /models for the library. The phone still does not call an exchange. A small now.json refreshes on load.</p>
+</section>
+
+<section class="view" id="library">
+  <div class="library">
+    <button class="card" data-open="gap"><header><h3>Power law</h3><span class="pill v">Votes</span></header><p>The map and the lump-versus-spread switch. As a weekly ladder it barely beat always owning bitcoin. As the −20% gate it is the reason this week says Add.</p><svg viewBox="0 0 280 70" aria-hidden="true"><path d="M4 60 C 80 50, 150 30, 276 12" fill="none" stroke="#9ec0f0" stroke-width="2"/><path d="M4 64 C 70 58, 120 20, 160 28 C 200 36, 230 48, 276 52" fill="none" stroke="#c8f54b" stroke-width="2"/></svg></button>
+    <button class="card" data-open="z"><header><h3>Bitcoin / gold</h3><span class="pill p">Pair only</span></header><p>The other half of the buy cross and the sell roll. 25% as its own ladder. Kept because the cross needs it. Gold flag is on for this arm.</p><svg viewBox="0 0 280 70" aria-hidden="true"><path d="M4 40 C 40 60, 80 10, 130 16 C 180 22, 220 58, 276 36" fill="none" stroke="#9ec0f0" stroke-width="2"/></svg></button>
+    <button class="card" data-open="rp"><header><h3>Realized cost</h3><span class="pill p">Sets pace</span></header><p>One flag. Under 1, a tranche is sliced. 79% of 91 cheap weeks, four spells. The weekly pace was not tested. Today 1.22×.</p><svg viewBox="0 0 280 70" aria-hidden="true"><path d="M4 36 H276" stroke="#6d6a64" stroke-dasharray="4 4"/><path d="M4 48 C 60 16, 120 20, 180 40 C 230 54, 250 30, 276 28" fill="none" stroke="#9ec0f0" stroke-width="2"/></svg></button>
+    <button class="card" data-open="cross"><header><h3>Buy cross</h3><span class="pill o">Closed</span></header><p>4 of 4 finished years gained at least 50%. Floor about 60%. Fired 18 Sep 2026. The grace Friday has passed, so it is not this week’s action.</p><svg viewBox="0 0 280 70" aria-hidden="true"><line x1="8" y1="36" x2="270" y2="36" stroke="#3a3328"/><g fill="#c8f54b"><circle cx="40" cy="36" r="4"/><circle cx="90" cy="36" r="4"/><circle cx="130" cy="36" r="4"/><circle cx="180" cy="36" r="4"/><circle cx="240" cy="36" r="4" fill="#9ec0f0"/></g></svg></button>
+    <button class="card" data-open="sell"><header><h3>Sell roll</h3><span class="pill o">Quiet</span></header><p>6 of 8 fires, floor about 46%, and two huge up years. Recall missed 2019–20 and 2025–26. It pauses cash. It does not sell coins.</p><svg viewBox="0 0 280 70" aria-hidden="true"><line x1="8" y1="36" x2="270" y2="36" stroke="#3a3328"/><g fill="#e07a7a"><circle cx="24" cy="36" r="4"/><circle cx="52" cy="36" r="4"/><circle cx="78" cy="36" r="4"/><circle cx="120" cy="36" r="4"/><circle cx="148" cy="36" r="4"/><circle cx="176" cy="36" r="4"/><circle cx="210" cy="36" r="4"/><circle cx="238" cy="36" r="4"/></g></svg></button>
+    <button class="card" data-open="qqe"><header><h3>QQE weighted</h3><span class="pill w">Watched</span></header><p>From the 12 Nov 2026 chart. Smoothed RSI and a weighted stop. The hit-rate claim is not this site’s test. Shown so it can be judged beside the scored gates.</p><svg viewBox="0 0 280 70" aria-hidden="true"><path d="M4 16 C 40 40, 80 58, 120 48 C 170 36, 210 20, 250 28 L 276 18" fill="none" stroke="#f0d48a" stroke-width="2"/></svg></button>
+  </div>
+</section>
+
+<div class="sheet" id="sheet">
+  <article>
+    <button class="close" type="button">Close</button>
+    <h3 id="sheet-title">Model</h3>
+    <p id="sheet-body"></p>
+    <svg class="big" viewBox="0 0 720 220" aria-hidden="true">
+      <path d="M20 180 C 140 160, 240 80, 320 96 C 400 112, 460 40, 520 70 C 580 100, 640 150, 700 130" fill="none" stroke="#0c6a42" stroke-width="2.5"/>
+      <path d="M20 190 C 200 170, 400 120, 700 50" fill="none" stroke="#1d4e89" stroke-width="2"/>
+    </svg>
+    <p class="formula" id="sheet-formula"></p>
+  </article>
+</div>
+<script>
+const copy = {
+  spot: ["Bitcoin, live", "The latest print replaces the dot. It is compared with Friday’s trend, which is not refit until the next close. A different print would move old fires, so the official series stays the daily close.", "Spot updates on load from the quote already used for live.json. No exchange call from the phone."],
+  gap: ["Power-law gap", "This is the voting input for Add. At least 20% under the trend, and the buy cross not armed, means put the set-aside money in at once. Between −20% and +55% there is no measured edge either way.", "log10(price) = a + b · log10(days since 3 Jan 2009)\ngap = price / trend − 1"],
+  z: ["Developing z-score", "Mean and standard deviation of 52 Friday bitcoin-to-gold ratios. Between Fridays the page may drop in the latest prints. That line is labeled developing. It cannot arm or fire.", "z = 100 × (ratio − mean52) / sd52\nGold flag: gold’s share of the cheapening above 15%."],
+  rp: ["Realized cost", "One series, market over realized. Below 1 starts a Friday slice of one tranche. The first week under cost is not a lump sum. Today’s 1.22 keeps Build off. The Friday file on the live site currently says the cost print has not arrived. This mockup shows the live ratio instead of hiding the disagreement.", "ratio = CapMVRVCur\nUnder 1 for a Friday close: slice.\nFive Fridays back at or above cost end the spell."],
+  qqe: ["QQE weighted oscillator", "LuxAlgo’s weighted QQE, the indicator in James Easton’s 12 Nov 2026 post. The post says 100% since 2012. That claim has not been run through the 12-month test, the Wilson floor, or the coins-versus-steady-buying test. Until it has, the lane stays watched.", "RSI length, factor, smooth, weight: unset.\nNo gate. No record line."],
+  cross: ["Buy cross", "The only combination that earned a timing event. Four finished fires. The September 2026 fire is open and its grace has passed, which is why the stamp is Add rather than Buy strongly.", "Arm at z ≤ −90 and gap ≤ −20%.\nFire on the later Friday z crosses above 0."],
+  sell: ["Sell roll", "The opposite thresholds. It can pause new cash. Two of eight fires were followed by very large up years, so it never sells the coins.", "Arm at gap ≥ +55% and z ≥ +40.\nFire after a 10% drop from that spell’s peak."]
+};
+function show(view) {
+  document.querySelectorAll(".view").forEach((el) => el.classList.toggle("on", el.id === view));
+  document.querySelectorAll("nav button").forEach((btn) => btn.setAttribute("aria-current", btn.dataset.view === view ? "page" : "false"));
+}
+function openSheet(id) {
+  const row = copy[id];
+  document.getElementById("sheet-title").textContent = row[0];
+  document.getElementById("sheet-body").textContent = row[1];
+  document.getElementById("sheet-formula").textContent = row[2];
+  document.getElementById("sheet").classList.add("on");
+}
+document.querySelectorAll("nav button").forEach((b) => b.addEventListener("click", () => show(b.dataset.view)));
+document.querySelectorAll("[data-open]").forEach((b) => b.addEventListener("click", () => openSheet(b.dataset.open)));
+document.querySelector(".close").addEventListener("click", () => document.getElementById("sheet").classList.remove("on"));
+const params = new URLSearchParams(location.search);
+if (params.get("view") === "library") show("library");
+if (params.get("open")) openSheet(params.get("open"));
+</script>
+</body>
+</html>
